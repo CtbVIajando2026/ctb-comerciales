@@ -3,6 +3,9 @@ import { OfflineSyncProvider } from "@/components/comerciales/OfflineSyncProvide
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
+import { Home, Plus, Building2, BarChart2, LogOut } from "lucide-react"
+import Link from "next/link"
+
 export default async function ComercialesLayout({
   children,
 }: {
@@ -24,13 +27,62 @@ export default async function ComercialesLayout({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-muted/20">
+    <div className="flex h-screen bg-muted/20">
       <OfflineSyncProvider />
       
-      <main className="flex-1 pb-16 md:pb-0">
-        {children}
+      {/* Sidebar - Oculto en móvil, visible en md+ */}
+      <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border">
+        <div className="p-6 border-b border-border">
+          <img src="/logo.png" alt="CTB Logo" className="h-16 object-contain" />
+          <div className="mt-3">
+            <span className="text-[10px] uppercase font-black tracking-widest text-primary/70 bg-primary/10 px-2 py-0.5 rounded-full">
+              COMERCIAL
+            </span>
+            <p className="text-sm font-bold text-foreground mt-2 line-clamp-1">
+              {perfil?.nombre_completo || 'Usuario'}
+            </p>
+          </div>
+        </div>
+        
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <Link href="/comerciales/dashboard" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <Home className="w-5 h-5 mr-3" />
+            Inicio
+          </Link>
+          <Link href="/comerciales/visitas/nueva" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <Plus className="w-5 h-5 mr-3" />
+            Nueva Visita
+          </Link>
+          <Link href="/comerciales/agencias" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <Building2 className="w-5 h-5 mr-3" />
+            Directorio Agencias
+          </Link>
+          <Link href="/comerciales/mi-dia" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <BarChart2 className="w-5 h-5 mr-3" />
+            Mi Rendimiento
+          </Link>
+        </nav>
+        
+        <div className="p-4 border-t border-border">
+          <form action="/login" method="GET">
+            <button type="submit" className="flex items-center w-full px-4 py-3 text-sm font-bold text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted transition-colors">
+              <LogOut className="w-5 h-5 mr-3" />
+              Cerrar Sesión
+            </button>
+          </form>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden pb-16 md:pb-0">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+          {children}
+        </div>
       </main>
-      <BottomNav />
+      
+      <div className="md:hidden">
+        <BottomNav />
+      </div>
     </div>
   )
 }
