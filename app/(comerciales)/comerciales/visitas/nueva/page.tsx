@@ -44,8 +44,8 @@ export default function NuevaVisitaPage() {
       lat = coords.lat
       lng = coords.lng
     } catch (e: any) {
-      toast.error("GPS Obligatorio", { description: e.message || "Debes encender tu GPS para hacer Check-in." })
-      return // ABORTAR CHECK-IN SI NO HAY GPS
+      toast.warning("GPS no disponible", { description: "Guardando visita sin ubicación precisa." })
+      // NO ABORTAMOS, CONTINUAMOS SIN GPS
     }
 
     try {
@@ -61,7 +61,29 @@ export default function NuevaVisitaPage() {
       router.push(`/comerciales/visitas/${nuevaVisita.id}`)
     } catch (e: any) {
       console.error(e)
-      toast.error("Error", { description: e.message || "Hubo un error al iniciar la visita." })
+      // Si falla por falta de internet, guardamos en local y redirigimos al dashboard
+      if (e.message?.includes('fetch') || !navigator.onLine) {
+        toast.warning("Sin conexión. Guardando visita localmente.", { description: "Se sincronizará cuando recuperes el internet." })
+        
+        const pendingQueueStr = localStorage.getItem('offline_checkins_queue')
+        const pendingQueue = pendingQueueStr ? JSON.parse(pendingQueueStr) : []
+        
+        pendingQueue.push({
+          id_temporal: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+          agencia_id: agenciaSeleccionada.id,
+          agencia_nombre: agenciaSeleccionada.nombre,
+          contacto_id: contactoSeleccionado?.id,
+          gps_lat: lat,
+          gps_lng: lng,
+          timer_programado_min: timerProgramado === "none" ? null : parseInt(timerProgramado, 10)
+        })
+        
+        localStorage.setItem('offline_checkins_queue', JSON.stringify(pendingQueue))
+        router.push('/comerciales/dashboard')
+      } else {
+        toast.error("Error", { description: e.message || "Hubo un error al iniciar la visita." })
+      }
     }
   }
 

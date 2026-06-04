@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts'
 import { TrendingUp, Map, Award, Users, Filter, Calendar as CalendarIcon, Clock, Search, Briefcase, Download, Printer, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -9,6 +9,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4']
+const AREA_COLOR = '#3b82f6'
 const ITEMS_PER_PAGE = 10
 
 type VistaType = 'global' | 'ciudad' | 'comercial'
@@ -56,6 +57,20 @@ export function DashboardInteractivo({ data }: { data: any }) {
       }
     })
     return Object.entries(map).map(([name, value]) => ({ name, value }))
+  }, [visitas])
+
+  // Serie de tiempo (Power BI style)
+  const visitasPorDia = useMemo(() => {
+    const map: Record<string, number> = {}
+    visitas.forEach((v: any) => {
+      if (v.estado === 'completada') {
+        const dia = format(new Date(v.created_at), "dd MMM")
+        map[dia] = (map[dia] || 0) + 1
+      }
+    })
+    return Object.entries(map)
+      .map(([name, value]) => ({ name, value }))
+      .reverse() // Asumiendo que vienen ordenadas desc, revertimos para la gráfica (cronológico)
   }, [visitas])
 
   const visitasGlobalesFiltradas = useMemo(() => {
@@ -198,21 +213,21 @@ export function DashboardInteractivo({ data }: { data: any }) {
       {vista === 'global' && (
         <div className="space-y-4 animate-in fade-in duration-300">
           <div className="flex flex-row gap-4 print:hidden w-full">
-            <div className="flex-1 bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col justify-center items-center text-center min-h-[250px]">
+            <div className="flex-1 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-lg flex flex-col justify-center items-center text-center min-h-[250px]">
               <h3 className="font-bold text-muted-foreground mb-4 uppercase tracking-wider text-xs">Efectividad Nacional</h3>
               <div className="relative flex-1 flex items-center justify-center w-full">
                 <svg className="w-40 h-40 transform -rotate-90">
-                  <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-muted/30" />
-                  <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={452} strokeDashoffset={452 - (452 * conversionRate) / 100} className="text-primary transition-all duration-1000 ease-out" />
+                  <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-muted/10" />
+                  <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={452} strokeDashoffset={452 - (452 * conversionRate) / 100} className="text-primary transition-all duration-1000 ease-out drop-shadow-md" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-black">{conversionRate}%</span>
+                  <span className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-br from-primary to-primary/60">{conversionRate}%</span>
                 </div>
               </div>
               <p className="mt-4 text-[11px] font-bold text-muted-foreground leading-tight">De {totalVisitas} visitas registradas,<br/>{completadas} fueron exitosas.</p>
             </div>
 
-            <div className="flex-1 bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col min-h-[250px]">
+            <div className="flex-1 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-lg flex flex-col min-h-[250px]">
               <div className="flex items-center justify-center space-x-2 mb-4">
                 <Map className="w-4 h-4 text-primary" />
                 <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Distribución Nacional</h3>
@@ -221,12 +236,12 @@ export function DashboardInteractivo({ data }: { data: any }) {
                 {visitasPorCiudadGlobal.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={visitasPorCiudadGlobal} cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={5} dataKey="value">
+                      <Pie data={visitasPorCiudadGlobal} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
                         {visitasPorCiudadGlobal.map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }} />
+                      <RechartsTooltip contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', color: 'var(--foreground)', fontSize: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} itemStyle={{ fontWeight: 'bold' }} />
                       <Legend verticalAlign="bottom" align="center" layout="horizontal" iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -234,6 +249,36 @@ export function DashboardInteractivo({ data }: { data: any }) {
                   <div className="h-full flex items-center justify-center text-muted-foreground text-xs">Sin datos</div>
                 )}
               </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-lg flex flex-col min-h-[300px] print:hidden">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Tendencia de Visitas Exitosas</h3>
+              </div>
+            </div>
+            <div className="flex-1 w-full min-h-[200px]">
+              {visitasPorDia.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={visitasPorDia} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorVisitas" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={AREA_COLOR} stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor={AREA_COLOR} stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <RechartsTooltip cursor={{ stroke: 'var(--border)', strokeWidth: 1, strokeDasharray: '4 4' }} contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', color: 'var(--foreground)', fontSize: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                    <Area type="monotone" dataKey="value" stroke={AREA_COLOR} strokeWidth={3} fillOpacity={1} fill="url(#colorVisitas)" activeDot={{ r: 6, strokeWidth: 0, fill: AREA_COLOR }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground text-xs">Sin actividad.</div>
+              )}
             </div>
           </div>
 

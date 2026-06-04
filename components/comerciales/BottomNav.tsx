@@ -2,14 +2,15 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, Plus, Building2, BarChart2, Power } from "lucide-react"
+import { Home, Plus, Building2, BarChart2, Power, Trophy } from "lucide-react"
 import { createClient } from '@/lib/supabase/client'
 
 const tabs = [
   { href: '/comerciales/dashboard', icon: Home, label: 'Inicio' },
   { href: '/comerciales/visitas/nueva', icon: Plus, label: 'Nueva' },
+  { href: '/comerciales/ranking', icon: Trophy, label: 'Ranking' },
   { href: '/comerciales/agencias', icon: Building2, label: 'Agencias' },
-  { href: '/comerciales/mi-dia', icon: BarChart2, label: 'Mi Actividad' },
+  { href: '/comerciales/mi-dia', icon: BarChart2, label: 'Actividad' },
 ]
 
 export function BottomNav() {

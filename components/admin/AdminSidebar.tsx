@@ -2,15 +2,17 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Building2, LayoutDashboard, Users, ShieldAlert, LogOut, Map as MapIcon, Activity } from "lucide-react"
+import { Building2, LayoutDashboard, Users, ShieldAlert, LogOut, Map as MapIcon, Activity, Trophy } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 const links = [
-  { href: '/admin', icon: LayoutDashboard, label: 'Ojo de Sauron' },
+  { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/admin/mapa', icon: MapIcon, label: 'Radar GPS' },
   { href: '/admin/comerciales', icon: Users, label: 'Comerciales' },
   { href: '/admin/visitas', icon: Activity, label: 'Registro de Visitas' },
   { href: '/admin/agencias', icon: Building2, label: 'Agencias Globales' },
+  { href: '/admin/ranking', icon: Trophy, label: 'Ranking' },
   { href: '/admin/alertas', icon: ShieldAlert, label: 'Alertas de Fraude', isDanger: true },
 ]
 
@@ -67,14 +69,15 @@ export function AdminSidebar({ userName }: { userName: string }) {
         })}
       </nav>
       
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border flex items-center justify-between">
         <button 
           onClick={handleLogout}
-          className="flex items-center w-full px-4 py-3 text-sm font-bold text-muted-foreground hover:text-destructive rounded-xl hover:bg-muted transition-colors"
+          className="flex flex-1 items-center px-4 py-3 text-sm font-bold text-muted-foreground hover:text-destructive rounded-xl hover:bg-muted transition-colors mr-2"
         >
           <LogOut className="w-5 h-5 mr-3" />
-          Cerrar Sesión
+          Salir
         </button>
+        <ThemeToggle />
       </div>
     </aside>
   )

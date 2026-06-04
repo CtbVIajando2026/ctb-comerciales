@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { cerrarVisita } from "@/app/(comerciales)/actions"
+import { cerrarVisita, iniciarVisita } from "@/app/(comerciales)/actions"
 import { toast } from "sonner"
 
 export function OfflineSyncProvider() {
@@ -24,14 +24,54 @@ export function OfflineSyncProvider() {
   }, [])
 
   const syncOfflineQueue = async () => {
-    try {
+      // 1. SINCRONIZAR CHECK-INS
+      try {
+        const checkinQueueStr = localStorage.getItem("offline_checkins_queue")
+        if (checkinQueueStr) {
+          const checkinQueue = JSON.parse(checkinQueueStr)
+          if (Array.isArray(checkinQueue) && checkinQueue.length > 0) {
+            toast.info("Sincronizando nuevos Check-ins...")
+            const remainingCheckins = []
+            let syncedCheckins = 0
+            
+            for (const item of checkinQueue) {
+              try {
+                await iniciarVisita({
+                  agencia_id: item.agencia_id,
+                  contacto_id: item.contacto_id,
+                  gps_lat: item.gps_lat,
+                  gps_lng: item.gps_lng,
+                  timer_programado_min: item.timer_programado_min
+                })
+                syncedCheckins++
+              } catch (e) {
+                console.error("Error sincronizando checkin offline", e)
+                remainingCheckins.push(item)
+              }
+            }
+            
+            if (remainingCheckins.length > 0) {
+              localStorage.setItem("offline_checkins_queue", JSON.stringify(remainingCheckins))
+            } else {
+              localStorage.removeItem("offline_checkins_queue")
+            }
+            if (syncedCheckins > 0) {
+              toast.success(`${syncedCheckins} visitas iniciadas sincronizadas.`)
+            }
+          }
+        }
+      } catch(e) {
+        console.error("Error parseando checkins:", e)
+      }
+
+      // 2. SINCRONIZAR CHECK-OUTS
       const queueStr = localStorage.getItem("offline_visits_queue")
       if (!queueStr) return
 
       const queue = JSON.parse(queueStr)
       if (!Array.isArray(queue) || queue.length === 0) return
 
-      toast.info("Conexión restaurada. Sincronizando visitas...")
+      toast.info("Conexión restaurada. Sincronizando datos de visitas...")
 
       const remainingQueue = []
       let syncedCount = 0
@@ -49,20 +89,17 @@ export function OfflineSyncProvider() {
       if (remainingQueue.length > 0) {
         localStorage.setItem("offline_visits_queue", JSON.stringify(remainingQueue))
         if (syncedCount > 0) {
-          toast.success(`${syncedCount} visitas sincronizadas. Quedan pendientes.`)
+          toast.success(`${syncedCount} visitas cerradas sincronizadas. Quedan pendientes.`)
         }
       } else {
         localStorage.removeItem("offline_visits_queue")
-        toast.success("¡Todas tus visitas offline fueron sincronizadas correctamente!")
+        toast.success("¡Tus datos offline fueron sincronizados correctamente!")
         
         // Refresh para actualizar la UI del dashboard u otras páginas
         setTimeout(() => {
           window.location.reload()
         }, 2000)
       }
-    } catch (e) {
-      console.error("Error parseando la cola offline:", e)
-    }
   }
 
   return null // Es un provider "invisible"

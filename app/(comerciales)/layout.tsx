@@ -3,8 +3,9 @@ import { OfflineSyncProvider } from "@/components/comerciales/OfflineSyncProvide
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
-import { Home, Plus, Building2, BarChart2, LogOut } from "lucide-react"
+import { Home, Plus, Building2, BarChart2, LogOut, Trophy } from "lucide-react"
 import Link from "next/link"
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 export default async function ComercialesLayout({
   children,
@@ -65,15 +66,20 @@ export default async function ComercialesLayout({
             <BarChart2 className="w-5 h-5 mr-3" />
             Mi Rendimiento
           </Link>
+          <Link href="/comerciales/ranking" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <Trophy className="w-5 h-5 mr-3 text-amber-500" />
+            Ranking
+          </Link>
         </nav>
         
-        <div className="p-4 border-t border-border">
-          <form action="/login" method="GET">
+        <div className="p-4 border-t border-border flex items-center justify-between">
+          <form action="/login" method="GET" className="flex-1 mr-2">
             <button type="submit" className="flex items-center w-full px-4 py-3 text-sm font-bold text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted transition-colors">
               <LogOut className="w-5 h-5 mr-3" />
-              Cerrar Sesión
+              Salir
             </button>
           </form>
+          <ThemeToggle />
         </div>
       </aside>
 
