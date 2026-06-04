@@ -143,7 +143,7 @@ export async function actualizarComercialAdmin(data: {
     .eq('id', data.id)
 
   // 2. Update Metas if it's a comercial
-  if (data.rol === 'comercial' && data.metaDiaria) {
+  if (data.rol === 'comercial' && data.metaDiaria !== undefined) {
     const { error: metaError } = await supabase
       .from('metas_comerciales')
       .upsert({

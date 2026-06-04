@@ -25,7 +25,7 @@ export function AdminBottomNav() {
   }
 
   return (
-    <div className="fixed bottom-0 w-full bg-background border-t border-border flex justify-around items-center h-16 pb-[env(safe-area-inset-bottom)] z-50 px-2 md:hidden">
+    <div className="fixed bottom-0 w-full bg-background border-t border-border flex justify-around items-center h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] z-50 px-2 md:hidden">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/') && tab.href !== '/admin'
         // Fix para que /admin no se marque como activo si estamos en /admin/comerciales

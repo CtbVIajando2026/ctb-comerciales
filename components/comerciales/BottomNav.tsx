@@ -27,7 +27,7 @@ export function BottomNav() {
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 w-full bg-background border-t border-border flex justify-around items-center h-16 pb-[env(safe-area-inset-bottom)] z-50 px-2">
+    <div className="md:hidden fixed bottom-0 w-full bg-background border-t border-border flex justify-around items-center h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] z-50 px-2">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/')
         const Icon = tab.icon
