@@ -18,7 +18,7 @@ export default async function AdminVisitasPage() {
       tiempo_en_sitio_minutos,
       resumen_visita,
       usuarios:comercial_id ( nombre ),
-      agencias:agencia_id ( nombre, direccion, zona, ciudad, latitud, longitud )
+      agencias:agencia_id ( nombre, direccion, zona, ciudad )
     `)
     .order('created_at', { ascending: false })
     .limit(1000)
