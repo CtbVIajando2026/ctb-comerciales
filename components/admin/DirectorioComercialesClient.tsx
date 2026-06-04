@@ -197,14 +197,16 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
                 <div className="mt-auto">
                   {user.rol === 'comercial' ? (
                     <div className="bg-muted/30 rounded-2xl p-3 border border-border/50 grid grid-cols-2 gap-2 mb-4">
-                      <div>
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center"><CalendarDays className="w-3 h-3 mr-1"/> Visitas Mes</p>
+                      <div className={user.meta_diaria > 0 ? "" : "col-span-2 text-center"}>
+                        <p className={`text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center ${user.meta_diaria > 0 ? '' : 'justify-center'}`}><CalendarDays className="w-3 h-3 mr-1"/> Visitas Mes</p>
                         <p className="font-black text-lg leading-none">{user.visitas_mes}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center justify-end"><Target className="w-3 h-3 mr-1"/> Meta Diaria</p>
-                        <p className="font-black text-lg leading-none">{user.meta_diaria > 0 ? user.meta_diaria : <span className="text-success text-sm">Libre</span>}</p>
-                      </div>
+                      {user.meta_diaria > 0 && (
+                        <div className="text-right">
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center justify-end"><Target className="w-3 h-3 mr-1"/> Meta Diaria</p>
+                          <p className="font-black text-lg leading-none">{user.meta_diaria}</p>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="h-[76px] mb-4"></div>

@@ -49,7 +49,7 @@ export function MetaBar({ realizadas, meta, justificado, actividades = 0, esFinD
       <div className="flex justify-between items-end mb-1">
         <div className="space-y-1">
           <p className="text-[11px] font-bold text-muted-foreground tracking-widest uppercase">
-            {esFinDeSemana ? 'LABORES EXTRA (FIN DE SEMANA)' : 'META DEL DÍA'}
+            {esFinDeSemana ? 'LABORES EXTRA (FIN DE SEMANA)' : (!meta ? 'LABORES DEL DÍA' : 'META DEL DÍA')}
           </p>
           <div className="flex items-center gap-3">
             <p className="text-4xl font-black">
@@ -61,11 +61,7 @@ export function MetaBar({ realizadas, meta, justificado, actividades = 0, esFinD
               <span className="text-xs font-bold bg-primary/20 text-primary px-2.5 py-1 rounded-md uppercase tracking-wider">
                 ¡Extra!
               </span>
-            ) : !meta ? (
-              <span className="text-xs font-bold bg-success/20 text-success px-2.5 py-1 rounded-md uppercase tracking-wider">
-                Meta Libre
-              </span>
-            ) : porcentaje < 100 ? (
+            ) : !meta ? null : porcentaje < 100 ? (
               <span className="text-xs font-bold bg-muted px-2.5 py-1 rounded-md text-muted-foreground uppercase tracking-wider">
                 Te faltan: {meta - realizadas}
               </span>
