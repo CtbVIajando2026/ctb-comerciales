@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ExportarExcelButton } from "./ExportarExcelButton"
 import { Building2, Clock, MapPin, User, Search, Filter, ShieldAlert, Timer } from "lucide-react"
+import { differenceInMinutes } from 'date-fns'
 
 export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[] }) {
   // State for filters
@@ -25,7 +26,7 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
     // Text search
     const matchSearch = agenciaNombre.toLowerCase().includes(search.toLowerCase()) || 
                         comercialNombre.toLowerCase().includes(search.toLowerCase()) ||
-                        (v.resumen_visita || "").toLowerCase().includes(search.toLowerCase())
+                        (v.observaciones || "").toLowerCase().includes(search.toLowerCase())
 
     // City
     const matchCiudad = filtroCiudad === "Todas" || ciudad === filtroCiudad
@@ -138,7 +139,7 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
                       {new Date(v.created_at).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                     <div className="flex items-center text-xs font-medium text-primary bg-primary/10 w-fit px-2 py-0.5 rounded-full uppercase tracking-wider mt-1">
-                      {v.tipo_actividad || 'Visita'}
+                      {v.temas || 'Visita'}
                     </div>
                   </div>
                   
@@ -156,10 +157,10 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
                       </div>
                       
                       <div className="text-right shrink-0 space-y-1">
-                        {v.tiempo_en_sitio_minutos > 0 && (
+                        {v.hora_checkin && v.hora_checkout && differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin)) > 0 && (
                           <div className="text-xs font-bold bg-muted px-2 py-1 rounded-lg flex items-center text-foreground justify-end">
                             <Timer className="w-3 h-3 mr-1 text-primary" />
-                            {v.tiempo_en_sitio_minutos} min
+                            {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
                           </div>
                         )}
                         {v.agencias?.ciudad && (
@@ -171,16 +172,16 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
                       </div>
                     </div>
                     
-                    {v.resumen_visita && (
+                    {v.observaciones && (
                       <p className="text-sm text-foreground bg-background border border-border p-3 rounded-xl mt-2">
-                        "{v.resumen_visita}"
+                        "{v.observaciones}"
                       </p>
                     )}
                     
                     {esFraude && (
                       <div className="flex items-center text-xs font-bold text-destructive bg-destructive/10 px-2 py-1.5 rounded-lg w-fit mt-2">
                         <ShieldAlert className="w-3.5 h-3.5 mr-1.5" />
-                        Alerta de Lejanía ({(v.distancia_gps_metros || 0).toFixed(0)}m de la agencia)
+                        Alerta de Lejanía ({(v.distancia_checkin_metros || 0).toFixed(0)}m de la agencia)
                       </div>
                     )}
                   </div>

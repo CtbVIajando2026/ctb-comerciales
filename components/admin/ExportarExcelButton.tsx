@@ -1,7 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Download } from "lucide-react"
+import { Download } from 'lucide-react'
+import { differenceInMinutes } from 'date-fns'
 import { toast } from "sonner"
 
 export function ExportarExcelButton({ datos }: { datos: any }) {
@@ -32,12 +33,12 @@ export function ExportarExcelButton({ datos }: { datos: any }) {
       const comercial = v.usuarios?.nombre || "Desconocido"
       const agencia = v.agencias?.nombre || "Desconocida"
       const ciudad = v.agencias?.ciudad || "Quito"
-      const tipo = v.tipo_actividad || ""
-      const duracion = v.tiempo_en_sitio_minutos || 0
-      const distancia = v.distancia_gps_metros || 0
+      const tipo = v.temas || ""
+      const duracion = v.hora_checkout && v.hora_checkin ? differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin)) : 0
+      const distancia = v.distancia_checkin_metros || 0
       
       // Clean up text for CSV (quotes, newlines)
-      const resumen = `"${(v.resumen_visita || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
+      const resumen = `"${(v.observaciones || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
 
       return [v.id, fecha, comercial, agencia, ciudad, tipo, duracion, distancia, resumen].join(",")
     })

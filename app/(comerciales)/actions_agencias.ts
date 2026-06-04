@@ -136,10 +136,9 @@ export async function obtenerDetalleAgencia(id: string) {
   const { data: historial } = await supabase
     .from('visitas')
     .select(`
-      id,
       created_at,
-      tipo_actividad,
-      resumen_visita,
+      temas,
+      observaciones,
       usuarios:comercial_id ( nombre )
     `)
     .eq('agencia_id', id)

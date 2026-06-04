@@ -11,12 +11,10 @@ export default async function AdminVisitasPage() {
     .from('visitas')
     .select(`
       id, created_at, comercial_id, agencia_id,
-      tipo_actividad, es_actividad, titulo_actividad,
+      es_actividad, titulo_actividad, temas, observaciones,
       hora_checkin, hora_checkout, estado,
       gps_lat, gps_lng,
-      distancia_gps_metros, alerta_fraude_checkin, alerta_fraude_checkout,
-      tiempo_en_sitio_minutos,
-      resumen_visita,
+      distancia_checkin_metros, alerta_fraude_checkin, alerta_fraude_checkout,
       usuarios:comercial_id ( nombre ),
       agencias:agencia_id ( nombre, direccion, zona, ciudad )
     `)
