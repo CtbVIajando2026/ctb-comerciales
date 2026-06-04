@@ -53,14 +53,14 @@ export function AdminSidebar({ userName }: { userName: string }) {
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
                 isExactOrChild 
                   ? link.isDanger 
-                    ? 'bg-destructive/10 text-destructive' 
-                    : 'bg-primary/10 text-primary'
+                    ? 'bg-destructive text-destructive-foreground' 
+                    : 'bg-primary text-primary-foreground'
                   : link.isDanger
                     ? 'text-muted-foreground hover:bg-muted hover:text-destructive'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
-              <Icon className={`w-5 h-5 mr-3 ${isExactOrChild ? (link.isDanger ? 'text-destructive' : 'text-primary') : ''}`} />
+              <Icon className={`w-5 h-5 mr-3 ${isExactOrChild ? (link.isDanger ? 'text-destructive-foreground' : 'text-primary-foreground') : ''}`} />
               {link.label}
             </Link>
           )

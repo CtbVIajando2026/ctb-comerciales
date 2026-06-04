@@ -139,7 +139,7 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
                       {new Date(v.created_at).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                     <div className="flex items-center text-xs font-medium text-primary bg-primary/10 w-fit px-2 py-0.5 rounded-full uppercase tracking-wider mt-1">
-                      {v.temas || 'Visita'}
+                      {Array.isArray(v.temas) ? v.temas.join(', ') : (v.temas || 'Visita')}
                     </div>
                   </div>
                   

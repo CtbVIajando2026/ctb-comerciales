@@ -41,8 +41,10 @@ export function AdminBottomNav() {
               isExactOrChild ? 'text-primary' : 'text-muted-foreground hover:text-primary'
             }`}
           >
-            <Icon size={24} strokeWidth={isExactOrChild ? 2.5 : 2} />
-            <span className="text-[10px] font-medium">{tab.label}</span>
+            <div className={`p-1.5 rounded-xl transition-all ${isExactOrChild ? 'bg-primary text-primary-foreground' : ''}`}>
+              <Icon size={22} strokeWidth={isExactOrChild ? 2.5 : 2} />
+            </div>
+            <span className={`text-[10px] font-medium ${isExactOrChild ? 'text-primary font-bold' : ''}`}>{tab.label}</span>
           </Link>
         )
       })}

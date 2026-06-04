@@ -132,7 +132,7 @@ export function AgenciaDetalleClient({ dataInicial, backUrl = "/comerciales/agen
                         <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                           {new Date(h.created_at).toLocaleDateString()}
                         </span>
-                        <span className="text-[10px] uppercase font-bold text-primary">{h.temas || 'Visita'}</span>
+                        <span className="text-[10px] uppercase font-bold text-primary">{Array.isArray(h.temas) ? h.temas.join(', ') : (h.temas || 'Visita')}</span>
                       </div>
                       <p className="text-xs text-foreground font-medium">{h.observaciones || 'Sin novedades'}</p>
                       <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/50">
