@@ -52,7 +52,9 @@ export function AgenciaDetalleClient({ dataInicial }: { dataInicial: any }) {
           <div className="space-y-3 pt-4 border-t border-border/50">
             <div className="flex items-start">
               <MapPin className="w-4 h-4 text-muted-foreground mr-2 mt-0.5 shrink-0" />
-              <span className="text-sm text-foreground">{agencia.direccion || 'Sin dirección registrada'}</span>
+              <span className="text-sm text-foreground">
+                <strong>{agencia.ciudad || 'Quito'}</strong> - {agencia.direccion || 'Sin dirección registrada'}
+              </span>
             </div>
             {agencia.fecha_aniversario && (
               <div className="flex items-center">

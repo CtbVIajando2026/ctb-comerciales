@@ -15,6 +15,7 @@ interface Agencia {
   direccion: string
   temperatura: string
   activa: boolean
+  ciudad: string
 }
 
 export function DirectorioClient({ agenciasIniciales }: { agenciasIniciales: Agencia[] }) {
@@ -67,7 +68,7 @@ export function DirectorioClient({ agenciasIniciales }: { agenciasIniciales: Age
                   <h3 className="font-bold text-foreground leading-tight">{agencia.nombre}</h3>
                   <p className="text-xs text-muted-foreground flex items-start">
                     <MapPin className="w-3 h-3 mr-1 mt-0.5 shrink-0" />
-                    <span className="line-clamp-1">{agencia.direccion || 'Sin dirección registrada'}</span>
+                    <span className="line-clamp-1">{agencia.ciudad || 'Quito'} - {agencia.direccion || 'Sin dirección registrada'}</span>
                   </p>
                   <div className="pt-1">
                     <TemperaturaBadge temperatura={agencia.temperatura} />

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 export async function crearAgenciaRapida(data: {
   nombre: string
   direccion: string
+  ciudad?: string | null
   aniversario_agencia: string | null
   contactoNombre: string
   contactoCargo: string
@@ -25,6 +26,7 @@ export async function crearAgenciaRapida(data: {
     .insert({
       nombre: data.nombre,
       direccion: data.direccion,
+      ciudad: data.ciudad || 'Quito',
       fecha_aniversario: data.aniversario_agencia,
       gps_lat_registro: data.gps_lat,
       gps_lng_registro: data.gps_lng,
@@ -98,7 +100,8 @@ export async function obtenerAgenciasDirectorio() {
       nombre,
       direccion,
       temperatura,
-      activa
+      activa,
+      ciudad
     `)
     .order('nombre')
 
@@ -135,6 +138,7 @@ export async function obtenerDetalleAgencia(id: string) {
 export async function actualizarAgencia(id: string, payload: {
   nombre: string
   direccion: string
+  ciudad?: string | null
   fecha_aniversario?: string | null
   contactos?: {
     id?: string
@@ -155,6 +159,7 @@ export async function actualizarAgencia(id: string, payload: {
     .update({
       nombre: payload.nombre,
       direccion: payload.direccion,
+      ciudad: payload.ciudad || 'Quito',
       fecha_aniversario: payload.fecha_aniversario
     })
     .eq('id', id)

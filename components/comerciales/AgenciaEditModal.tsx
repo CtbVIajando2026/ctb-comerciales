@@ -27,6 +27,7 @@ interface Contacto {
 export function AgenciaEditModal({ agencia, isOpen, onClose, onSuccess }: AgenciaEditModalProps) {
   const [nombre, setNombre] = useState("")
   const [direccion, setDireccion] = useState("")
+  const [ciudad, setCiudad] = useState("")
   const [aniversario, setAniversario] = useState("")
   const [contactos, setContactos] = useState<Contacto[]>([])
   const [guardando, setGuardando] = useState(false)
@@ -36,6 +37,7 @@ export function AgenciaEditModal({ agencia, isOpen, onClose, onSuccess }: Agenci
     if (isOpen && agencia) {
       setNombre(agencia.nombre || "")
       setDireccion(agencia.direccion || "")
+      setCiudad(agencia.ciudad || "Quito")
       setAniversario(agencia.fecha_aniversario ? agencia.fecha_aniversario.split('T')[0] : "")
       
       const inicialContactos = (agencia.contactos || []).map((c: any) => ({
@@ -81,6 +83,7 @@ export function AgenciaEditModal({ agencia, isOpen, onClose, onSuccess }: Agenci
       await actualizarAgencia(agencia.id, {
         nombre,
         direccion,
+        ciudad,
         fecha_aniversario: aniversario || null,
         contactos: payloadContactos
       })
@@ -92,6 +95,7 @@ export function AgenciaEditModal({ agencia, isOpen, onClose, onSuccess }: Agenci
       onSuccess({
         nombre,
         direccion,
+        ciudad,
         fecha_aniversario: aniversario || null,
         contactos: payloadContactos // these might miss real IDs if new, but parent refreshes
       })
@@ -124,6 +128,16 @@ export function AgenciaEditModal({ agencia, isOpen, onClose, onSuccess }: Agenci
                 className="pl-10 h-12"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
+                required
+              />
+            </div>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Ciudad"
+                className="pl-10 h-12"
+                value={ciudad}
+                onChange={(e) => setCiudad(e.target.value)}
                 required
               />
             </div>

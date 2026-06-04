@@ -25,6 +25,7 @@ interface OtroContacto {
 export function AgenciaRegistroModal({ isOpen, onClose, onSuccess }: AgenciaRegistroModalProps) {
   const [nombre, setNombre] = useState("")
   const [direccion, setDireccion] = useState("")
+  const [ciudad, setCiudad] = useState("Quito")
   const [aniversario, setAniversario] = useState("")
   
   const [gerenteNombre, setGerenteNombre] = useState("")
@@ -75,6 +76,7 @@ export function AgenciaRegistroModal({ isOpen, onClose, onSuccess }: AgenciaRegi
       const { agencia, contacto } = await crearAgenciaRapida({
         nombre,
         direccion,
+        ciudad,
         aniversario_agencia: aniversario || null,
         contactoNombre: gerenteNombre,
         contactoCargo: "Gerente",
@@ -93,6 +95,7 @@ export function AgenciaRegistroModal({ isOpen, onClose, onSuccess }: AgenciaRegi
       // Limpiar formulario
       setNombre("")
       setDireccion("")
+      setCiudad("Quito")
       setAniversario("")
       setGerenteNombre("")
       setGerenteCumpleanos("")
@@ -128,6 +131,17 @@ export function AgenciaRegistroModal({ isOpen, onClose, onSuccess }: AgenciaRegi
                 onChange={(e) => setNombre(e.target.value)}
                 required
               />
+            </div>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <MapPin className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Ciudad (Ej. Quito)"
+                  className="pl-10 h-12"
+                  value={ciudad}
+                  onChange={(e) => setCiudad(e.target.value)}
+                />
+              </div>
             </div>
             <div className="flex gap-2">
               <div className="relative flex-1">
