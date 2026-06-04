@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Plus, Search, MapPin, Phone, Target, Edit2, ShieldAlert, Award, CalendarDays, Filter } from 'lucide-react'
+import { Plus, Search, MapPin, Phone, Target, Edit2, ShieldAlert, Award, CalendarDays, Filter, Trophy } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
@@ -11,7 +11,7 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
   const [filtroRol, setFiltroRol] = useState<string>('all')
 
   const filteredData = useMemo(() => {
-    return initialData.filter(user => {
+    const data = initialData.filter(user => {
       const matchesSearch = 
         user.nombre_completo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.ciudad_zona?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -20,6 +20,9 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
 
       return matchesSearch && matchesRol
     })
+
+    // Sort as a ranking (most visits first)
+    return data.sort((a, b) => (b.visitas_mes || 0) - (a.visitas_mes || 0))
   }, [initialData, searchTerm, filtroRol])
 
   const totalUsuarios = initialData.length
@@ -64,6 +67,46 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
         </div>
       </div>
 
+      {/* Card Superior Inteligente (Top 1) */}
+      {filteredData.length > 0 && (filteredData[0].visitas_mes || 0) > 0 && (
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl p-6 shadow-xl shadow-amber-500/20 text-white relative overflow-hidden animate-in fade-in zoom-in duration-500 flex flex-col md:flex-row items-center justify-between gap-6 border border-amber-400">
+          {/* Decals */}
+          <Award className="absolute -right-6 -top-6 w-32 h-32 text-white/10 rotate-12" />
+          
+          <div className="flex items-center gap-4 z-10 w-full md:w-auto">
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 rounded-full bg-white text-amber-600 flex items-center justify-center font-black text-2xl shadow-lg border-2 border-amber-200 z-10 relative">
+                {filteredData[0].nombre_completo?.charAt(0) || 'U'}
+              </div>
+              <div className="absolute -bottom-2 -right-2 bg-amber-800 text-white text-[10px] font-black px-2 py-0.5 rounded-full border-2 border-amber-500 shadow-sm z-20">
+                #1
+              </div>
+            </div>
+            <div>
+              <p className="text-amber-100 text-[10px] font-black uppercase tracking-widest mb-1 flex items-center">
+                <Trophy className="w-3 h-3 mr-1" /> Líder {searchTerm ? 'de la Búsqueda' : 'Actual'}
+              </p>
+              <h3 className="font-black text-2xl leading-none">{filteredData[0].nombre_completo}</h3>
+              <p className="text-amber-100 text-xs font-medium flex items-center mt-1.5">
+                <MapPin className="w-3 h-3 mr-1" /> {filteredData[0].ciudad_zona || 'Global'}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-black/20 rounded-2xl px-6 py-4 flex items-center gap-6 z-10 w-full md:w-auto backdrop-blur-sm border border-white/10">
+            <div className="text-center">
+              <p className="text-[10px] text-amber-200 font-bold uppercase tracking-widest mb-0.5">Visitas del Mes</p>
+              <p className="text-3xl font-black">{filteredData[0].visitas_mes}</p>
+            </div>
+            <div className="w-px h-10 bg-white/20"></div>
+            <div className="text-center">
+              <p className="text-[10px] text-amber-200 font-bold uppercase tracking-widest mb-0.5">Meta Diaria</p>
+              <p className="text-xl font-bold">{filteredData[0].meta_diaria || 'Libre'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {filteredData.length === 0 ? (
           <div className="col-span-full bg-card p-12 text-center rounded-3xl border border-border">
@@ -72,11 +115,17 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
             <p className="text-xs text-muted-foreground mt-1">No se encontraron usuarios con esos filtros.</p>
           </div>
         ) : (
-          filteredData.map((user) => {
+          filteredData.map((user, index) => {
             const isAdmin = user.rol === 'admin'
             
             return (
               <div key={user.id} className="bg-card border border-border rounded-3xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group flex flex-col h-full">
+                {/* Ranking Badge if top 3 */}
+                {index < 3 && user.visitas_mes > 0 && (
+                  <div className={`absolute top-0 right-6 px-3 py-1 rounded-b-lg font-black text-xs text-white shadow-md z-10 flex items-center justify-center ${index === 0 ? 'bg-amber-500' : index === 1 ? 'bg-slate-400' : 'bg-orange-700'}`}>
+                    #{index + 1}
+                  </div>
+                )}
                 {/* Banda de color superior según rol */}
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isAdmin ? 'bg-primary' : 'bg-secondary'}`} />
                 
