@@ -505,7 +505,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:grid-cols-4">
             <div className="bg-card p-4 rounded-2xl border border-border shadow-sm flex flex-col justify-center text-center">
               <h3 className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Meta Base</h3>
-              <div className="text-3xl font-black">{metaComercial}</div>
+              <div className="text-3xl font-black">{metaComercial > 0 ? metaComercial : 'Libre'}</div>
             </div>
             <div className="bg-card p-4 rounded-2xl border border-border shadow-sm flex flex-col justify-center text-center">
               <h3 className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Total (30d)</h3>

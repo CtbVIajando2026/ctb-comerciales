@@ -28,7 +28,7 @@ export function MetaBar({ realizadas, meta, justificado, actividades = 0, esFinD
     )
   }
 
-  const porcentaje = Math.min(100, (realizadas / meta) * 100)
+  const porcentaje = meta > 0 ? Math.min(100, (realizadas / meta) * 100) : 100
   
   let colorClass = "bg-error"
   let textColorClass = "text-error"
@@ -54,12 +54,16 @@ export function MetaBar({ realizadas, meta, justificado, actividades = 0, esFinD
           <div className="flex items-center gap-3">
             <p className="text-4xl font-black">
               {realizadas} 
-              {!esFinDeSemana && <><span className="text-2xl text-muted-foreground/50 mx-1">/</span><span className="text-3xl">{meta}</span></>}
+              {!esFinDeSemana && meta > 0 && <><span className="text-2xl text-muted-foreground/50 mx-1">/</span><span className="text-3xl">{meta}</span></>}
             </p>
             
             {esFinDeSemana ? (
               <span className="text-xs font-bold bg-primary/20 text-primary px-2.5 py-1 rounded-md uppercase tracking-wider">
                 ¡Extra!
+              </span>
+            ) : !meta ? (
+              <span className="text-xs font-bold bg-success/20 text-success px-2.5 py-1 rounded-md uppercase tracking-wider">
+                Meta Libre
               </span>
             ) : porcentaje < 100 ? (
               <span className="text-xs font-bold bg-muted px-2.5 py-1 rounded-md text-muted-foreground uppercase tracking-wider">
