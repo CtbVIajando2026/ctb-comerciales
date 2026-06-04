@@ -244,3 +244,48 @@ export async function obtenerDatosHistoricosAdmin() {
     comerciales: comerciales || []
   }
 }
+
+export async function obtenerDirectorioEquipo() {
+  const supabase = await createAdminClient()
+  
+  // 1. Obtener comerciales
+  const { data: comerciales, error } = await supabase
+    .from('usuarios_perfil')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error || !comerciales) return []
+
+  // 2. Obtener metas activas
+  const { data: metas } = await supabase
+    .from('metas_comerciales')
+    .select('comercial_id, visitas_diarias')
+    .eq('activa', true)
+
+  // 3. Obtener visitas completadas del mes actual
+  const inicioMes = new Date()
+  inicioMes.setDate(1)
+  inicioMes.setHours(0,0,0,0)
+
+  const { data: visitas } = await supabase
+    .from('visitas')
+    .select('comercial_id, es_actividad')
+    .eq('estado', 'completada')
+    .gte('created_at', inicioMes.toISOString())
+
+  return comerciales.map(c => {
+    const metaObj = metas?.find(m => m.comercial_id === c.id)
+    const meta = metaObj?.visitas_diarias !== undefined ? metaObj.visitas_diarias : 0 // 0 = Libre
+    
+    const misVisitas = visitas?.filter(v => v.comercial_id === c.id) || []
+    const visitasReales = misVisitas.filter(v => !v.es_actividad).length
+    const actividades = misVisitas.filter(v => v.es_actividad).length
+
+    return {
+      ...c,
+      meta_diaria: meta,
+      visitas_mes: visitasReales,
+      actividades_mes: actividades
+    }
+  })
+}

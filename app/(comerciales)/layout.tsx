@@ -3,7 +3,7 @@ import { OfflineSyncProvider } from "@/components/comerciales/OfflineSyncProvide
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
-import { Home, Plus, Building2, BarChart2, LogOut, Trophy } from "lucide-react"
+import { Home, Plus, Building2, BarChart2, LogOut, Trophy, User } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
@@ -61,6 +61,10 @@ export default async function ComercialesLayout({
           <Link href="/comerciales/agencias" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
             <Building2 className="w-5 h-5 mr-3" />
             Directorio Agencias
+          </Link>
+          <Link href="/comerciales/equipo" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <User className="w-5 h-5 mr-3" />
+            Directorio Equipo
           </Link>
           <Link href="/comerciales/mi-dia" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
             <BarChart2 className="w-5 h-5 mr-3" />
