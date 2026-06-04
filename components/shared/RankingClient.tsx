@@ -23,9 +23,17 @@ export function RankingClient({ datos }: { datos: any }) {
 
     visitas.forEach((v: any) => {
       if (v.estado === 'completada' && !v.es_actividad) {
-        if (mapa[v.comercial_id]) {
-          mapa[v.comercial_id].puntos += 1 // 1 punto por visita exitosa
+        if (!mapa[v.comercial_id]) {
+          const nombre = v.usuarios?.nombre || 'Usuario Registrado'
+          const zona = v.usuarios?.zona || 'Global'
+          mapa[v.comercial_id] = {
+            nombre,
+            zona,
+            puntos: 0,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=random`
+          }
         }
+        mapa[v.comercial_id].puntos += 1 // 1 punto por visita exitosa
       }
     })
 
