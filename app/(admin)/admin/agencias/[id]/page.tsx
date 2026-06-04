@@ -4,7 +4,8 @@ import { notFound } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminAgenciaDetallePage({ params }: { params: { id: string } }) {
+export default async function AdminAgenciaDetallePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const data = await obtenerDetalleAgencia(params.id)
   
   if (!data) {
