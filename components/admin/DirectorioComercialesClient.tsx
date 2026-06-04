@@ -67,42 +67,73 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
         </div>
       </div>
 
-      {/* Card Superior Inteligente (Top 1) */}
+      {/* Top 4 Inteligente */}
       {filteredData.length > 0 && (filteredData[0].visitas_mes || 0) > 0 && (
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl p-6 shadow-xl shadow-amber-500/20 text-white relative overflow-hidden animate-in fade-in zoom-in duration-500 flex flex-col md:flex-row items-center justify-between gap-6 border border-amber-400">
-          {/* Decals */}
-          <Award className="absolute -right-6 -top-6 w-32 h-32 text-white/10 rotate-12" />
-          
-          <div className="flex items-center gap-4 z-10 w-full md:w-auto">
-            <div className="relative shrink-0">
-              <div className="w-16 h-16 rounded-full bg-white text-amber-600 flex items-center justify-center font-black text-2xl shadow-lg border-2 border-amber-200 z-10 relative">
-                {filteredData[0].nombre_completo?.charAt(0) || 'U'}
-              </div>
-              <div className="absolute -bottom-2 -right-2 bg-amber-800 text-white text-[10px] font-black px-2 py-0.5 rounded-full border-2 border-amber-500 shadow-sm z-20">
-                #1
-              </div>
-            </div>
-            <div>
-              <p className="text-amber-100 text-[10px] font-black uppercase tracking-widest mb-1 flex items-center">
-                <Trophy className="w-3 h-3 mr-1" /> Líder {searchTerm ? 'de la Búsqueda' : 'Actual'}
-              </p>
-              <h3 className="font-black text-2xl leading-none">{filteredData[0].nombre_completo}</h3>
-              <p className="text-amber-100 text-xs font-medium flex items-center mt-1.5">
-                <MapPin className="w-3 h-3 mr-1" /> {filteredData[0].ciudad_zona || 'Global'}
-              </p>
-            </div>
-          </div>
+        <div className="mb-8">
+          <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4 flex items-center">
+            <Trophy className="w-4 h-4 mr-2 text-amber-500" /> Líderes {searchTerm ? 'de la Búsqueda' : 'del Equipo'}
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {filteredData.slice(0, 4).filter(u => (u.visitas_mes || 0) > 0).map((leader, index) => {
+              const styles = [
+                {
+                  bg: "from-amber-400 to-amber-600 border-amber-300 shadow-amber-500/30",
+                  text: "text-amber-100",
+                  badgeBg: "bg-white text-amber-600",
+                  badgeLabel: "1ER LUGAR"
+                },
+                {
+                  bg: "from-slate-400 to-slate-600 border-slate-300 shadow-slate-500/30",
+                  text: "text-slate-100",
+                  badgeBg: "bg-white text-slate-700",
+                  badgeLabel: "2DO LUGAR"
+                },
+                {
+                  bg: "from-orange-500 to-orange-700 border-orange-400 shadow-orange-600/30",
+                  text: "text-orange-100",
+                  badgeBg: "bg-white text-orange-800",
+                  badgeLabel: "3ER LUGAR"
+                },
+                {
+                  bg: "from-blue-500 to-blue-700 border-blue-400 shadow-blue-600/30",
+                  text: "text-blue-100",
+                  badgeBg: "bg-white text-blue-800",
+                  badgeLabel: "4TO LUGAR"
+                }
+              ]
+              const style = styles[index]
 
-          <div className="bg-black/20 rounded-2xl px-6 py-4 flex items-center gap-6 z-10 w-full md:w-auto backdrop-blur-sm border border-white/10">
-            <div className="text-center">
-              <p className="text-[10px] text-amber-200 font-bold uppercase tracking-widest mb-0.5">Visitas del Mes</p>
-              <p className="text-3xl font-black">{filteredData[0].visitas_mes}</p>
-            </div>
-            <div className="w-px h-10 bg-white/20"></div>
-            <div className="text-center">
-              <p className="text-[10px] text-amber-200 font-bold uppercase tracking-widest mb-0.5">Meta Diaria</p>
-              <p className="text-xl font-bold">{filteredData[0].meta_diaria || 'Libre'}</p>
-            </div>
+              return (
+                <div key={`leader-${leader.id}`} className={`bg-gradient-to-br ${style.bg} border rounded-3xl p-4 md:p-5 shadow-lg text-white relative overflow-hidden flex flex-col justify-between h-[160px] md:h-[180px] animate-in zoom-in-95 duration-500 delay-${index * 100}`}>
+                  {/* Decoración de fondo */}
+                  <Award className="absolute -right-4 -bottom-4 w-24 h-24 text-white/10 rotate-12" />
+                  
+                  <div className="flex items-start justify-between z-10">
+                    <div className="flex flex-col">
+                      <div className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full inline-block w-max mb-2 shadow-sm ${style.badgeBg}`}>
+                        {style.badgeLabel}
+                      </div>
+                      <h3 className="font-black text-sm md:text-base leading-tight line-clamp-2">{leader.nombre_completo}</h3>
+                      <p className={`${style.text} text-[10px] md:text-xs font-medium flex items-center mt-1 truncate max-w-full`}>
+                        <MapPin className="w-3 h-3 mr-1 shrink-0" /> <span className="truncate">{leader.ciudad_zona || 'Global'}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="z-10 flex items-end justify-between mt-auto">
+                    <div className="flex -space-x-2 mr-2">
+                       <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-lg md:text-xl border-2 border-white/40 shadow-inner">
+                        {leader.nombre_completo?.charAt(0) || 'U'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`${style.text} text-[9px] uppercase tracking-widest font-bold mb-[-2px]`}>Visitas</p>
+                      <p className="font-black text-3xl md:text-4xl leading-none">{leader.visitas_mes}</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
