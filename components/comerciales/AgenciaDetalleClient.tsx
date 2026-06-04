@@ -60,7 +60,7 @@ export function AgenciaDetalleClient({ dataInicial, backUrl = "/comerciales/agen
               <div className="flex items-center">
                 <Calendar className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
                 <span className="text-sm text-foreground">
-                  Aniversario: <strong className="font-semibold">{new Date(agencia.fecha_aniversario).toLocaleDateString()}</strong>
+                  Aniversario: <strong className="font-semibold">{new Date(agencia.fecha_aniversario).toLocaleDateString('es-EC', { timeZone: 'UTC' })}</strong>
                 </span>
               </div>
             )}
@@ -101,7 +101,7 @@ export function AgenciaDetalleClient({ dataInicial, backUrl = "/comerciales/agen
                     )}
                     {contacto.fecha_cumpleanos && (
                       <div className="flex items-center text-xs text-muted-foreground">
-                        <Calendar className="w-3 h-3 mr-1.5" /> Cumple: {new Date(contacto.fecha_cumpleanos).toLocaleDateString()}
+                        <Calendar className="w-3 h-3 mr-1.5" /> Cumple: {new Date(contacto.fecha_cumpleanos).toLocaleDateString('es-EC', { timeZone: 'UTC' })}
                       </div>
                     )}
                     {!contacto.telefono && !contacto.email && !contacto.fecha_cumpleanos && (
