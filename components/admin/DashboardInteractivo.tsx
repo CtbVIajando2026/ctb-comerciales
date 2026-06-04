@@ -59,6 +59,16 @@ export function DashboardInteractivo({ data }: { data: any }) {
     return Object.entries(map).map(([name, value]) => ({ name, value }))
   }, [visitas])
 
+  // Composición de trabajo: Agencias vs Actividades
+  const compTrabajoData = useMemo(() => {
+    const reales = visitas.filter((v: any) => v.estado === 'completada' && !v.es_actividad).length
+    const extra = visitas.filter((v: any) => v.estado === 'completada' && v.es_actividad).length
+    return [
+      { name: 'Agencias', value: reales, fill: '#3b82f6' }, // primary
+      { name: 'Internas', value: extra, fill: '#f59e0b' }   // warning
+    ]
+  }, [visitas])
+
   // Serie de tiempo (Power BI style)
   const visitasPorDia = useMemo(() => {
     const map: Record<string, number> = {}
@@ -214,17 +224,35 @@ export function DashboardInteractivo({ data }: { data: any }) {
         <div className="space-y-4 animate-in fade-in duration-300">
           <div className="flex flex-row gap-4 print:hidden w-full">
             <div className="flex-1 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-lg flex flex-col justify-center items-center text-center min-h-[250px]">
-              <h3 className="font-bold text-muted-foreground mb-4 uppercase tracking-wider text-xs">Efectividad Nacional</h3>
-              <div className="relative flex-1 flex items-center justify-center w-full">
-                <svg className="w-40 h-40 transform -rotate-90">
-                  <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-muted/10" />
-                  <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={452} strokeDashoffset={452 - (452 * conversionRate) / 100} className="text-primary transition-all duration-1000 ease-out drop-shadow-md" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-br from-primary to-primary/60">{conversionRate}%</span>
-                </div>
+              <div className="flex items-center justify-center space-x-2 mb-4">
+                <Briefcase className="w-4 h-4 text-primary" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Composición del Trabajo</h3>
               </div>
-              <p className="mt-4 text-[11px] font-bold text-muted-foreground leading-tight">De {totalVisitas} visitas registradas,<br/>{completadas} fueron exitosas.</p>
+              <div className="flex-1 w-full h-full min-h-[180px] relative">
+                {compTrabajoData[0].value + compTrabajoData[1].value > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={compTrabajoData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
+                          {compTrabajoData.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', color: 'var(--foreground)', fontSize: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} itemStyle={{ fontWeight: 'bold' }} />
+                        <Legend verticalAlign="bottom" align="center" layout="horizontal" iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-[-20px]">
+                      <span className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground leading-none">
+                        {compTrabajoData[0].value + compTrabajoData[1].value}
+                      </span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mt-1">Totales</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground text-xs">Sin datos</div>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-lg flex flex-col min-h-[250px]">
