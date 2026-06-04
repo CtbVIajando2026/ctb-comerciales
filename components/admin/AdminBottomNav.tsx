@@ -25,7 +25,7 @@ export function AdminBottomNav() {
   }
 
   return (
-    <div className="fixed bottom-0 w-full bg-background border-t border-border flex justify-around items-center pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] min-h-[4.5rem] z-50 px-2 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
+    <div className="fixed bottom-0 left-0 w-full bg-background border-t border-border flex justify-around pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] min-h-[4.5rem] z-50 px-2 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/') && tab.href !== '/admin'
         // Fix para que /admin no se marque como activo si estamos en /admin/comerciales
@@ -38,7 +38,7 @@ export function AdminBottomNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
+            className={`flex flex-col items-center justify-start pt-1 w-full h-full space-y-1 transition-colors ${
               isExactOrChild ? 'text-primary' : 'text-muted-foreground hover:text-primary'
             }`}
           >
@@ -52,7 +52,7 @@ export function AdminBottomNav() {
       
       <button
         onClick={handleLogout}
-        className="flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors text-muted-foreground hover:text-destructive"
+        className="flex flex-col items-center justify-start pt-1 w-full h-full space-y-1 transition-colors text-muted-foreground hover:text-destructive"
       >
         <Power size={24} strokeWidth={2} />
         <span className="text-[10px] font-medium">Salir</span>

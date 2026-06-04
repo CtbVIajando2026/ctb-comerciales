@@ -26,6 +26,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
+    <>
     <div className="flex h-[100dvh] bg-muted/30">
       {/* Sidebar - Oculto en móvil, visible en md+ */}
       <AdminSidebar userName={perfil?.nombre_completo || 'Admin Master'} />
@@ -36,9 +37,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           {children}
         </div>
       </main>
-      
-      {/* Navegación Inferior Móvil */}
-      <AdminBottomNav />
     </div>
+    {/* Navegación Inferior Móvil */}
+    <AdminBottomNav />
+    </>
   )
 }

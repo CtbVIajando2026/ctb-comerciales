@@ -149,7 +149,7 @@ export async function actualizarComercialAdmin(data: {
       .upsert({
         comercial_id: data.id,
         visitas_diarias: data.metaDiaria
-      })
+      }, { onConflict: 'comercial_id' })
     
     if (metaError) console.error("Error actualizando meta:", metaError)
   }

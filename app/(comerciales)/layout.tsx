@@ -32,6 +32,7 @@ export default async function ComercialesLayout({
   }
 
   return (
+    <>
     <div className="flex h-[100dvh] bg-muted/20">
       <OfflineSyncProvider />
       
@@ -93,10 +94,10 @@ export default async function ComercialesLayout({
           {children}
         </div>
       </main>
-      
-      <div className="md:hidden">
-        <BottomNav />
-      </div>
     </div>
+    <div className="md:hidden">
+      <BottomNav />
+    </div>
+    </>
   )
 }
