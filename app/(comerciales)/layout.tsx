@@ -14,12 +14,16 @@ export default async function ComercialesLayout({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  let perfil = null;
+
   if (user) {
-    const { data: perfil } = await supabase
+    const { data } = await supabase
       .from('usuarios_perfil')
-      .select('rol')
+      .select('rol, nombre_completo')
       .eq('id', user.id)
       .single()
+      
+    perfil = data;
 
     if (perfil?.rol === 'admin') {
       redirect('/admin')
