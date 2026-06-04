@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
-import { Search, MapPin, Building2, ChevronRight, Plus } from "lucide-react"
+import { Search, MapPin, Building2, ChevronRight, Plus, Filter } from "lucide-react"
 import Link from "next/link"
 import { TemperaturaBadge } from "@/components/comerciales/TemperaturaBadge"
 import { Button } from "@/components/ui/button"
@@ -20,12 +20,20 @@ interface Agencia {
 
 export function DirectorioClient({ agenciasIniciales }: { agenciasIniciales: Agencia[] }) {
   const [search, setSearch] = useState("")
+  const [filtroCiudad, setFiltroCiudad] = useState("Todas")
+  const [filtroEstado, setFiltroEstado] = useState("Activas")
+  const [showFiltros, setShowFiltros] = useState(false)
   const [isRegistroOpen, setIsRegistroOpen] = useState(false)
   const router = useRouter()
 
-  const filtradas = agenciasIniciales.filter(a => 
-    a.activa && a.nombre.toLowerCase().includes(search.toLowerCase())
-  )
+  const ciudadesUnicas = Array.from(new Set(agenciasIniciales.map(a => a.ciudad || 'Quito'))).sort()
+
+  const filtradas = agenciasIniciales.filter(a => {
+    const matchSearch = a.nombre.toLowerCase().includes(search.toLowerCase())
+    const matchCiudad = filtroCiudad === "Todas" || (a.ciudad || 'Quito') === filtroCiudad
+    const matchEstado = filtroEstado === "Todas" || (filtroEstado === "Activas" ? a.activa : !a.activa)
+    return matchSearch && matchCiudad && matchEstado
+  })
 
   const handleAgenciaRegistrada = (agencia: any) => {
     // Cuando se registra, recargamos la data del servidor para verla en la lista
@@ -46,6 +54,14 @@ export function DirectorioClient({ agenciasIniciales }: { agenciasIniciales: Age
           />
         </div>
         <Button 
+          onClick={() => setShowFiltros(!showFiltros)}
+          variant={showFiltros ? "default" : "outline"}
+          className={`h-12 w-12 shrink-0 rounded-2xl ${showFiltros ? '' : 'bg-card'}`} 
+          size="icon"
+        >
+          <Filter className="w-5 h-5" />
+        </Button>
+        <Button 
           onClick={() => setIsRegistroOpen(true)}
           className="h-12 w-12 shrink-0 rounded-2xl" 
           size="icon"
@@ -53,6 +69,34 @@ export function DirectorioClient({ agenciasIniciales }: { agenciasIniciales: Age
           <Plus className="w-5 h-5" />
         </Button>
       </div>
+
+      {showFiltros && (
+        <div className="bg-card p-4 rounded-2xl border border-border flex gap-3 animate-in fade-in slide-in-from-top-2">
+          <div className="flex-1 space-y-1.5">
+            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Ciudad</label>
+            <select 
+              className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+              value={filtroCiudad}
+              onChange={(e) => setFiltroCiudad(e.target.value)}
+            >
+              <option value="Todas">Todas las ciudades</option>
+              {ciudadesUnicas.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="flex-1 space-y-1.5">
+            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Estado</label>
+            <select 
+              className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+            >
+              <option value="Activas">Solo Activas</option>
+              <option value="Inactivas">Solo Inactivas</option>
+              <option value="Todas">Todas</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-3">
         {filtradas.length === 0 ? (

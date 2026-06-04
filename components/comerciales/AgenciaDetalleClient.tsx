@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Edit, MapPin, Building2, User, Phone, Mail, Calendar, Thermometer } from "lucide-react"
+import { ArrowLeft, Edit, MapPin, Building2, User, Phone, Mail, Calendar, Thermometer, Clock } from "lucide-react"
 import Link from "next/link"
 import { AgenciaEditModal } from "./AgenciaEditModal"
 import { TemperaturaBadge } from "./TemperaturaBadge"
@@ -110,6 +110,38 @@ export function AgenciaDetalleClient({ dataInicial }: { dataInicial: any }) {
                   </div>
                 </div>
               ))
+            )}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider ml-1">Historial de Interacciones</h3>
+          
+          <div className="bg-card p-4 rounded-3xl border border-border shadow-sm">
+            {(!agencia.historial || agencia.historial.length === 0) ? (
+              <p className="text-xs text-muted-foreground text-center py-4 italic">No hay registros de visitas recientes.</p>
+            ) : (
+              <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                {agencia.historial.map((h: any, index: number) => (
+                  <div key={h.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-primary/10 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-[0_0_0_4px_var(--background)]">
+                      <Clock className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-3 rounded-2xl border border-border bg-background shadow-sm space-y-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                          {new Date(h.created_at).toLocaleDateString()}
+                        </span>
+                        <span className="text-[10px] uppercase font-bold text-primary">{h.tipo_actividad}</span>
+                      </div>
+                      <p className="text-xs text-foreground font-medium">{h.resumen_visita || 'Sin novedades'}</p>
+                      <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+                        Por: <strong>{h.usuarios?.nombre_completo || 'Desconocido'}</strong>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </section>

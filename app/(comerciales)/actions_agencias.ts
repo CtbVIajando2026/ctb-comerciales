@@ -132,7 +132,21 @@ export async function obtenerDetalleAgencia(id: string) {
     .eq('activo', true)
     .order('created_at')
 
-  return { ...agencia, contactos: contactos || [] }
+  // Get historial de visitas
+  const { data: historial } = await supabase
+    .from('visitas')
+    .select(`
+      id,
+      created_at,
+      tipo_actividad,
+      resumen_visita,
+      usuarios:comercial_id ( nombre_completo )
+    `)
+    .eq('agencia_id', id)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  return { ...agencia, contactos: contactos || [], historial: historial || [] }
 }
 
 export async function actualizarAgencia(id: string, payload: {
