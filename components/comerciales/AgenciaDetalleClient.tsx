@@ -136,7 +136,7 @@ export function AgenciaDetalleClient({ dataInicial, backUrl = "/comerciales/agen
                       </div>
                       <p className="text-xs text-foreground font-medium">{h.resumen_visita || 'Sin novedades'}</p>
                       <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/50">
-                        Por: <strong>{h.usuarios?.nombre_completo || 'Desconocido'}</strong>
+                        Por: <strong>{h.usuarios?.nombre || 'Desconocido'}</strong>
                       </p>
                     </div>
                   </div>

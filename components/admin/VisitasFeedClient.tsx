@@ -14,11 +14,11 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
 
   // Extract unique filter options
   const ciudadesUnicas = Array.from(new Set(visitasIniciales.map(v => v.agencias?.ciudad || 'Quito').filter(Boolean))).sort()
-  const comercialesUnicos = Array.from(new Set(visitasIniciales.map(v => v.usuarios?.nombre_completo).filter(Boolean))).sort()
+  const comercialesUnicos = Array.from(new Set(visitasIniciales.map(v => v.usuarios?.nombre).filter(Boolean))).sort()
 
   const filtradas = visitasIniciales.filter(v => {
     const agenciaNombre = v.agencias?.nombre || v.titulo_actividad || ""
-    const comercialNombre = v.usuarios?.nombre_completo || ""
+    const comercialNombre = v.usuarios?.nombre || ""
     const ciudad = v.agencias?.ciudad || 'Quito'
     const fecha = new Date(v.created_at)
 
@@ -151,7 +151,7 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
                         </h3>
                         <p className="text-sm text-muted-foreground flex items-center mt-0.5">
                           <User className="w-3 h-3 mr-1" />
-                          {v.usuarios?.nombre_completo || 'Comercial'}
+                          {v.usuarios?.nombre || 'Comercial'}
                         </p>
                       </div>
                       

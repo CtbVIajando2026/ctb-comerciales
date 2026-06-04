@@ -140,7 +140,7 @@ export async function obtenerDetalleAgencia(id: string) {
       created_at,
       tipo_actividad,
       resumen_visita,
-      usuarios:comercial_id ( nombre_completo )
+      usuarios:comercial_id ( nombre )
     `)
     .eq('agencia_id', id)
     .order('created_at', { ascending: false })

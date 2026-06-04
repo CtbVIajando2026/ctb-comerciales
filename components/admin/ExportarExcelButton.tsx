@@ -29,7 +29,7 @@ export function ExportarExcelButton({ datos }: { datos: any }) {
     // Map rows
     const rows = visitas.map((v: any) => {
       const fecha = new Date(v.created_at).toLocaleString('es-EC')
-      const comercial = v.usuarios?.nombre_completo || "Desconocido"
+      const comercial = v.usuarios?.nombre || "Desconocido"
       const agencia = v.agencias?.nombre || "Desconocida"
       const ciudad = v.agencias?.ciudad || "Quito"
       const tipo = v.tipo_actividad || ""
