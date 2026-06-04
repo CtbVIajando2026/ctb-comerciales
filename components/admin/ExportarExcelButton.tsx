@@ -6,8 +6,8 @@ import { toast } from "sonner"
 
 export function ExportarExcelButton({ datos }: { datos: any }) {
   const handleExport = () => {
-    // We expect datos to contain .visitas
-    const visitas = datos?.visitas || []
+    // We expect datos to contain .visitas, or be an array of visitas directly
+    const visitas = Array.isArray(datos) ? datos : (datos?.visitas || [])
     if (visitas.length === 0) {
       toast.info("No hay datos", { description: "No hay visitas registradas para exportar." })
       return

@@ -2,14 +2,14 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Users, ShieldAlert, Power, Map as MapIcon } from "lucide-react"
+import { LayoutDashboard, Users, ShieldAlert, Power, Map as MapIcon, Activity } from "lucide-react"
 import { createClient } from '@/lib/supabase/client'
 
 const tabs = [
   { href: '/admin', icon: LayoutDashboard, label: 'Inicio' },
   { href: '/admin/mapa', icon: MapIcon, label: 'Mapa' },
+  { href: '/admin/visitas', icon: Activity, label: 'Visitas' },
   { href: '/admin/comerciales', icon: Users, label: 'Equipo' },
-  { href: '/admin/alertas', icon: ShieldAlert, label: 'Alertas' },
 ]
 
 export function AdminBottomNav() {

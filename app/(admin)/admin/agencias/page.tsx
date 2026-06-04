@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { Building2, Search } from 'lucide-react'
+import { Building2, Search, ExternalLink } from 'lucide-react'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +46,10 @@ export default async function AgenciasPage() {
                 {agencias.map((a: any) => (
                   <tr key={a.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-4 py-3">
-                      <div className="font-bold text-foreground">{a.nombre}</div>
+                      <Link href={`/admin/agencias/${a.id}`} className="font-bold text-primary hover:underline flex items-center group">
+                        {a.nombre}
+                        <ExternalLink className="w-3 h-3 ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </Link>
                       <div className="text-xs text-muted-foreground mt-0.5">{a.direccion || 'Sin dirección'}</div>
                     </td>
                     <td className="px-4 py-3 font-semibold text-muted-foreground">

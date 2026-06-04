@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import { Building2, Clock, User, ShieldAlert, Timer } from 'lucide-react'
+import { Building2, Clock, User, ShieldAlert, Timer, ExternalLink } from 'lucide-react'
+import Link from 'next/link'
 import { differenceInMinutes } from 'date-fns'
 
 // Iconos personalizados
@@ -145,6 +146,13 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
                         <ShieldAlert className="w-3 h-3 mr-1" />
                         Alerta de Lejanía Detectada
                       </p>
+                    )}
+                    
+                    {!v.es_actividad && v.agencia_id && (
+                      <Link href={`/admin/agencias/${v.agencia_id}`} className="flex items-center justify-center w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold py-2 rounded-xl mt-3 transition-colors">
+                        <ExternalLink className="w-3 h-3 mr-1.5" />
+                        Ver Perfil Completo
+                      </Link>
                     )}
                   </div>
                 </div>

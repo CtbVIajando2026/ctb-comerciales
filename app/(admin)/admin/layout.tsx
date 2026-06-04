@@ -2,7 +2,7 @@ import { ReactNode } from "react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { Building2, LayoutDashboard, Users, ShieldAlert, LogOut, Map as MapIcon } from "lucide-react"
+import { Building2, LayoutDashboard, Users, ShieldAlert, LogOut, Map as MapIcon, Activity } from "lucide-react"
 
 import { AdminBottomNav } from "@/components/admin/AdminBottomNav"
 
@@ -54,6 +54,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Link href="/admin/comerciales" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
             <Users className="w-5 h-5 mr-3" />
             Comerciales
+          </Link>
+          <Link href="/admin/visitas" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <Activity className="w-5 h-5 mr-3" />
+            Registro de Visitas
           </Link>
           <Link href="/admin/agencias" className="flex items-center px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
             <Building2 className="w-5 h-5 mr-3" />

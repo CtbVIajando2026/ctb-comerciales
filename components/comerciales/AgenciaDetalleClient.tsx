@@ -8,7 +8,7 @@ import Link from "next/link"
 import { AgenciaEditModal } from "./AgenciaEditModal"
 import { TemperaturaBadge } from "./TemperaturaBadge"
 
-export function AgenciaDetalleClient({ dataInicial }: { dataInicial: any }) {
+export function AgenciaDetalleClient({ dataInicial, backUrl = "/comerciales/agencias" }: { dataInicial: any, backUrl?: string }) {
   const router = useRouter()
   const [agencia, setAgencia] = useState(dataInicial)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -22,7 +22,7 @@ export function AgenciaDetalleClient({ dataInicial }: { dataInicial: any }) {
     <div className="bg-background min-h-screen">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4 flex items-center justify-between pt-6">
         <div className="flex items-center">
-          <Link href="/comerciales/agencias" className="inline-flex items-center justify-center size-10 rounded-xl hover:bg-muted mr-2 -ml-2 transition-colors shrink-0">
+          <Link href={backUrl} className="inline-flex items-center justify-center size-10 rounded-xl hover:bg-muted mr-2 -ml-2 transition-colors shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <h1 className="text-xl font-bold line-clamp-1">Perfil de Agencia</h1>
