@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import { differenceInMinutes } from 'date-fns'
 
 // Fix for default marker icons in Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -30,6 +31,24 @@ const getDistanceText = (lat1: number, lon1: number, lat2: number, lon2: number)
   
   if (d > 1000) return (d / 1000).toFixed(1) + ' km';
   return Math.round(d) + ' m';
+}
+
+const LivePopupTimer = ({ horaCheckin }: { horaCheckin: string }) => {
+  const [mins, setMins] = useState(differenceInMinutes(new Date(), new Date(horaCheckin)))
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMins(differenceInMinutes(new Date(), new Date(horaCheckin)))
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [horaCheckin])
+
+  return (
+    <div className="flex justify-between pt-1 border-t mt-1">
+      <span className="text-muted-foreground font-medium">Lleva allí:</span> 
+      <span className="font-bold text-blue-600 animate-pulse">{mins} min</span>
+    </div>
+  )
 }
 
 // Custom DivIcon for numbered markers with color based on duration
@@ -152,10 +171,14 @@ export default function MapaRecorrido({ visitas }: MapaRecorridoProps) {
                       <span className="font-medium">{new Date(v.hora_checkout).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   )}
-                  <div className="flex justify-between pt-1 border-t mt-1">
-                    <span className="text-muted-foreground">Duración:</span> 
-                    <span className="font-bold" style={{ color: colorHex }}>{etiquetaTiempo}</span>
-                  </div>
+                  {v.hora_checkout ? (
+                    <div className="flex justify-between pt-1 border-t mt-1">
+                      <span className="text-muted-foreground">Duración:</span> 
+                      <span className="font-bold" style={{ color: colorHex }}>{etiquetaTiempo}</span>
+                    </div>
+                  ) : (
+                    <LivePopupTimer horaCheckin={v.hora_checkin} />
+                  )}
                 </div>
               </Popup>
             </Marker>

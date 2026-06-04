@@ -8,6 +8,24 @@ import { Building2, Clock, User, ShieldAlert, Timer } from 'lucide-react'
 import { differenceInMinutes } from 'date-fns'
 
 // Iconos personalizados
+const LivePopupTimer = ({ horaCheckin }: { horaCheckin: string }) => {
+  const [mins, setMins] = useState(differenceInMinutes(new Date(), new Date(horaCheckin)))
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMins(differenceInMinutes(new Date(), new Date(horaCheckin)))
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [horaCheckin])
+
+  return (
+    <p className="text-[10px] font-bold flex items-center bg-blue-500/10 px-2 py-1 rounded text-blue-600 mt-1 border border-blue-500/20">
+      <Timer className="w-3 h-3 mr-1 animate-pulse" />
+      Lleva allí: {mins} min
+    </p>
+  )
+}
+
 const createIcon = (color: string, esActividad: boolean, label?: number) => {
   return L.divIcon({
     className: 'custom-div-icon',
@@ -114,12 +132,14 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
                       <Clock className="w-3 h-3 mr-2" />
                       Llegada: {new Date(v.hora_checkin).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
                     </p>
-                    {!esActiva && v.hora_checkout && (
+                    {esActiva ? (
+                      <LivePopupTimer horaCheckin={v.hora_checkin} />
+                    ) : v.hora_checkout ? (
                       <p className="text-[10px] font-bold flex items-center bg-muted/50 px-2 py-1 rounded text-foreground mt-1">
                         <Timer className="w-3 h-3 mr-1 text-primary" />
                         Tiempo: {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
                       </p>
-                    )}
+                    ) : null}
                     {esFraude && (
                       <p className="text-[10px] font-bold text-destructive flex items-center bg-destructive/10 px-2 py-1 rounded mt-2">
                         <ShieldAlert className="w-3 h-3 mr-1" />
