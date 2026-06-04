@@ -247,7 +247,7 @@ export async function cerrarVisita(visitaId: string, data: {
     .eq('comercial_id', user.id)
     .eq('activa', true)
     .single()
-  const metaDiaria = meta?.visitas_diarias || 5 // Meta fallback de 5
+  const metaDiaria = meta?.visitas_diarias !== undefined ? meta.visitas_diarias : 5 // Meta fallback de 5
 
   const hoyStr = new Date().toISOString().split('T')[0]
   const { count } = await supabase
@@ -318,14 +318,24 @@ export async function obtenerMeticasDashboard() {
   const { data: visitas } = await supabase
     .from('visitas')
     .select(`
-      *,
+      id,
+      es_actividad,
+      titulo_actividad,
+      hora_checkin,
+      hora_checkout,
+      estado,
+      alerta_fraude_checkin,
+      alerta_fraude_checkout,
+      observaciones,
+      temas,
+      temas_texto_libre,
       agencia:agencias(nombre, temperatura)
     `)
     .eq('comercial_id', user.id)
     .gte('created_at', hoy.toISOString())
     .order('created_at', { ascending: false })
 
-  const metaDiaria = meta?.visitas_diarias || 5 // default fallback
+  const metaDiaria = meta?.visitas_diarias !== undefined ? meta.visitas_diarias : 5 // default fallback
 
   // 4. Justificación
   const { data: justificacion } = await supabase

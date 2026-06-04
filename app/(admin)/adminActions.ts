@@ -167,9 +167,11 @@ export async function obtenerMetricasEnVivo() {
   const { data: visitas, error } = await supabase
     .from('visitas')
     .select(`
-      *,
-      usuarios (nombre, zona),
-      agencias (nombre)
+      id, 
+      estado, 
+      comercial_id, 
+      alerta_fraude_checkin, 
+      alerta_fraude_checkout
     `)
     .gte('created_at', hoy.toISOString())
 
@@ -207,9 +209,16 @@ export async function obtenerDatosHistoricosAdmin() {
   const { data: visitas, error } = await supabase
     .from('visitas')
     .select(`
-      *,
+      id, 
+      created_at, 
+      estado, 
+      comercial_id, 
+      es_actividad, 
+      titulo_actividad, 
+      alerta_fraude_checkin, 
+      alerta_fraude_checkout,
       usuarios!inner(nombre, zona),
-      agencias(nombre, direccion)
+      agencias(nombre)
     `)
     .gte('created_at', hace30Dias.toISOString())
     .order('created_at', { ascending: false })
