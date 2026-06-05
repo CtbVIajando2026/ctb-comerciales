@@ -260,30 +260,30 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
                 >
                   <Popup className="rounded-xl">
                   <div className="p-1 min-w-[200px]">
-                    <div className="flex items-center mb-2 border-b border-border pb-2">
+                    <div className="flex items-center mb-2 border-b border-slate-200 pb-2">
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
                         <User className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="font-bold text-sm leading-tight text-foreground">{v.usuarios?.nombre || 'Comercial'}</p>
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                        <p className="font-bold text-sm leading-tight text-slate-800">{v.usuarios?.nombre || 'Comercial'}</p>
+                        <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                           {esActiva ? 'En Ruta' : 'Completado'}
                         </p>
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <p className="text-xs font-bold flex items-start text-foreground">
+                      <p className="text-xs font-bold flex items-start text-slate-800">
                         <Building2 className="w-3 h-3 mr-2 mt-0.5 text-primary shrink-0" />
                         <span className="line-clamp-2">{v.es_actividad ? v.titulo_actividad : v.agencias?.nombre}</span>
                       </p>
-                      <p className="text-xs flex items-center text-muted-foreground">
+                      <p className="text-xs flex items-center text-slate-500">
                         <Clock className="w-3 h-3 mr-2" />
                         Llegada: {new Date(v.hora_checkin).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                       {esActiva ? (
                         <LivePopupTimer horaCheckin={v.hora_checkin} />
                       ) : v.hora_checkout ? (
-                        <p className="text-[10px] font-bold flex items-center bg-muted/50 px-2 py-1 rounded text-foreground mt-1">
+                        <p className="text-[10px] font-bold flex items-center bg-slate-100 px-2 py-1 rounded text-slate-700 mt-1">
                           <Timer className="w-3 h-3 mr-1 text-primary" />
                           Tiempo: {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
                         </p>
