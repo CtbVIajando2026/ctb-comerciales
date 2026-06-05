@@ -1,44 +1,39 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { useEffect, useState, useRef } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'react-leaflet-cluster/dist/assets/MarkerCluster.css'
+import 'react-leaflet-cluster/dist/assets/MarkerCluster.Default.css'
+import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import { Building2, Clock, User, ShieldAlert, Timer, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { differenceInMinutes } from 'date-fns'
-import { Polyline } from 'react-leaflet'
 
-// Haversine distance
+// ─────────────────────────────────────────
+// Haversine distance helper
+// ─────────────────────────────────────────
 const getDistanceText = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 6371e3; 
-  const p1 = lat1 * Math.PI/180; 
-  const p2 = lat2 * Math.PI/180;
-  const dp = (lat2-lat1) * Math.PI/180;
-  const dl = (lon2-lon1) * Math.PI/180;
-
-  const a = Math.sin(dp/2) * Math.sin(dp/2) +
-            Math.cos(p1) * Math.cos(p2) *
-            Math.sin(dl/2) * Math.sin(dl/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-  const d = R * c; 
-  
-  if (d > 1000) return (d / 1000).toFixed(1) + ' km';
-  return Math.round(d) + ' m';
+  const R = 6371e3
+  const p1 = lat1 * Math.PI / 180
+  const p2 = lat2 * Math.PI / 180
+  const dp = (lat2 - lat1) * Math.PI / 180
+  const dl = (lon2 - lon1) * Math.PI / 180
+  const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2
+  const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m'
 }
 
-// Iconos personalizados
+// ─────────────────────────────────────────
+// Live timer component for open visits
+// ─────────────────────────────────────────
 const LivePopupTimer = ({ horaCheckin }: { horaCheckin: string }) => {
   const [mins, setMins] = useState(differenceInMinutes(new Date(), new Date(horaCheckin)))
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMins(differenceInMinutes(new Date(), new Date(horaCheckin)))
-    }, 10000)
+    const interval = setInterval(() => setMins(differenceInMinutes(new Date(), new Date(horaCheckin))), 10000)
     return () => clearInterval(interval)
   }, [horaCheckin])
-
   return (
     <p className="text-[10px] font-bold flex items-center bg-blue-500/10 px-2 py-1 rounded text-blue-600 mt-1 border border-blue-500/20">
       <Timer className="w-3 h-3 mr-1 animate-pulse" />
@@ -47,195 +42,241 @@ const LivePopupTimer = ({ horaCheckin }: { horaCheckin: string }) => {
   )
 }
 
-const createIcon = (color: string, esActividad: boolean, label?: number) => {
+// ─────────────────────────────────────────
+// Custom marker icon
+// ─────────────────────────────────────────
+const createIcon = (color: string, esActividad: boolean, label?: number) => L.divIcon({
+  className: 'custom-div-icon',
+  html: `
+    <div style="
+      background-color: ${color};
+      width: 26px; height: 26px;
+      border-radius: ${esActividad ? '7px' : '50%'};
+      border: 2.5px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 900; font-size: 11px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    ">${label ?? ''}</div>
+  `,
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+  popupAnchor: [0, -13],
+})
+
+// ─────────────────────────────────────────
+// Custom cluster icon (premium look)
+// ─────────────────────────────────────────
+const createClusterCustomIcon = (cluster: any) => {
+  const count = cluster.getChildCount()
+  const size = count < 5 ? 36 : count < 10 ? 42 : 50
   return L.divIcon({
-    className: 'custom-div-icon',
     html: `
       <div style="
-        background-color: ${color};
-        width: 24px;
-        height: 24px;
-        border-radius: ${esActividad ? '6px' : '50%'};
-        border: 2px solid white;
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 900;
-        font-size: 11px;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-        position: relative;
-        z-index: 10;
-        animation: pulse 2s infinite;
-      ">${label ? label : ''}</div>
+        width: ${size}px; height: ${size}px;
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 4px 14px rgba(99,102,241,0.5);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: 900; font-size: ${count < 10 ? 14 : 12}px;
+        animation: clusterPulse 2s ease-in-out infinite;
+      ">${count}</div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -12]
+    className: 'cluster-icon',
+    iconSize: L.point(size, size, true),
   })
 }
 
-// Centro por defecto: Ecuador
+// ─────────────────────────────────────────
+// Auto-fitBounds after map is ready
+// ─────────────────────────────────────────
+function FitBoundsAll({ positions }: { positions: [number, number][] }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (positions.length === 0) return
+
+    const apply = () => {
+      map.invalidateSize()
+      if (positions.length === 1) {
+        map.setView(positions[0], 14, { animate: true })
+      } else {
+        map.fitBounds(L.latLngBounds(positions), {
+          padding: [60, 60],
+          maxZoom: 14,
+          animate: true,
+        })
+      }
+    }
+
+    const t = setTimeout(apply, 250)
+    return () => clearTimeout(t)
+  }, [positions, map])
+
+  return null
+}
+
+// ─────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────
 const DEFAULT_CENTER: [number, number] = [-1.8312, -78.1834]
 const DEFAULT_ZOOM = 7
+const ROUTE_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#0ea5e9']
 
-interface MapaGlobalProps {
-  visitas: any[]
-}
+interface MapaGlobalProps { visitas: any[] }
 
 export default function MapaGlobal({ visitas }: MapaGlobalProps) {
   const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
+  useEffect(() => setMounted(true), [])
   if (!mounted) return <div className="w-full h-full bg-muted animate-pulse rounded-2xl" />
 
-  // Filtrar solo las que tienen GPS válido
   const visitasConGps = visitas.filter(v => v.gps_lat && v.gps_lng)
+  const allPositions: [number, number][] = visitasConGps.map(v => [v.gps_lat, v.gps_lng])
 
-  // Agrupar por comercial para dibujar rutas individuales
+  // Group by comercial to draw individual routes
   const visitasPorComercial = visitasConGps.reduce((acc: any, v: any) => {
-    const comercialId = v.comercial_id || v.usuarios?.nombre || 'desconocido';
-    if (!acc[comercialId]) acc[comercialId] = [];
-    acc[comercialId].push(v);
-    return acc;
-  }, {});
-
-  // Colores para las rutas de distintos comerciales
-  const routeColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#0ea5e9'];
+    const id = v.comercial_id || v.usuarios?.nombre || 'desconocido'
+    if (!acc[id]) acc[id] = []
+    acc[id].push(v)
+    return acc
+  }, {})
 
   return (
     <div className="w-full h-full rounded-2xl overflow-hidden border border-border relative z-0 shadow-sm">
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes pulse {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,0,0,0.4); }
-          70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(0,0,0,0); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes clusterPulse {
+          0%, 100% { box-shadow: 0 4px 14px rgba(99,102,241,0.4); }
+          50%       { box-shadow: 0 4px 22px rgba(99,102,241,0.75); }
         }
-      `}} />
-      <MapContainer 
-        center={visitasConGps.length > 0 ? [visitasConGps[0].gps_lat, visitasConGps[0].gps_lng] : DEFAULT_CENTER} 
-        zoom={visitasConGps.length > 0 ? 12 : DEFAULT_ZOOM} 
+        .leaflet-cluster-anim .leaflet-marker-icon,
+        .leaflet-cluster-anim .leaflet-marker-shadow {
+          transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+      ` }} />
+
+      <MapContainer
+        center={allPositions.length > 0 ? allPositions[0] : DEFAULT_CENTER}
+        zoom={allPositions.length > 0 ? 12 : DEFAULT_ZOOM}
         className="w-full h-full"
+        scrollWheelZoom
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
 
-        {visitasConGps.map((v, index) => {
-          const esFraude = v.alerta_fraude_checkin || v.alerta_fraude_checkout
-          const esActiva = v.estado === 'abierta'
-          
-          let color = esFraude ? '#ef4444' : (esActiva ? '#3b82f6' : '#10b981')
-          let icon = createIcon(color, v.es_actividad, index + 1)
+        {/* Auto-fit all GPS points */}
+        <FitBoundsAll positions={allPositions} />
 
-          return (
-            <Marker 
-              key={v.id} 
-              position={[v.gps_lat, v.gps_lng]} 
-              icon={icon}
-            >
-              <Popup className="rounded-xl">
-                <div className="p-1 min-w-[200px]">
-                  <div className="flex items-center mb-2 border-b border-border pb-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
-                      <User className="w-4 h-4" />
+        {/* ─── CLUSTERED MARKERS ─── */}
+        <MarkerClusterGroup
+          chunkedLoading
+          iconCreateFunction={createClusterCustomIcon}
+          maxClusterRadius={50}
+          showCoverageOnHover={false}
+          animate
+        >
+          {visitasConGps.map((v, index) => {
+            const esFraude = v.alerta_fraude_checkin || v.alerta_fraude_checkout
+            const esActiva = v.estado === 'abierta'
+            const color = esFraude ? '#ef4444' : (esActiva ? '#3b82f6' : '#10b981')
+
+            return (
+              <Marker
+                key={v.id}
+                position={[v.gps_lat, v.gps_lng]}
+                icon={createIcon(color, v.es_actividad, index + 1)}
+              >
+                <Popup className="rounded-xl">
+                  <div className="p-1 min-w-[200px]">
+                    <div className="flex items-center mb-2 border-b border-border pb-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm leading-tight text-foreground">{v.usuarios?.nombre || 'Comercial'}</p>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                          {esActiva ? 'En Ruta' : 'Completado'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-sm leading-tight text-foreground">
-                        {v.usuarios?.nombre || 'Comercial'}
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold flex items-start text-foreground">
+                        <Building2 className="w-3 h-3 mr-2 mt-0.5 text-primary shrink-0" />
+                        <span className="line-clamp-2">{v.es_actividad ? v.titulo_actividad : v.agencias?.nombre}</span>
                       </p>
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                        {esActiva ? 'En Ruta' : 'Completado'}
+                      <p className="text-xs flex items-center text-muted-foreground">
+                        <Clock className="w-3 h-3 mr-2" />
+                        Llegada: {new Date(v.hora_checkin).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
                       </p>
+                      {esActiva ? (
+                        <LivePopupTimer horaCheckin={v.hora_checkin} />
+                      ) : v.hora_checkout ? (
+                        <p className="text-[10px] font-bold flex items-center bg-muted/50 px-2 py-1 rounded text-foreground mt-1">
+                          <Timer className="w-3 h-3 mr-1 text-primary" />
+                          Tiempo: {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
+                        </p>
+                      ) : null}
+                      {esFraude && (
+                        <p className="text-[10px] font-bold text-destructive flex items-center bg-destructive/10 px-2 py-1 rounded mt-2">
+                          <ShieldAlert className="w-3 h-3 mr-1" />
+                          Alerta de Lejanía Detectada
+                        </p>
+                      )}
+                      {!v.es_actividad && v.agencia_id && (
+                        <Link
+                          href={`/admin/agencias/${v.agencia_id}`}
+                          className="flex items-center justify-center w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold py-2 rounded-xl mt-3 transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1.5" />
+                          Ver Perfil Completo
+                        </Link>
+                      )}
                     </div>
                   </div>
+                </Popup>
+              </Marker>
+            )
+          })}
+        </MarkerClusterGroup>
 
-                  <div className="space-y-2">
-                    <p className="text-xs font-bold flex items-start text-foreground">
-                      <Building2 className="w-3 h-3 mr-2 mt-0.5 text-primary shrink-0" />
-                      <span className="line-clamp-2">{v.es_actividad ? v.titulo_actividad : v.agencias?.nombre}</span>
-                    </p>
-                    <p className="text-xs flex items-center text-muted-foreground">
-                      <Clock className="w-3 h-3 mr-2" />
-                      Llegada: {new Date(v.hora_checkin).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                    {esActiva ? (
-                      <LivePopupTimer horaCheckin={v.hora_checkin} />
-                    ) : v.hora_checkout ? (
-                      <p className="text-[10px] font-bold flex items-center bg-muted/50 px-2 py-1 rounded text-foreground mt-1">
-                        <Timer className="w-3 h-3 mr-1 text-primary" />
-                        Tiempo: {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
-                      </p>
-                    ) : null}
-                    {esFraude && (
-                      <p className="text-[10px] font-bold text-destructive flex items-center bg-destructive/10 px-2 py-1 rounded mt-2">
-                        <ShieldAlert className="w-3 h-3 mr-1" />
-                        Alerta de Lejanía Detectada
-                      </p>
-                    )}
-                    
-                    {!v.es_actividad && v.agencia_id && (
-                      <Link href={`/admin/agencias/${v.agencia_id}`} className="flex items-center justify-center w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold py-2 rounded-xl mt-3 transition-colors">
-                        <ExternalLink className="w-3 h-3 mr-1.5" />
-                        Ver Perfil Completo
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          )
-        })}
-        {/* Trazar rutas y kilometrajes por comercial */}
+        {/* ─── ROUTE LINES & DISTANCE LABELS (outside cluster) ─── */}
         {Object.keys(visitasPorComercial).map((comercialId, i) => {
           const rutas = visitasPorComercial[comercialId].sort(
             (a: any, b: any) => new Date(a.hora_checkin).getTime() - new Date(b.hora_checkin).getTime()
-          );
-          const positions: [number, number][] = rutas.map((v: any) => [v.gps_lat, v.gps_lng]);
-          const routeColor = routeColors[i % routeColors.length];
+          )
+          const positions: [number, number][] = rutas.map((v: any) => [v.gps_lat, v.gps_lng])
+          const routeColor = ROUTE_COLORS[i % ROUTE_COLORS.length]
 
           return (
             <div key={`ruta-${comercialId}`}>
               {positions.length > 1 && (
-                <Polyline positions={positions} color={routeColor} weight={3} dashArray="5, 10" />
+                <Polyline positions={positions} color={routeColor} weight={2.5} dashArray="6, 10" opacity={0.7} />
               )}
               {rutas.map((v: any, index: number) => {
-                if (index === 0) return null;
-                const prev = rutas[index - 1];
-                const midLat = (v.gps_lat + prev.gps_lat) / 2;
-                const midLng = (v.gps_lng + prev.gps_lng) / 2;
-                const distText = getDistanceText(prev.gps_lat, prev.gps_lng, v.gps_lat, v.gps_lng);
-                
-                const distanceIcon = L.divIcon({
+                if (index === 0) return null
+                const prev = rutas[index - 1]
+                const midLat = (v.gps_lat + prev.gps_lat) / 2
+                const midLng = (v.gps_lng + prev.gps_lng) / 2
+                const distText = getDistanceText(prev.gps_lat, prev.gps_lng, v.gps_lat, v.gps_lng)
+                const distIcon = L.divIcon({
                   className: 'distance-badge-icon',
                   html: `<div style="
-                    background-color: white;
-                    color: ${routeColor};
-                    font-size: 9px;
-                    font-weight: 900;
-                    padding: 2px 6px;
-                    border-radius: 12px;
-                    border: 1px solid ${routeColor};
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-                    white-space: nowrap;
-                    text-align: center;
-                    line-height: 1;
+                    background:white; color:${routeColor};
+                    font-size:9px; font-weight:900;
+                    padding:2px 6px; border-radius:12px;
+                    border:1px solid ${routeColor};
+                    box-shadow:0 2px 4px rgba(0,0,0,0.15);
+                    white-space:nowrap; text-align:center; line-height:1;
                   ">${distText}</div>`,
                   iconSize: [40, 16],
                   iconAnchor: [20, 8],
-                });
-
-                return (
-                  <Marker key={`dist-${comercialId}-${index}`} position={[midLat, midLng]} icon={distanceIcon} interactive={false} />
-                );
+                })
+                return <Marker key={`dist-${comercialId}-${index}`} position={[midLat, midLng]} icon={distIcon} interactive={false} />
               })}
             </div>
-          );
+          )
         })}
       </MapContainer>
     </div>
