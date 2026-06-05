@@ -23,11 +23,19 @@ export async function obtenerNotificaciones(comercialId: string): Promise<Notifi
   const hoy = new Date()
   hoy.setHours(0, 0, 0, 0)
   
-  const futuro = new Date(hoy)
-  futuro.setDate(futuro.getDate() + 7) // Próximos 7 días
+  const futuro7Dias = new Date(hoy)
+  futuro7Dias.setDate(futuro7Dias.getDate() + 7)
 
-  // 1. Seguimientos (Próximos pasos de visitas)
-  // Solo obtenemos los que le pertenecen al comercial
+  // 0. Obtener la ciudad del comercial
+  const { data: perfil } = await supabase
+    .from('usuarios_perfil')
+    .select('ciudad_zona')
+    .eq('id', comercialId)
+    .single()
+    
+  const ciudadComercial = perfil?.ciudad_zona || 'Quito'
+
+  // 1. Seguimientos (Próximos pasos de visitas) - Ventana de 7 días, propios del comercial
   const { data: seguimientos } = await supabase
     .from('visitas')
     .select(`
@@ -39,7 +47,7 @@ export async function obtenerNotificaciones(comercialId: string): Promise<Notifi
     .eq('comercial_id', comercialId)
     .not('proximo_paso_fecha', 'is', null)
     .gte('proximo_paso_fecha', hoy.toISOString().split('T')[0])
-    .lte('proximo_paso_fecha', futuro.toISOString().split('T')[0])
+    .lte('proximo_paso_fecha', futuro7Dias.toISOString().split('T')[0])
 
   if (seguimientos) {
     seguimientos.forEach(seg => {
@@ -59,58 +67,69 @@ export async function obtenerNotificaciones(comercialId: string): Promise<Notifi
     })
   }
 
-  // 2. Cumpleaños de contactos
-  // Obtener todos los contactos activos
+  // 2. Cumpleaños de contactos - Top 3 próximos, filtrados por ciudad
   const { data: contactos } = await supabase
     .from('agencia_contactos')
     .select(`
       id,
       nombre,
       fecha_cumpleanos,
-      agencia:agencias(id, nombre)
+      agencia:agencias!inner(id, nombre, ciudad)
     `)
     .eq('activo', true)
+    .eq('agencias.ciudad', ciudadComercial)
     .not('fecha_cumpleanos', 'is', null)
 
+  const proximosCumples: { data: any, fechaCalculada: Date }[] = []
   if (contactos) {
     contactos.forEach(cont => {
       if (!cont.fecha_cumpleanos) return
       
       const fechaNac = new Date(cont.fecha_cumpleanos)
-      // Ajustar el año de cumpleaños al año actual para comparar
       const cumpleEsteAno = new Date(hoy.getFullYear(), fechaNac.getMonth(), fechaNac.getDate())
       
-      // Si el cumple ya pasó este año, mirar si es el próximo año (poco probable en una ventana de 7 días, pero por si acaso)
       if (cumpleEsteAno < hoy) {
         cumpleEsteAno.setFullYear(hoy.getFullYear() + 1)
       }
 
-      if (cumpleEsteAno >= hoy && cumpleEsteAno <= futuro) {
-        const esHoy = cumpleEsteAno.toDateString() === hoy.toDateString()
-        notificaciones.push({
-          id: `cump-${cont.id}`,
-          tipo: 'cumpleanos',
-          titulo: `Cumpleaños de ${cont.nombre}`,
-          descripcion: 'Felicita a este contacto en su día',
-          fecha: cumpleEsteAno.toISOString().split('T')[0],
-          agencia_id: (cont.agencia as any)?.id,
-          agencia_nombre: (cont.agencia as any)?.nombre,
-          contacto_id: cont.id,
-          contacto_nombre: cont.nombre,
-          estado: 'pendiente',
-          es_hoy: esHoy
-        })
-      }
+      proximosCumples.push({
+        data: cont,
+        fechaCalculada: cumpleEsteAno
+      })
+    })
+    
+    // Ordenar por fecha calculada y tomar los 3 primeros
+    proximosCumples.sort((a, b) => a.fechaCalculada.getTime() - b.fechaCalculada.getTime())
+    const top3Cumples = proximosCumples.slice(0, 3)
+
+    top3Cumples.forEach(cump => {
+      const cont = cump.data
+      const esHoy = cump.fechaCalculada.toDateString() === hoy.toDateString()
+      notificaciones.push({
+        id: `cump-${cont.id}`,
+        tipo: 'cumpleanos',
+        titulo: `Cumpleaños de ${cont.nombre}`,
+        descripcion: 'Felicita a este contacto en su día',
+        fecha: cump.fechaCalculada.toISOString().split('T')[0],
+        agencia_id: (cont.agencia as any)?.id,
+        agencia_nombre: (cont.agencia as any)?.nombre,
+        contacto_id: cont.id,
+        contacto_nombre: cont.nombre,
+        estado: 'pendiente',
+        es_hoy: esHoy
+      })
     })
   }
 
-  // 3. Aniversarios de Agencias
+  // 3. Aniversarios de Agencias - Top 3 próximos, filtrados por ciudad
   const { data: agencias } = await supabase
     .from('agencias')
     .select('id, nombre, fecha_aniversario')
     .eq('activa', true)
+    .eq('ciudad', ciudadComercial)
     .not('fecha_aniversario', 'is', null)
 
+  const proximosAniv: { data: any, fechaCalculada: Date }[] = []
   if (agencias) {
     agencias.forEach(ag => {
       if (!ag.fecha_aniversario) return
@@ -122,24 +141,34 @@ export async function obtenerNotificaciones(comercialId: string): Promise<Notifi
         anivEsteAno.setFullYear(hoy.getFullYear() + 1)
       }
 
-      if (anivEsteAno >= hoy && anivEsteAno <= futuro) {
-        const esHoy = anivEsteAno.toDateString() === hoy.toDateString()
-        notificaciones.push({
-          id: `aniv-${ag.id}`,
-          tipo: 'aniversario',
-          titulo: `Aniversario de ${ag.nombre}`,
-          descripcion: 'Es el aniversario de la agencia',
-          fecha: anivEsteAno.toISOString().split('T')[0],
-          agencia_id: ag.id,
-          agencia_nombre: ag.nombre,
-          estado: 'pendiente',
-          es_hoy: esHoy
-        })
-      }
+      proximosAniv.push({
+        data: ag,
+        fechaCalculada: anivEsteAno
+      })
+    })
+
+    // Ordenar y tomar los 3 primeros
+    proximosAniv.sort((a, b) => a.fechaCalculada.getTime() - b.fechaCalculada.getTime())
+    const top3Aniv = proximosAniv.slice(0, 3)
+
+    top3Aniv.forEach(aniv => {
+      const ag = aniv.data
+      const esHoy = aniv.fechaCalculada.toDateString() === hoy.toDateString()
+      notificaciones.push({
+        id: `aniv-${ag.id}`,
+        tipo: 'aniversario',
+        titulo: `Aniversario de ${ag.nombre}`,
+        descripcion: 'Es el aniversario de la agencia',
+        fecha: aniv.fechaCalculada.toISOString().split('T')[0],
+        agencia_id: ag.id,
+        agencia_nombre: ag.nombre,
+        estado: 'pendiente',
+        es_hoy: esHoy
+      })
     })
   }
 
-  // Ordenar: primero los de hoy, luego por fecha ascendente
+  // Ordenar la lista final: primero los de hoy, luego por fecha ascendente
   return notificaciones.sort((a, b) => {
     if (a.es_hoy && !b.es_hoy) return -1
     if (!a.es_hoy && b.es_hoy) return 1

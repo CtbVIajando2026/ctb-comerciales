@@ -1,9 +1,20 @@
 import { obtenerAgenciasDirectorio } from "@/app/(comerciales)/actions_agencias"
 import { DirectorioClient } from "@/components/comerciales/DirectorioClient"
 import { Building2 } from "lucide-react"
+import { createClient } from "@/lib/supabase/server"
 
 export default async function AgenciasPage() {
   const agencias = await obtenerAgenciasDirectorio()
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  let ciudadUsuario = "Quito"
+  if (user) {
+    const { data } = await supabase.from('usuarios_perfil').select('ciudad_zona').eq('id', user.id).single()
+    if (data?.ciudad_zona) {
+      ciudadUsuario = data.ciudad_zona
+    }
+  }
 
   return (
     <div className="bg-background min-h-screen">
@@ -19,7 +30,7 @@ export default async function AgenciasPage() {
       </header>
 
       <main className="p-4 pb-32">
-        <DirectorioClient agenciasIniciales={agencias} />
+        <DirectorioClient agenciasIniciales={agencias} ciudadComercial={ciudadUsuario} />
       </main>
     </div>
   )

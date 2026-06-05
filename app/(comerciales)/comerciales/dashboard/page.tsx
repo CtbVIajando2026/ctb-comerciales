@@ -7,8 +7,9 @@ import { Plus, Clock, Briefcase } from "lucide-react"
 import { obtenerMeticasDashboard } from "@/app/(comerciales)/actions"
 import { NuevaActividadButton } from "@/components/comerciales/NuevaActividadButton"
 import { LiveLocationHeader } from "@/components/comerciales/LiveLocationHeader"
-import { obtenerNotificaciones } from "@/app/(comerciales)/actions_notificaciones"
+import { obtenerNotificaciones, Notificacion } from "@/app/(comerciales)/actions_notificaciones"
 import { createClient } from "@/lib/supabase/server"
+import { CumpleanosPopup } from "@/components/comerciales/CumpleanosPopup"
 
 export default async function DashboardPage() {
   const data = await obtenerMeticasDashboard()
@@ -16,8 +17,9 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   let notificacionesHoy = 0
+  let notifs: Notificacion[] = []
   if (user) {
-    const notifs = await obtenerNotificaciones(user.id)
+    notifs = await obtenerNotificaciones(user.id)
     notificacionesHoy = notifs.filter(n => n.es_hoy).length
   }
   
@@ -42,6 +44,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-4 bg-muted/20 min-h-screen">
+      <CumpleanosPopup notificacionesHoy={notifs.filter(n => n.es_hoy)} />
       <div className="max-w-lg mx-auto space-y-6">
 
         

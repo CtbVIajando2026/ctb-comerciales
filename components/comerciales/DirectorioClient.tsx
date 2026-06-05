@@ -18,7 +18,7 @@ interface Agencia {
   ciudad: string
 }
 
-export function DirectorioClient({ agenciasIniciales }: { agenciasIniciales: Agencia[] }) {
+export function DirectorioClient({ agenciasIniciales, ciudadComercial = "Quito" }: { agenciasIniciales: Agencia[], ciudadComercial?: string }) {
   const [search, setSearch] = useState("")
   const [filtroCiudad, setFiltroCiudad] = useState("Todas")
   const [filtroEstado, setFiltroEstado] = useState("Activas")
@@ -70,10 +70,25 @@ export function DirectorioClient({ agenciasIniciales }: { agenciasIniciales: Age
         </Button>
       </div>
 
+      <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+        <button
+          onClick={() => setFiltroCiudad("Todas")}
+          className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${filtroCiudad === "Todas" ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}
+        >
+          Todas las Agencias
+        </button>
+        <button
+          onClick={() => setFiltroCiudad(ciudadComercial)}
+          className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${filtroCiudad === ciudadComercial ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}
+        >
+          📍 Mi Ciudad ({ciudadComercial})
+        </button>
+      </div>
+
       {showFiltros && (
         <div className="bg-card p-4 rounded-2xl border border-border flex gap-3 animate-in fade-in slide-in-from-top-2">
           <div className="flex-1 space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Ciudad</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Otras Ciudades</label>
             <select 
               className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
               value={filtroCiudad}
