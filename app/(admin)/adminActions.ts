@@ -161,8 +161,10 @@ export async function actualizarComercialAdmin(data: {
 export async function obtenerMetricasEnVivo() {
   const supabase = await createAdminClient()
   
-  const hoy = new Date()
-  hoy.setHours(0,0,0,0)
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+  const ecDateStr = formatter.format(now) // "YYYY-MM-DD" en Ecuador
+  const inicioDiaEcuador = new Date(`${ecDateStr}T00:00:00-05:00`).toISOString()
 
   const { data: visitas, error } = await supabase
     .from('visitas')
@@ -173,7 +175,7 @@ export async function obtenerMetricasEnVivo() {
       alerta_fraude_checkin, 
       alerta_fraude_checkout
     `)
-    .gte('created_at', hoy.toISOString())
+    .gte('created_at', inicioDiaEcuador)
 
   if (error) {
     console.error("Error obteniendo métricas en vivo:", error)
@@ -263,15 +265,16 @@ export async function obtenerDirectorioEquipo() {
     .eq('activa', true)
 
   // 3. Obtener visitas completadas del mes actual
-  const inicioMes = new Date()
-  inicioMes.setDate(1)
-  inicioMes.setHours(0,0,0,0)
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit' })
+  const ecMonthStr = formatter.format(now) // "YYYY-MM" en Ecuador
+  const inicioMesEcuador = new Date(`${ecMonthStr}-01T00:00:00-05:00`).toISOString()
 
   const { data: visitas } = await supabase
     .from('visitas')
     .select('comercial_id, es_actividad')
     .eq('estado', 'completada')
-    .gte('created_at', inicioMes.toISOString())
+    .gte('created_at', inicioMesEcuador)
 
   return comerciales.map(c => {
     const metaObj = metas?.find(m => m.comercial_id === c.id)

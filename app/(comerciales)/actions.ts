@@ -311,9 +311,11 @@ export async function obtenerMeticasDashboard() {
     .eq('activa', true)
     .single()
 
-  // 2. Visitas y actividades de hoy (desde las 00:00:00)
-  const hoy = new Date()
-  hoy.setHours(0,0,0,0)
+  // 2. Visitas y actividades de hoy (desde las 00:00:00 en Ecuador)
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+  const ecDateStr = formatter.format(now)
+  const inicioDiaEcuador = new Date(`${ecDateStr}T00:00:00-05:00`).toISOString()
 
   const { data: visitas } = await supabase
     .from('visitas')
@@ -332,7 +334,7 @@ export async function obtenerMeticasDashboard() {
       agencia:agencias(nombre, temperatura)
     `)
     .eq('comercial_id', user.id)
-    .gte('created_at', hoy.toISOString())
+    .gte('created_at', inicioDiaEcuador)
     .order('created_at', { ascending: false })
 
   const metaDiaria = meta?.visitas_diarias !== undefined ? meta.visitas_diarias : 5 // default fallback
@@ -342,7 +344,7 @@ export async function obtenerMeticasDashboard() {
     .from('justificaciones_comerciales')
     .select('id')
     .eq('comercial_id', user.id)
-    .eq('fecha', hoy.toISOString().split('T')[0])
+    .eq('fecha', ecDateStr)
     .single()
 
   // 5. Perfil
@@ -379,15 +381,16 @@ export async function obtenerDirectorioEquipoComercial() {
     .eq('activa', true)
 
   // 3. Obtener visitas completadas del mes actual
-  const inicioMes = new Date()
-  inicioMes.setDate(1)
-  inicioMes.setHours(0,0,0,0)
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit' })
+  const ecMonthStr = formatter.format(now) // "YYYY-MM"
+  const inicioMesEcuador = new Date(`${ecMonthStr}-01T00:00:00-05:00`).toISOString()
 
   const { data: visitas } = await supabase
     .from('visitas')
     .select('comercial_id, es_actividad')
     .eq('estado', 'completada')
-    .gte('created_at', inicioMes.toISOString())
+    .gte('created_at', inicioMesEcuador)
 
   return comerciales.map(c => {
     const metaObj = metas?.find(m => m.comercial_id === c.id)
