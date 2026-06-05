@@ -7,9 +7,19 @@ import { Plus, Clock, Briefcase } from "lucide-react"
 import { obtenerMeticasDashboard } from "@/app/(comerciales)/actions"
 import { NuevaActividadButton } from "@/components/comerciales/NuevaActividadButton"
 import { LiveLocationHeader } from "@/components/comerciales/LiveLocationHeader"
+import { obtenerNotificaciones } from "@/app/(comerciales)/actions_notificaciones"
+import { createClient } from "@/lib/supabase/server"
 
 export default async function DashboardPage() {
   const data = await obtenerMeticasDashboard()
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  let notificacionesHoy = 0
+  if (user) {
+    const notifs = await obtenerNotificaciones(user.id)
+    notificacionesHoy = notifs.filter(n => n.es_hoy).length
+  }
   
   if (!data) {
     return <div>Error cargando datos. Por favor inicia sesión de nuevo.</div>
@@ -35,7 +45,7 @@ export default async function DashboardPage() {
       <div className="max-w-lg mx-auto space-y-6">
 
         
-        <LiveLocationHeader perfil={perfil} />
+        <LiveLocationHeader perfil={perfil} notificacionesCount={notificacionesHoy} />
 
         <section className="bg-card rounded-2xl shadow-sm border border-border p-5">
           <MetaBar 
