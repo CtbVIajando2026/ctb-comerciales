@@ -173,7 +173,16 @@ export async function obtenerMetricasEnVivo() {
       estado, 
       comercial_id, 
       alerta_fraude_checkin, 
-      alerta_fraude_checkout
+      alerta_fraude_checkout,
+      created_at,
+      hora_checkin,
+      hora_checkout,
+      gps_lat,
+      gps_lng,
+      es_actividad,
+      titulo_actividad,
+      usuarios!inner(nombre, zona),
+      agencias(nombre)
     `)
     .gte('created_at', inicioDiaEcuador)
 
