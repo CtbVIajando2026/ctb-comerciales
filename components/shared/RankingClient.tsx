@@ -1,11 +1,13 @@
 "use client"
 
 import { useMemo, useEffect, useState } from 'react'
-import { Trophy, MapPin, Award, Star, Briefcase } from 'lucide-react'
+import { Trophy, MapPin, Award, Star, Briefcase, Filter } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export function RankingClient({ datos }: { datos: any }) {
   const { visitas, comerciales } = datos
   const [mounted, setMounted] = useState(false)
+  const [filtroZona, setFiltroZona] = useState<string>('Global')
 
   useEffect(() => {
     // Retraso para que la animación se vea después de cargar la página
@@ -13,13 +15,24 @@ export function RankingClient({ datos }: { datos: any }) {
     return () => clearTimeout(timer)
   }, [])
 
+  const zonas = useMemo(() => {
+    const setZonas = new Set<string>()
+    comerciales.forEach((c: any) => {
+      if (c.ciudad_zona) setZonas.add(c.ciudad_zona)
+    })
+    return Array.from(setZonas).sort()
+  }, [comerciales])
+
   const ranking = useMemo(() => {
     const mapa: Record<string, { nombre: string, zona: string, visitas: number, actividades: number, avatar: string }> = {}
     
     comerciales.forEach((c: any) => {
+      const zona = c.ciudad_zona || 'Global'
+      if (filtroZona !== 'Global' && zona !== filtroZona) return
+
       mapa[c.id] = {
         nombre: c.nombre_completo,
-        zona: c.ciudad_zona || 'Global',
+        zona,
         visitas: 0,
         actividades: 0,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.nombre_completo)}&background=random`
@@ -28,11 +41,14 @@ export function RankingClient({ datos }: { datos: any }) {
 
     visitas.forEach((v: any) => {
       if (v.estado === 'completada') {
+        const comercialZona = v.usuarios?.zona || 'Global'
+        if (filtroZona !== 'Global' && comercialZona !== filtroZona) return
+
         if (!mapa[v.comercial_id]) {
           const nombre = v.usuarios?.nombre || 'Usuario Registrado'
           mapa[v.comercial_id] = {
             nombre,
-            zona: v.usuarios?.zona || 'Global',
+            zona: comercialZona,
             visitas: 0,
             actividades: 0,
             avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=random`
@@ -47,7 +63,7 @@ export function RankingClient({ datos }: { datos: any }) {
     })
 
     return Object.values(mapa).sort((a, b) => b.visitas - a.visitas)
-  }, [visitas, comerciales])
+  }, [visitas, comerciales, filtroZona])
 
   const top3 = ranking.slice(0, 3)
   const maxVisitasTop3 = Math.max(...top3.map(c => c.visitas), 1)
@@ -70,6 +86,22 @@ export function RankingClient({ datos }: { datos: any }) {
         <p className="text-muted-foreground text-sm font-medium tracking-wide">
           Desempeño comercial de los últimos 30 días
         </p>
+
+        {/* SELECTOR DE FILTRO */}
+        <div className="mt-6 flex items-center space-x-2 bg-card border border-border p-1 rounded-xl shadow-sm">
+          <Filter className="w-4 h-4 text-muted-foreground ml-3" />
+          <Select value={filtroZona} onValueChange={setFiltroZona}>
+            <SelectTrigger className="w-[180px] sm:w-[220px] h-10 border-0 bg-transparent focus:ring-0 focus:ring-offset-0 font-bold text-foreground">
+              <SelectValue placeholder="Filtrar por Zona" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="Global" className="font-bold">🌎 Todo el País</SelectItem>
+              {zonas.map(z => (
+                <SelectItem key={z} value={z}>📍 {z}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* TOP 3 BARRAS VERTICALES ANIMADAS */}
