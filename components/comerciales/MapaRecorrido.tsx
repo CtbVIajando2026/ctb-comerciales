@@ -6,6 +6,14 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { differenceInMinutes } from 'date-fns'
 
+// Supabase timestamps come without 'Z' suffix - this ensures correct UTC parsing on all browsers/devices
+const parseUTC = (dateStr: string): Date => {
+  if (!dateStr) return new Date()
+  // If already has timezone info (Z, +, -) don't modify
+  if (/[Z+]/.test(dateStr) || (dateStr.includes('-') && dateStr.lastIndexOf('-') > 7)) return new Date(dateStr)
+  return new Date(dateStr + 'Z')
+}
+
 // Fix for default marker icons in Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -34,11 +42,11 @@ const getDistanceText = (lat1: number, lon1: number, lat2: number, lon2: number)
 }
 
 const LivePopupTimer = ({ horaCheckin }: { horaCheckin: string }) => {
-  const [mins, setMins] = useState(differenceInMinutes(new Date(), new Date(horaCheckin)))
+  const [mins, setMins] = useState(differenceInMinutes(new Date(), parseUTC(horaCheckin)))
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setMins(differenceInMinutes(new Date(), new Date(horaCheckin)))
+      setMins(differenceInMinutes(new Date(), parseUTC(horaCheckin)))
     }, 10000)
     return () => clearInterval(interval)
   }, [horaCheckin])
@@ -99,7 +107,7 @@ interface MapaRecorridoProps {
 export default function MapaRecorrido({ visitas }: MapaRecorridoProps) {
   // Sort by time (ascending) to draw the correct route
   const ordenadas = [...visitas].sort(
-    (a, b) => new Date(a.hora_checkin).getTime() - new Date(b.hora_checkin).getTime()
+    (a, b) => parseUTC(a.hora_checkin).getTime() - parseUTC(b.hora_checkin).getTime()
   )
 
   // Filter out those without GPS
@@ -137,7 +145,7 @@ export default function MapaRecorrido({ visitas }: MapaRecorridoProps) {
         {conGPS.map((v, index) => {
           let mins = 0
           if (v.hora_checkin && v.hora_checkout) {
-            mins = Math.floor((new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000)
+            mins = Math.floor((parseUTC(v.hora_checkout).getTime() - parseUTC(v.hora_checkin).getTime()) / 60000)
           }
 
           let colorHex = '#3b82f6' // Default blue si está en curso
@@ -163,12 +171,12 @@ export default function MapaRecorrido({ visitas }: MapaRecorridoProps) {
                 <div className="text-xs space-y-1">
                   <div className="flex justify-between w-40">
                     <span className="text-muted-foreground">Llegada:</span> 
-                    <span className="font-medium">{new Date(v.hora_checkin).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</span>
+                     <span className="font-medium">{parseUTC(v.hora_checkin).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                   {v.hora_checkout && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Salida:</span> 
-                      <span className="font-medium">{new Date(v.hora_checkout).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</span>
+                       <span className="font-medium">{parseUTC(v.hora_checkout).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   )}
                   {v.hora_checkout ? (

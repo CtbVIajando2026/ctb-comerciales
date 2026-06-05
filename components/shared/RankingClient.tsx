@@ -90,7 +90,7 @@ export function RankingClient({ datos }: { datos: any }) {
         {/* SELECTOR DE FILTRO */}
         <div className="mt-6 flex items-center space-x-2 bg-card border border-border p-1 rounded-xl shadow-sm">
           <Filter className="w-4 h-4 text-muted-foreground ml-3" />
-          <Select value={filtroZona} onValueChange={setFiltroZona}>
+          <Select value={filtroZona} onValueChange={(val) => setFiltroZona(val ?? 'Global')}>
             <SelectTrigger className="w-[180px] sm:w-[220px] h-10 border-0 bg-transparent focus:ring-0 focus:ring-offset-0 font-bold text-foreground">
               <SelectValue placeholder="Filtrar por Zona" />
             </SelectTrigger>

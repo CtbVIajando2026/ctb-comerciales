@@ -2,15 +2,15 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Users, ShieldAlert, Power, Map as MapIcon, Activity, Trophy } from "lucide-react"
+import { LayoutDashboard, Users, Power, Map as MapIcon, Activity, Trophy } from "lucide-react"
 import { createClient } from '@/lib/supabase/client'
 
 const tabs = [
-  { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/admin/mapa', icon: MapIcon, label: 'Mapa' },
-  { href: '/admin/visitas', icon: Activity, label: 'Visitas' },
-  { href: '/admin/ranking', icon: Trophy, label: 'Ranking' },
-  { href: '/admin/comerciales', icon: Users, label: 'Equipo' },
+  { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', color: 'text-violet-500', bg: 'bg-violet-500/15', exact: true },
+  { href: '/admin/mapa', icon: MapIcon, label: 'Mapa', color: 'text-emerald-500', bg: 'bg-emerald-500/15', exact: false },
+  { href: '/admin/visitas', icon: Activity, label: 'Visitas', color: 'text-blue-500', bg: 'bg-blue-500/15', exact: false },
+  { href: '/admin/ranking', icon: Trophy, label: 'Ranking', color: 'text-amber-500', bg: 'bg-amber-500/15', exact: false },
+  { href: '/admin/comerciales', icon: Users, label: 'Equipo', color: 'text-orange-500', bg: 'bg-orange-500/15', exact: false },
 ]
 
 export function AdminBottomNav() {
@@ -18,17 +18,17 @@ export function AdminBottomNav() {
   const router = useRouter()
   const supabase = createClient()
 
-  // Solo mostrar en móvil (hasta sm)
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
   }
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-background border-t border-border flex justify-around pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] min-h-[4.5rem] z-50 px-2 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
+    <div className="fixed bottom-0 left-0 w-full bg-background/80 backdrop-blur-xl border-t border-border/50 flex justify-around pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] min-h-[4.5rem] z-50 px-1 md:hidden shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)]">
       {tabs.map((tab) => {
-        const isExactOrChild = tab.href === '/admin' 
-          ? pathname === '/admin' 
+        // Para "Inicio" (Dashboard), solo se activa en la ruta exacta /admin
+        const isActive = tab.exact 
+          ? pathname === '/admin'
           : pathname.startsWith(tab.href)
         
         const Icon = tab.icon
@@ -36,23 +36,23 @@ export function AdminBottomNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all ${
-              isExactOrChild 
-                ? 'text-primary bg-primary/10 shadow-[inset_0px_2px_4px_rgba(0,0,0,0.05)] dark:shadow-[inset_0px_2px_4px_rgba(0,0,0,0.2)] font-bold' 
-                : 'text-muted-foreground hover:text-primary hover:bg-muted/50 font-medium'
+            className={`flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all duration-200 ${
+              isActive 
+                ? `${tab.color} ${tab.bg} font-bold scale-105 shadow-sm` 
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium'
             }`}
           >
-            <Icon size={isExactOrChild ? 22 : 24} strokeWidth={isExactOrChild ? 2.5 : 2} />
-            <span className={`text-[9px] mt-0.5`}>{tab.label}</span>
+            <Icon size={isActive ? 22 : 23} strokeWidth={isActive ? 2.5 : 1.8} />
+            <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{tab.label}</span>
           </Link>
         )
       })}
       
       <button
         onClick={handleLogout}
-        className="flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        className="flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all duration-200 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
       >
-        <Power size={24} strokeWidth={2} />
+        <Power size={23} strokeWidth={1.8} />
         <span className="text-[9px] mt-0.5 font-medium">Salir</span>
       </button>
     </div>

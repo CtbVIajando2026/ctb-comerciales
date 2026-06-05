@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, MapPin, Building2, Plus } from "lucide-react"
+import { Search, MapPin, Building2, Plus, Sparkles } from "lucide-react"
 import { TemperaturaBadge } from "@/components/comerciales/TemperaturaBadge"
 import { buscarAgencias } from "@/app/(comerciales)/actions"
 
@@ -43,6 +43,29 @@ export function AgenciaBuscador({ onSelect, onCrearNueva }: AgenciaBuscadorProps
 
   return (
     <div className="space-y-4">
+      {/* BOTÓN REGISTRAR - SIEMPRE VISIBLE Y PROMINENTE */}
+      <button
+        onClick={onCrearNueva}
+        className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary/30 border-dashed hover:border-primary hover:bg-primary/10 transition-all duration-200 group"
+      >
+        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+          <Plus className="w-5 h-5 text-primary-foreground" />
+        </div>
+        <div className="text-left flex-1">
+          <p className="font-bold text-base text-primary leading-tight">Registrar nueva agencia</p>
+          <p className="text-xs text-muted-foreground mt-0.5">¿No la encuentras? Agrégala al sistema</p>
+        </div>
+        <Sparkles className="w-4 h-4 text-primary opacity-60 group-hover:opacity-100 transition-opacity" />
+      </button>
+
+      {/* DIVIDER */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-xs text-muted-foreground font-medium">o busca una existente</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      {/* BÚSQUEDA */}
       <div className="relative">
         <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
         <Input
@@ -78,27 +101,11 @@ export function AgenciaBuscador({ onSelect, onCrearNueva }: AgenciaBuscadorProps
         </div>
       )}
 
-      {!buscando && (!haBuscado || resultados.length === 0) && (
-        <div className="text-center p-6 bg-card border border-border border-dashed rounded-xl space-y-4 mt-4">
-          <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-muted-foreground" />
-          </div>
-          <div>
-            {haBuscado && resultados.length === 0 ? (
-              <>
-                <p className="font-medium text-lg">No encontramos "{query}"</p>
-                <p className="text-sm text-muted-foreground mt-1">¿Es una agencia nueva?</p>
-              </>
-            ) : (
-              <>
-                <p className="font-medium text-lg">¿Agencia no registrada?</p>
-                <p className="text-sm text-muted-foreground mt-1">Si la agencia no existe en el sistema, regístrala aquí.</p>
-              </>
-            )}
-          </div>
-          <Button onClick={onCrearNueva} className="w-full h-12" variant="outline">
-            <Plus className="w-5 h-5 mr-2" /> Registrar nueva agencia
-          </Button>
+      {!buscando && haBuscado && resultados.length === 0 && (
+        <div className="text-center p-6 bg-card border border-border rounded-xl">
+          <Building2 className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+          <p className="font-medium">No encontramos "{query}"</p>
+          <p className="text-sm text-muted-foreground mt-1">Usa el botón de arriba para registrarla</p>
         </div>
       )}
     </div>

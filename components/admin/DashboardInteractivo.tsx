@@ -236,18 +236,18 @@ export function DashboardInteractivo({ data }: { data: any }) {
       {/* ---------------- VISTA GLOBAL ---------------- */}
       {vista === 'global' && (
         <div className="space-y-4 animate-in fade-in duration-300">
-          <div className="flex flex-row gap-4 print:hidden w-full">
-            <div className="flex-1 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-lg flex flex-col justify-center items-center text-center min-h-[250px]">
+          <div className="flex flex-col md:flex-row gap-4 print:hidden w-full">
+            <div className="flex-1 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-lg flex flex-col">
               <div className="flex items-center justify-center space-x-2 mb-4">
                 <Briefcase className="w-4 h-4 text-primary" />
                 <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Composición del Trabajo</h3>
               </div>
-              <div className="flex-1 w-full h-full min-h-[180px] relative">
+              <div className="w-full h-[220px] relative">
                 {compTrabajoData[0].value + compTrabajoData[1].value > 0 ? (
                   <>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={220}>
                       <PieChart>
-                        <Pie data={compTrabajoData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
+                        <Pie data={compTrabajoData} cx="50%" cy="45%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
                           {compTrabajoData.map((entry: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={entry.fill} />
                           ))}
@@ -256,7 +256,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
                         <Legend verticalAlign="bottom" align="center" layout="horizontal" iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-[-20px]">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{top: '-10px'}}>
                       <span className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground leading-none">
                         {compTrabajoData[0].value + compTrabajoData[1].value}
                       </span>
@@ -269,16 +269,16 @@ export function DashboardInteractivo({ data }: { data: any }) {
               </div>
             </div>
 
-            <div className="flex-1 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-lg flex flex-col min-h-[250px]">
+            <div className="flex-1 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-lg flex flex-col">
               <div className="flex items-center justify-center space-x-2 mb-4">
                 <Map className="w-4 h-4 text-primary" />
                 <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Distribución Nacional</h3>
               </div>
-              <div className="flex-1 w-full h-full min-h-[180px]">
+              <div className="w-full h-[220px]">
                 {visitasPorCiudadGlobal.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
-                      <Pie data={visitasPorCiudadGlobal} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
+                      <Pie data={visitasPorCiudadGlobal} cx="50%" cy="45%" innerRadius={45} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
                         {visitasPorCiudadGlobal.map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
