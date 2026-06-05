@@ -20,17 +20,21 @@ export function AgenciaDetalleClient({ dataInicial, backUrl = "/comerciales/agen
 
   return (
     <div className="bg-background min-h-screen">
-      <header className="sticky top-[-1rem] md:top-[-2rem] z-10 bg-background/95 backdrop-blur border-b border-border p-4 flex items-center justify-between pt-6 -mx-4 md:-mx-8 -mt-4 md:-mt-8 mb-6">
-        <div className="flex items-center">
-          <Link href={backUrl} className="inline-flex items-center justify-center size-10 rounded-xl hover:bg-muted mr-2 -ml-2 transition-colors shrink-0">
-            <ArrowLeft className="h-5 w-5" />
+      <header className="sticky top-0 z-20 bg-background/90 backdrop-blur-xl border-b border-border/60 px-4 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2">
+          <Link 
+            href={backUrl} 
+            className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-muted hover:bg-muted/80 transition-colors shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5 text-foreground" />
           </Link>
-          <h1 className="text-xl font-bold line-clamp-1">Perfil de Agencia</h1>
+          <h1 className="text-lg font-bold text-foreground line-clamp-1">Perfil de Agencia</h1>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)} className="rounded-full">
-          <Edit className="w-4 h-4 mr-1.5" /> Editar
+        <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)} className="rounded-full h-9 px-4 text-sm font-semibold">
+          <Edit className="w-3.5 h-3.5 mr-1.5" /> Editar
         </Button>
       </header>
+
 
       <main className="p-4 space-y-6 max-w-lg mx-auto pb-32">
         <section className="bg-card p-5 rounded-3xl border border-border shadow-sm space-y-4">
