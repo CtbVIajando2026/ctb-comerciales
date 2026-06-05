@@ -2,6 +2,7 @@ import { obtenerMetricasEnVivo, obtenerDatosHistoricosAdmin } from '@/app/(admin
 import { DashboardInteractivo } from '@/components/admin/DashboardInteractivo'
 import { ExportarExcelButton } from '@/components/admin/ExportarExcelButton'
 import { createClient } from "@/lib/supabase/server"
+import { ThemeToggle } from '@/components/shared/ThemeToggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +38,7 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
         <div className="flex items-center space-x-4 shrink-0">
+          <ThemeToggle className="!bg-muted border-border" />
           <ExportarExcelButton datos={datosHistoricos} />
           <img src="/logo.png" alt="CTB" className="h-20 w-auto object-contain drop-shadow-sm" />
         </div>
