@@ -18,6 +18,13 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
     
+    // Forzar el cierre del teclado móvil desenfocando todos los campos
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+    const inputs = e.currentTarget.querySelectorAll('input')
+    inputs.forEach(input => input.blur())
+
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
     const password = formData.get('password') as string
@@ -49,14 +56,14 @@ export default function LoginPage() {
 
       const rol = usuario?.rol
 
-      // Pequeño timeout para dar margen a que se procesen las cookies
+      // Timeout de 300ms para asegurar el cierre completo del teclado y reajuste del viewport
       setTimeout(() => {
         if (rol === 'admin') {
           window.location.href = '/admin'
         } else {
           window.location.href = '/comerciales/dashboard'
         }
-      }, 150)
+      }, 300)
     } else {
       setError("No se pudo iniciar sesión.")
       setLoading(false)
