@@ -45,50 +45,75 @@ const LivePopupTimer = ({ horaCheckin }: { horaCheckin: string }) => {
 // ─────────────────────────────────────────
 // Custom marker icon
 // ─────────────────────────────────────────
+// Custom marker icon (numbered sequence dot)
+// ─────────────────────────────────────────
 const createIcon = (color: string, esActividad: boolean, label?: number) => L.divIcon({
   className: 'custom-div-icon',
   html: `
     <div style="
       background-color: ${color};
-      width: 26px; height: 26px;
+      width: 28px; height: 28px;
       border-radius: ${esActividad ? '7px' : '50%'};
       border: 2.5px solid white;
       box-shadow: 0 2px 8px rgba(0,0,0,0.45);
       display: flex; align-items: center; justify-content: center;
-      color: white; font-weight: 900; font-size: 11px;
+      color: white; font-weight: 900; font-size: 12px;
       text-shadow: 0 1px 2px rgba(0,0,0,0.8);
     ">${label ?? ''}</div>
   `,
-  iconSize: [26, 26],
-  iconAnchor: [13, 13],
-  popupAnchor: [0, -13],
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14],
 })
 
 // ─────────────────────────────────────────
-// Custom cluster icon (premium look)
+// Cluster icon — looks like a STACKED GROUP BADGE
+// Visually VERY different from individual numbered markers
 // ─────────────────────────────────────────
 const createClusterCustomIcon = (cluster: any) => {
   const count = cluster.getChildCount()
-  const size = count < 5 ? 36 : count < 10 ? 42 : 50
   return L.divIcon({
     html: `
-      <div style="
-        width: ${size}px; height: ${size}px;
-        background: linear-gradient(135deg, #3b82f6, #6366f1);
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 4px 14px rgba(99,102,241,0.5);
-        display: flex; align-items: center; justify-content: center;
-        color: white; font-weight: 900; font-size: ${count < 10 ? 14 : 12}px;
-        animation: clusterPulse 2s ease-in-out infinite;
-      ">${count}</div>
+      <div style="position:relative; width:46px; height:36px;">
+        <!-- Shadow stack layers -->
+        <div style="
+          position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+          width:38px; height:26px; border-radius:20px;
+          background: rgba(99,102,241,0.25);
+          border: 2px solid rgba(99,102,241,0.4);
+        "></div>
+        <div style="
+          position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
+          width:42px; height:28px; border-radius:20px;
+          background: rgba(99,102,241,0.4);
+          border: 2px solid rgba(99,102,241,0.5);
+        "></div>
+        <!-- Main pill badge -->
+        <div style="
+          position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+          width:46px; height:30px; border-radius:20px;
+          background: linear-gradient(135deg, #4f46e5, #6366f1);
+          border: 2.5px solid white;
+          box-shadow: 0 4px 12px rgba(99,102,241,0.6);
+          display:flex; align-items:center; justify-content:center; gap:3px;
+          color:white; font-weight:900; font-size:13px;
+          animation: clusterPulse 2.5s ease-in-out infinite;
+        ">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="white" opacity="0.85">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          ${count}
+        </div>
+      </div>
     `,
     className: 'cluster-icon',
-    iconSize: L.point(size, size, true),
+    iconSize: L.point(46, 44, true),
+    iconAnchor: [23, 44],
   })
 }
 
 // ─────────────────────────────────────────
+
 // Auto-fitBounds after map is ready
 // ─────────────────────────────────────────
 function FitBoundsAll({ positions }: { positions: [number, number][] }) {
