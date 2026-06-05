@@ -86,19 +86,40 @@ const createNumberedIcon = (num: number, colorHex: string, esActividad: boolean)
   })
 }
 
-// Component to auto-fit bounds
+// Component to auto-fit bounds - waits for map to be fully ready
 function SetBoundsMap({ positions }: { positions: [number, number][] }) {
   const map = useMap()
   
   useEffect(() => {
-    if (positions.length > 0) {
-      const bounds = L.latLngBounds(positions)
-      map.fitBounds(bounds, { padding: [50, 50] })
+    if (positions.length === 0) return
+
+    // Wait for the map container to fully initialize before fitting bounds
+    const applyBounds = () => {
+      map.invalidateSize() // Force map to recalculate its container size
+
+      if (positions.length === 1) {
+        // Single point: just center on it at a reasonable zoom
+        map.setView(positions[0], 15, { animate: true })
+      } else {
+        // Multiple points: fit all of them with padding so none gets cut off
+        const bounds = L.latLngBounds(positions)
+        map.fitBounds(bounds, {
+          padding: [60, 60],  // Generous padding so no point is cut off
+          maxZoom: 15,        // Don't zoom in too much if points are very close
+          animate: true,
+        })
+      }
     }
+
+    // Small delay to ensure the DOM and tile layer are ready
+    const timer = setTimeout(applyBounds, 200)
+    return () => clearTimeout(timer)
   }, [positions, map])
 
   return null
 }
+
+
 
 interface MapaRecorridoProps {
   visitas: any[]
