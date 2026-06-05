@@ -9,8 +9,9 @@ export default async function MiDiaMetricsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const hoyStr = new Date().toISOString().split('T')[0]
-  
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+  const hoyStr = formatter.format(now) // "YYYY-MM-DD" en Ecuador
   // Buscar justificación de hoy
   const { data: justificacion } = await supabase
     .from('justificaciones_comerciales')
@@ -19,8 +20,7 @@ export default async function MiDiaMetricsPage() {
     .eq('fecha', hoyStr)
     .single()
 
-  const hoyInicio = new Date()
-  hoyInicio.setHours(0, 0, 0, 0)
+  const inicioDiaEcuador = new Date(`${hoyStr}T00:00:00-05:00`).toISOString()
 
   const { data: visitasRaw } = await supabase
     .from('visitas')
@@ -40,7 +40,7 @@ export default async function MiDiaMetricsPage() {
     `)
     .eq('comercial_id', user.id)
     .in('estado', ['en_curso', 'completada'])
-    .gte('hora_checkin', hoyInicio.toISOString())
+    .gte('hora_checkin', inicioDiaEcuador)
     .order('hora_checkin', { ascending: false })
 
   const visitas = (visitasRaw || []).map(v => ({

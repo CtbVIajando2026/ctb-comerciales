@@ -20,8 +20,11 @@ export async function obtenerNotificaciones(comercialId: string): Promise<Notifi
   const supabase = await createClient()
   const notificaciones: Notificacion[] = []
   
-  const hoy = new Date()
-  hoy.setHours(0, 0, 0, 0)
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+  const ecDateStr = formatter.format(now)
+  const [y, m, d] = ecDateStr.split('-').map(Number)
+  const hoy = new Date(y, m - 1, d, 0, 0, 0, 0)
   
   const futuro7Dias = new Date(hoy)
   futuro7Dias.setDate(futuro7Dias.getDate() + 7)
@@ -46,7 +49,7 @@ export async function obtenerNotificaciones(comercialId: string): Promise<Notifi
     `)
     .eq('comercial_id', comercialId)
     .not('proximo_paso_fecha', 'is', null)
-    .gte('proximo_paso_fecha', hoy.toISOString().split('T')[0])
+    .gte('proximo_paso_fecha', ecDateStr)
     .lte('proximo_paso_fecha', futuro7Dias.toISOString().split('T')[0])
 
   if (seguimientos) {

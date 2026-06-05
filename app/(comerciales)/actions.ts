@@ -249,13 +249,17 @@ export async function cerrarVisita(visitaId: string, data: {
     .single()
   const metaDiaria = meta?.visitas_diarias !== undefined ? meta.visitas_diarias : 5 // Meta fallback de 5
 
-  const hoyStr = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+  const ecDateStr = formatter.format(now)
+  const inicioDiaEcuador = new Date(`${ecDateStr}T00:00:00-05:00`).toISOString()
+
   const { count } = await supabase
     .from('visitas')
     .select('*', { count: 'exact', head: true })
     .eq('comercial_id', user.id)
     .eq('estado', 'completada')
-    .gte('hora_checkout', hoyStr + 'T00:00:00')
+    .gte('hora_checkout', inicioDiaEcuador)
 
   const meta_alcanzada = count === metaDiaria
 
