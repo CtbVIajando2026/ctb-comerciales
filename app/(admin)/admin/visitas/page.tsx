@@ -15,7 +15,7 @@ export default async function AdminVisitasPage() {
       hora_checkin, hora_checkout, estado,
       gps_lat, gps_lng,
       distancia_checkin_metros, alerta_fraude_checkin, alerta_fraude_checkout,
-      usuarios:comercial_id ( nombre ),
+      usuarios:comercial_id ( nombre, zona ),
       agencias:agencia_id ( nombre, direccion, zona, ciudad )
     `)
     .order('created_at', { ascending: false })
