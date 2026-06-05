@@ -65,78 +65,76 @@ export function RankingClient({ datos }: { datos: any }) {
         
         {/* 2do Lugar - SILVER */}
         {top3[1] && (
-          <div className="order-2 md:order-1 flex flex-col items-center p-6 bg-card rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl relative overflow-hidden group transform hover:-translate-y-2 transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-slate-300 to-slate-400"></div>
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-slate-400/10 rounded-full blur-2xl"></div>
+          <div className="order-2 md:order-1 flex flex-col items-center p-5 bg-card rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg relative overflow-hidden group hover:border-slate-300 transition-colors duration-300">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-300 to-slate-400"></div>
             
-            <div className="relative mb-4">
-              <img src={top3[1].avatar} className="w-20 h-20 rounded-full object-cover border-4 border-card shadow-lg z-10 relative" />
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-br from-slate-300 to-slate-400 text-slate-800 text-[10px] font-black px-4 py-1 rounded-full shadow-md tracking-wider z-20">
+            <div className="relative mb-3 mt-2">
+              <img src={top3[1].avatar} className="w-16 h-16 rounded-full object-cover border-[3px] border-card shadow-sm z-10 relative" />
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-br from-slate-300 to-slate-400 text-slate-800 text-[9px] font-black px-3 py-0.5 rounded-full shadow-sm tracking-wider z-20">
                 2DO
               </div>
             </div>
             
-            <h3 className="font-bold text-lg text-foreground mt-2 line-clamp-1 text-center w-full">{top3[1].nombre}</h3>
-            <p className="text-xs text-muted-foreground font-medium flex items-center mb-6 uppercase tracking-wider">
-              <MapPin className="w-3 h-3 mr-1"/> {top3[1].zona}
+            <h3 className="font-bold text-base text-foreground mt-1 line-clamp-1 text-center w-full">{top3[1].nombre}</h3>
+            <p className="text-[10px] text-muted-foreground font-medium flex items-center mb-4 uppercase tracking-wider">
+              <MapPin className="w-2.5 h-2.5 mr-1"/> {top3[1].zona}
             </p>
             
-            <div className="w-full bg-muted/50 rounded-2xl p-4 flex flex-col items-center justify-center border border-border">
-              <span className="text-sm font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Visitas</span>
-              <span className="font-black text-3xl text-slate-700 dark:text-slate-300">{top3[1].puntos}</span>
+            <div className="w-full bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-3 flex flex-col items-center justify-center border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-semibold text-slate-500 mb-0.5 uppercase tracking-wider">Visitas</span>
+              <span className="font-black text-2xl text-slate-700 dark:text-slate-300">{top3[1].puntos}</span>
             </div>
           </div>
         )}
 
         {/* 1er Lugar - GOLD */}
         {top3[0] && (
-          <div className="order-1 md:order-2 flex flex-col items-center p-8 bg-card rounded-[2rem] border border-amber-200 dark:border-amber-900/50 shadow-2xl relative overflow-hidden group transform hover:-translate-y-2 transition-all duration-300 md:-mt-8 z-10">
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600"></div>
-            <div className="absolute -top-12 -left-12 w-40 h-40 bg-amber-500/20 rounded-full blur-3xl"></div>
+          <div className="order-1 md:order-2 flex flex-col items-center p-6 bg-card rounded-3xl border border-amber-200 dark:border-amber-900/50 shadow-xl relative overflow-hidden group hover:border-amber-300 transition-colors duration-300 z-10 scale-105">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600"></div>
+            <div className="absolute -top-12 -left-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl"></div>
             
-            <div className="relative mb-5">
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full p-1.5 shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-                <Trophy className="w-4 h-4 text-white" />
+            <div className="relative mb-4 mt-2">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full p-1 shadow-sm">
+                <Trophy className="w-3.5 h-3.5 text-white" />
               </div>
-              <img src={top3[0].avatar} className="w-28 h-28 rounded-full object-cover border-4 border-card shadow-xl z-10 relative ring-4 ring-amber-400/30 ring-offset-2 ring-offset-background" />
-              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-br from-amber-400 to-yellow-500 text-amber-950 text-xs font-black px-6 py-1 rounded-full shadow-lg tracking-widest z-20">
+              <img src={top3[0].avatar} className="w-20 h-20 rounded-full object-cover border-[3px] border-card shadow-md z-10 relative ring-2 ring-amber-400/30 ring-offset-1 ring-offset-background" />
+              <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-br from-amber-400 to-yellow-500 text-amber-950 text-[10px] font-black px-4 py-0.5 rounded-full shadow-sm tracking-widest z-20 whitespace-nowrap">
                 1ER LUGAR
               </div>
             </div>
             
-            <h3 className="font-black text-xl text-foreground mt-4 line-clamp-1 text-center w-full">{top3[0].nombre}</h3>
-            <p className="text-xs text-amber-600 dark:text-amber-500 font-bold flex items-center mb-6 uppercase tracking-wider">
-              <MapPin className="w-3 h-3 mr-1"/> {top3[0].zona}
+            <h3 className="font-black text-lg text-foreground mt-2 line-clamp-1 text-center w-full">{top3[0].nombre}</h3>
+            <p className="text-[10px] text-amber-600 dark:text-amber-500 font-bold flex items-center mb-4 uppercase tracking-wider">
+              <MapPin className="w-2.5 h-2.5 mr-1"/> {top3[0].zona}
             </p>
             
-            <div className="w-full bg-gradient-to-b from-amber-500/10 to-transparent rounded-2xl p-5 flex flex-col items-center justify-center border border-amber-500/20">
-              <span className="text-xs font-bold text-amber-600/80 dark:text-amber-500/80 mb-1 uppercase tracking-widest">Puntuación</span>
-              <span className="font-black text-5xl text-amber-600 dark:text-amber-500 drop-shadow-sm">{top3[0].puntos}</span>
+            <div className="w-full bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-4 flex flex-col items-center justify-center border border-amber-100 dark:border-amber-900/50">
+              <span className="text-[10px] font-bold text-amber-600/80 dark:text-amber-500/80 mb-0.5 uppercase tracking-widest">Puntuación</span>
+              <span className="font-black text-4xl text-amber-600 dark:text-amber-500">{top3[0].puntos}</span>
             </div>
           </div>
         )}
 
         {/* 3er Lugar - BRONZE */}
         {top3[2] && (
-          <div className="order-3 md:order-3 flex flex-col items-center p-6 bg-card rounded-[2rem] border border-orange-200 dark:border-orange-900/40 shadow-xl relative overflow-hidden group transform hover:-translate-y-2 transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-orange-400 to-orange-600"></div>
-            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl"></div>
+          <div className="order-3 flex flex-col items-center p-5 bg-card rounded-3xl border border-orange-200 dark:border-orange-900/40 shadow-lg relative overflow-hidden group hover:border-orange-300 transition-colors duration-300">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-orange-600"></div>
             
-            <div className="relative mb-4">
-              <img src={top3[2].avatar} className="w-20 h-20 rounded-full object-cover border-4 border-card shadow-lg z-10 relative" />
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-br from-orange-400 to-orange-600 text-white text-[10px] font-black px-4 py-1 rounded-full shadow-md tracking-wider z-20">
+            <div className="relative mb-3 mt-2">
+              <img src={top3[2].avatar} className="w-16 h-16 rounded-full object-cover border-[3px] border-card shadow-sm z-10 relative" />
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-br from-orange-400 to-orange-600 text-white text-[9px] font-black px-3 py-0.5 rounded-full shadow-sm tracking-wider z-20">
                 3ER
               </div>
             </div>
             
-            <h3 className="font-bold text-lg text-foreground mt-2 line-clamp-1 text-center w-full">{top3[2].nombre}</h3>
-            <p className="text-xs text-muted-foreground font-medium flex items-center mb-6 uppercase tracking-wider">
-              <MapPin className="w-3 h-3 mr-1"/> {top3[2].zona}
+            <h3 className="font-bold text-base text-foreground mt-1 line-clamp-1 text-center w-full">{top3[2].nombre}</h3>
+            <p className="text-[10px] text-muted-foreground font-medium flex items-center mb-4 uppercase tracking-wider">
+              <MapPin className="w-2.5 h-2.5 mr-1"/> {top3[2].zona}
             </p>
             
-            <div className="w-full bg-muted/50 rounded-2xl p-4 flex flex-col items-center justify-center border border-border">
-              <span className="text-sm font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Visitas</span>
-              <span className="font-black text-3xl text-orange-600 dark:text-orange-500">{top3[2].puntos}</span>
+            <div className="w-full bg-orange-50 dark:bg-orange-900/10 rounded-2xl p-3 flex flex-col items-center justify-center border border-orange-100 dark:border-orange-900/30">
+              <span className="text-[10px] font-semibold text-orange-600/70 dark:text-orange-500/70 mb-0.5 uppercase tracking-wider">Visitas</span>
+              <span className="font-black text-2xl text-orange-600 dark:text-orange-500">{top3[2].puntos}</span>
             </div>
           </div>
         )}
