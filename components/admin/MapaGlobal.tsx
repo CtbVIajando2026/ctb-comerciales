@@ -322,29 +322,43 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
 
           return (
             <div key={`ruta-${comercialId}`}>
-              {positions.length > 1 && (
-                <Polyline positions={positions} color={routeColor} weight={2.5} dashArray="6, 10" opacity={0.7} />
-              )}
               {rutas.map((v: any, index: number) => {
                 if (index === 0) return null
                 const prev = rutas[index - 1]
+                
+                const segmentPositions: [number, number][] = [
+                  [prev.gps_lat, prev.gps_lng],
+                  [v.gps_lat, v.gps_lng]
+                ]
+
+                const distMeters = L.latLng(prev.gps_lat, prev.gps_lng).distanceTo(L.latLng(v.gps_lat, v.gps_lng))
+                
+                let segmentColor = '#10b981' // Green (< 1km)
+                if (distMeters >= 5000) segmentColor = '#ef4444' // Red (>= 5km)
+                else if (distMeters >= 1000) segmentColor = '#f59e0b' // Yellow (1-5km)
+
                 const midLat = (v.gps_lat + prev.gps_lat) / 2
                 const midLng = (v.gps_lng + prev.gps_lng) / 2
                 const distText = getDistanceText(prev.gps_lat, prev.gps_lng, v.gps_lat, v.gps_lng)
+                
                 const distIcon = L.divIcon({
                   className: 'distance-badge-icon',
                   html: `<div style="
-                    background:white; color:${routeColor};
-                    font-size:9px; font-weight:900;
-                    padding:2px 6px; border-radius:12px;
-                    border:1px solid ${routeColor};
-                    box-shadow:0 2px 4px rgba(0,0,0,0.15);
+                    background:${segmentColor}; color:white;
+                    font-size:9px; font-weight:800;
+                    padding:1.5px 5px; border-radius:4px;
+                    box-shadow:0 1px 3px rgba(0,0,0,0.3);
                     white-space:nowrap; text-align:center; line-height:1;
+                    opacity: 0.9;
                   ">${distText}</div>`,
-                  iconSize: [40, 16],
-                  iconAnchor: [20, 8],
+                  iconSize: [36, 14],
+                  iconAnchor: [18, 7],
                 })
-                return <Marker key={`dist-${comercialId}-${index}`} position={[midLat, midLng]} icon={distIcon} interactive={false} />
+                
+                return [
+                  <Polyline key={`poly-${comercialId}-${index}`} positions={segmentPositions} color={segmentColor} weight={3} dashArray="4, 6" opacity={0.85} />,
+                  <Marker key={`dist-${comercialId}-${index}`} position={[midLat, midLng]} icon={distIcon} interactive={false} />
+                ]
               })}
             </div>
           )
