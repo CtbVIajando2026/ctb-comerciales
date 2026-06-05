@@ -29,13 +29,8 @@ export async function login(formData: FormData) {
     const rol = usuario?.rol
     revalidatePath('/', 'layout')
 
-    if (rol === 'admin') {
-      redirect('/admin')
-    } else {
-      redirect('/comerciales/dashboard')
-    }
+    return { success: true, rol }
   }
 
-  revalidatePath('/', 'layout')
-  redirect('/')
+  return { error: "No se pudo obtener la información del usuario." }
 }

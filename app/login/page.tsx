@@ -23,6 +23,12 @@ export default function LoginPage() {
     if (result?.error) {
       setError(result.error)
       setLoading(false)
+    } else if (result?.success) {
+      if (result.rol === 'admin') {
+        window.location.href = '/admin'
+      } else {
+        window.location.href = '/comerciales/dashboard'
+      }
     }
   }
 
