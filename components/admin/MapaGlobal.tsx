@@ -7,6 +7,26 @@ import L from 'leaflet'
 import { Building2, Clock, User, ShieldAlert, Timer, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { differenceInMinutes } from 'date-fns'
+import { Polyline } from 'react-leaflet'
+
+// Haversine distance
+const getDistanceText = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371e3; 
+  const p1 = lat1 * Math.PI/180; 
+  const p2 = lat2 * Math.PI/180;
+  const dp = (lat2-lat1) * Math.PI/180;
+  const dl = (lon2-lon1) * Math.PI/180;
+
+  const a = Math.sin(dp/2) * Math.sin(dp/2) +
+            Math.cos(p1) * Math.cos(p2) *
+            Math.sin(dl/2) * Math.sin(dl/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  const d = R * c; 
+  
+  if (d > 1000) return (d / 1000).toFixed(1) + ' km';
+  return Math.round(d) + ' m';
+}
 
 // Iconos personalizados
 const LivePopupTimer = ({ horaCheckin }: { horaCheckin: string }) => {
@@ -75,6 +95,17 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
 
   // Filtrar solo las que tienen GPS válido
   const visitasConGps = visitas.filter(v => v.gps_lat && v.gps_lng)
+
+  // Agrupar por comercial para dibujar rutas individuales
+  const visitasPorComercial = visitasConGps.reduce((acc: any, v: any) => {
+    const comercialId = v.comercial_id || v.usuarios?.nombre || 'desconocido';
+    if (!acc[comercialId]) acc[comercialId] = [];
+    acc[comercialId].push(v);
+    return acc;
+  }, {});
+
+  // Colores para las rutas de distintos comerciales
+  const routeColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#0ea5e9'];
 
   return (
     <div className="w-full h-full rounded-2xl overflow-hidden border border-border relative z-0 shadow-sm">
@@ -159,6 +190,52 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
               </Popup>
             </Marker>
           )
+        })}
+        {/* Trazar rutas y kilometrajes por comercial */}
+        {Object.keys(visitasPorComercial).map((comercialId, i) => {
+          const rutas = visitasPorComercial[comercialId].sort(
+            (a: any, b: any) => new Date(a.hora_checkin).getTime() - new Date(b.hora_checkin).getTime()
+          );
+          const positions: [number, number][] = rutas.map((v: any) => [v.gps_lat, v.gps_lng]);
+          const routeColor = routeColors[i % routeColors.length];
+
+          return (
+            <div key={`ruta-${comercialId}`}>
+              {positions.length > 1 && (
+                <Polyline positions={positions} color={routeColor} weight={3} dashArray="5, 10" />
+              )}
+              {rutas.map((v: any, index: number) => {
+                if (index === 0) return null;
+                const prev = rutas[index - 1];
+                const midLat = (v.gps_lat + prev.gps_lat) / 2;
+                const midLng = (v.gps_lng + prev.gps_lng) / 2;
+                const distText = getDistanceText(prev.gps_lat, prev.gps_lng, v.gps_lat, v.gps_lng);
+                
+                const distanceIcon = L.divIcon({
+                  className: 'distance-badge-icon',
+                  html: `<div style="
+                    background-color: white;
+                    color: ${routeColor};
+                    font-size: 9px;
+                    font-weight: 900;
+                    padding: 2px 6px;
+                    border-radius: 12px;
+                    border: 1px solid ${routeColor};
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+                    white-space: nowrap;
+                    text-align: center;
+                    line-height: 1;
+                  ">${distText}</div>`,
+                  iconSize: [40, 16],
+                  iconAnchor: [20, 8],
+                });
+
+                return (
+                  <Marker key={`dist-${comercialId}-${index}`} position={[midLat, midLng]} icon={distanceIcon} interactive={false} />
+                );
+              })}
+            </div>
+          );
         })}
       </MapContainer>
     </div>
