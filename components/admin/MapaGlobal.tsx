@@ -3,9 +3,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import 'react-leaflet-cluster/dist/assets/MarkerCluster.css'
-import 'react-leaflet-cluster/dist/assets/MarkerCluster.Default.css'
-import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import { Building2, Clock, User, ShieldAlert, Timer, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
@@ -106,51 +103,7 @@ const createIcon = (color: string, esActividad: boolean, label?: number, nombre?
   })
 }
 
-// ─────────────────────────────────────────
-// Cluster icon — looks like a STACKED GROUP BADGE
-// Visually VERY different from individual numbered markers
-// ─────────────────────────────────────────
-const createClusterCustomIcon = (cluster: any) => {
-  const count = cluster.getChildCount()
-  return L.divIcon({
-    html: `
-      <div style="position:relative; width:46px; height:36px;">
-        <!-- Shadow stack layers -->
-        <div style="
-          position:absolute; bottom:0; left:50%; transform:translateX(-50%);
-          width:38px; height:26px; border-radius:20px;
-          background: rgba(99,102,241,0.25);
-          border: 2px solid rgba(99,102,241,0.4);
-        "></div>
-        <div style="
-          position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
-          width:42px; height:28px; border-radius:20px;
-          background: rgba(99,102,241,0.4);
-          border: 2px solid rgba(99,102,241,0.5);
-        "></div>
-        <!-- Main pill badge -->
-        <div style="
-          position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
-          width:46px; height:30px; border-radius:20px;
-          background: linear-gradient(135deg, #4f46e5, #6366f1);
-          border: 2.5px solid white;
-          box-shadow: 0 4px 12px rgba(99,102,241,0.6);
-          display:flex; align-items:center; justify-content:center; gap:3px;
-          color:white; font-weight:900; font-size:13px;
-          animation: clusterPulse 2.5s ease-in-out infinite;
-        ">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="white" opacity="0.85">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          ${count}
-        </div>
-      </div>
-    `,
-    className: 'cluster-icon',
-    iconSize: L.point(46, 44, true),
-    iconAnchor: [23, 44],
-  })
-}
+
 
 // ─────────────────────────────────────────
 
@@ -234,31 +187,24 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
         {/* Auto-fit all GPS points */}
         <FitBoundsAll positions={allPositions} />
 
-        {/* ─── CLUSTERED MARKERS ─── */}
-        <MarkerClusterGroup
-          chunkedLoading
-          iconCreateFunction={createClusterCustomIcon}
-          maxClusterRadius={50}
-          showCoverageOnHover={false}
-          animate
-        >
-          {Object.keys(visitasPorComercial).flatMap((comercialId) => {
-            const rutas = visitasPorComercial[comercialId].sort(
-              (a: any, b: any) => new Date(a.hora_checkin).getTime() - new Date(b.hora_checkin).getTime()
-            )
+        {/* ─── UNCLUSTERED MARKERS ─── */}
+        {Object.keys(visitasPorComercial).flatMap((comercialId) => {
+          const rutas = visitasPorComercial[comercialId].sort(
+            (a: any, b: any) => new Date(a.hora_checkin).getTime() - new Date(b.hora_checkin).getTime()
+          )
 
-            return rutas.map((v: any, index: number) => {
-              const esFraude = v.alerta_fraude_checkin || v.alerta_fraude_checkout
-              const esActiva = v.estado === 'abierta'
-              const color = esFraude ? '#ef4444' : (esActiva ? '#3b82f6' : '#10b981')
+          return rutas.map((v: any, index: number) => {
+            const esFraude = v.alerta_fraude_checkin || v.alerta_fraude_checkout
+            const esActiva = v.estado === 'abierta'
+            const color = esFraude ? '#ef4444' : (esActiva ? '#3b82f6' : '#10b981')
 
-              return (
-                <Marker
-                  key={v.id}
-                  position={[v.gps_lat, v.gps_lng]}
-                  icon={createIcon(color, v.es_actividad, index + 1, v.usuarios?.nombre)}
-                >
-                  <Popup className="rounded-xl">
+            return (
+              <Marker
+                key={v.id}
+                position={[v.gps_lat, v.gps_lng]}
+                icon={createIcon(color, v.es_actividad, index + 1, v.usuarios?.nombre)}
+              >
+                <Popup className="rounded-xl">
                   <div className="p-1 min-w-[200px]">
                     <div className="flex items-center mb-2 border-b border-slate-200 pb-2">
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
@@ -310,7 +256,6 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
             )
           })
         })}
-        </MarkerClusterGroup>
 
         {/* ─── ROUTE LINES & DISTANCE LABELS (outside cluster) ─── */}
         {Object.keys(visitasPorComercial).map((comercialId, i) => {
@@ -334,8 +279,8 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
                 const distMeters = L.latLng(prev.gps_lat, prev.gps_lng).distanceTo(L.latLng(v.gps_lat, v.gps_lng))
                 
                 let segmentColor = '#10b981' // Green (< 1km)
-                if (distMeters >= 5000) segmentColor = '#ef4444' // Red (>= 5km)
-                else if (distMeters >= 1000) segmentColor = '#f59e0b' // Yellow (1-5km)
+                if (distMeters >= 3000) segmentColor = '#ef4444' // Red (>= 3km)
+                else if (distMeters >= 1000) segmentColor = '#f59e0b' // Yellow (1-3km)
 
                 const midLat = (v.gps_lat + prev.gps_lat) / 2
                 const midLng = (v.gps_lng + prev.gps_lng) / 2
