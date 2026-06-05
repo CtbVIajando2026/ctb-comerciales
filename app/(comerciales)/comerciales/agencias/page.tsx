@@ -7,7 +7,7 @@ export default async function AgenciasPage() {
 
   return (
     <div className="bg-background min-h-screen">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4 flex items-center justify-between pt-6">
+      <header className="sticky top-[-1rem] md:top-[-2rem] z-10 bg-background/95 backdrop-blur border-b border-border p-4 flex items-center justify-between pt-6 -mx-4 md:-mx-8 -mt-4 md:-mt-8 mb-6">
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center">
             <Building2 className="w-5 h-5 mr-2 text-primary" />
