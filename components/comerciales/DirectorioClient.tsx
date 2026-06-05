@@ -157,6 +157,7 @@ export function DirectorioClient({ agenciasIniciales, ciudadComercial = "Quito" 
         isOpen={isRegistroOpen}
         onClose={() => setIsRegistroOpen(false)}
         onSuccess={handleAgenciaRegistrada}
+        ciudadInicial={ciudadComercial}
       />
     </div>
   )

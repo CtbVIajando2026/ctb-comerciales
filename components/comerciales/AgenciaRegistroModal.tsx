@@ -12,6 +12,7 @@ interface AgenciaRegistroModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: (agencia: any, contacto: any) => void
+  ciudadInicial?: string
 }
 
 interface OtroContacto {
@@ -22,10 +23,10 @@ interface OtroContacto {
   email: string
 }
 
-export function AgenciaRegistroModal({ isOpen, onClose, onSuccess }: AgenciaRegistroModalProps) {
+export function AgenciaRegistroModal({ isOpen, onClose, onSuccess, ciudadInicial = "Quito" }: AgenciaRegistroModalProps) {
   const [nombre, setNombre] = useState("")
   const [direccion, setDireccion] = useState("")
-  const [ciudad, setCiudad] = useState("Quito")
+  const [ciudad, setCiudad] = useState(ciudadInicial)
   const [aniversario, setAniversario] = useState("")
   
   const [gerenteNombre, setGerenteNombre] = useState("")
@@ -95,7 +96,7 @@ export function AgenciaRegistroModal({ isOpen, onClose, onSuccess }: AgenciaRegi
       // Limpiar formulario
       setNombre("")
       setDireccion("")
-      setCiudad("Quito")
+      setCiudad(ciudadInicial)
       setAniversario("")
       setGerenteNombre("")
       setGerenteCumpleanos("")
