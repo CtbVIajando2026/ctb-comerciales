@@ -27,7 +27,7 @@ interface OtroContacto {
 export function AgenciaRegistroModal({ isOpen, onClose, onSuccess, ciudadInicial = "Quito" }: AgenciaRegistroModalProps) {
   const [nombre, setNombre] = useState("")
   const [direccion, setDireccion] = useState("")
-  const [ciudad, setCiudad] = useState(ciudadInicial)
+  const [ciudad, setCiudad] = useState(ciudadInicial !== "Quito" ? ciudadInicial : "")
   const [aniversario, setAniversario] = useState("")
   
   const [gerenteNombre, setGerenteNombre] = useState("")
@@ -163,10 +163,11 @@ export function AgenciaRegistroModal({ isOpen, onClose, onSuccess, ciudadInicial
               <div className="relative flex-1">
                 <MapPin className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                 <Input
-                  placeholder="Ciudad (Ej. Quito)"
+                  placeholder="Ciudad (Ej. Quito) *"
                   className="pl-10 h-12"
                   value={ciudad}
                   onChange={(e) => setCiudad(e.target.value)}
+                  required
                 />
               </div>
             </div>

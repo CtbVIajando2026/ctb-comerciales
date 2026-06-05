@@ -46,8 +46,8 @@ export function DirectorioClient({ agenciasIniciales, ciudadComercial = "Quito" 
   })
 
   const handleAgenciaRegistrada = (agencia: any) => {
-    // Cuando se registra, recargamos la data del servidor para verla en la lista
-    router.refresh()
+    // Cuando se registra, lo llevamos al detalle de la agencia
+    router.push(`/comerciales/agencias/${agencia.id}`)
   }
 
   return (

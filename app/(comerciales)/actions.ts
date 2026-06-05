@@ -335,6 +335,8 @@ export async function obtenerMeticasDashboard() {
       observaciones,
       temas,
       temas_texto_libre,
+      gps_lat,
+      gps_lng,
       agencia:agencias(nombre, temperatura)
     `)
     .eq('comercial_id', user.id)
