@@ -52,7 +52,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
     const map: Record<string, number> = {}
     visitas.forEach((v: any) => {
       if (v.estado === 'completada') {
-        const ciudad = v.usuarios?.zona || 'Sin Zona'
+        const ciudad = v.agencias?.ciudad || v.usuarios?.zona || 'Sin Zona'
         map[ciudad] = (map[ciudad] || 0) + 1
       }
     })
@@ -106,7 +106,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
 
   // ---------------- DATOS POR CIUDAD ----------------
   const visitasCiudad = useMemo(() => {
-    return visitas.filter((v: any) => v.usuarios?.zona === ciudadSeleccionada)
+    return visitas.filter((v: any) => (v.agencias?.ciudad || v.usuarios?.zona) === ciudadSeleccionada)
   }, [visitas, ciudadSeleccionada])
 
   const visitasRealesCiudad = useMemo(() => visitasCiudad.filter((v: any) => !v.es_actividad), [visitasCiudad])

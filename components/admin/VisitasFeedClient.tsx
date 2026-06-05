@@ -14,13 +14,13 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
   const [showFiltros, setShowFiltros] = useState(false)
 
   // Extract unique filter options
-  const ciudadesUnicas = Array.from(new Set(visitasIniciales.map(v => v.usuarios?.zona || v.agencias?.ciudad || 'Quito').filter(Boolean))).sort()
+  const ciudadesUnicas = Array.from(new Set(visitasIniciales.map(v => v.agencias?.ciudad || v.usuarios?.zona || 'Quito').filter(Boolean))).sort()
   const comercialesUnicos = Array.from(new Set(visitasIniciales.map(v => v.usuarios?.nombre).filter(Boolean))).sort()
 
   const filtradas = visitasIniciales.filter(v => {
     const agenciaNombre = v.agencias?.nombre || v.titulo_actividad || ""
     const comercialNombre = v.usuarios?.nombre || ""
-    const ciudad = v.usuarios?.zona || v.agencias?.ciudad || 'Quito'
+    const ciudad = v.agencias?.ciudad || v.usuarios?.zona || 'Quito'
     const fecha = new Date(v.created_at)
 
     // Text search
@@ -163,10 +163,10 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
                             {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
                           </div>
                         )}
-                        {(v.usuarios?.zona || v.agencias?.ciudad) && (
+                        {(v.agencias?.ciudad || v.usuarios?.zona) && (
                           <div className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-end">
                             <MapPin className="w-3 h-3 mr-1" />
-                            {v.usuarios?.zona || v.agencias?.ciudad}
+                            {v.agencias?.ciudad || v.usuarios?.zona}
                           </div>
                         )}
                       </div>

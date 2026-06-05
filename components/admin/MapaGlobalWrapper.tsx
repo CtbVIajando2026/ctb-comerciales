@@ -32,14 +32,14 @@ export function MapaGlobalWrapper({ visitas }: { visitas: any[] }) {
   const [tipoActividadFiltro, setTipoActividadFiltro] = useState<'todas' | 'agencias' | 'internas'>('todas')
 
   const ciudades = useMemo(() => {
-    const setCiudades = new Set(visitas.map((v: any) => v.usuarios?.zona).filter(Boolean))
+    const setCiudades = new Set(visitas.map((v: any) => v.agencias?.ciudad || v.usuarios?.zona).filter(Boolean))
     return Array.from(setCiudades) as string[]
   }, [visitas])
 
   const comercialesFiltrados = useMemo(() => {
     let list = visitas
     if (ciudadFiltro !== 'todas') {
-      list = list.filter(v => v.usuarios?.zona === ciudadFiltro)
+      list = list.filter(v => (v.agencias?.ciudad || v.usuarios?.zona) === ciudadFiltro)
     }
     const setComerciales = new Set(list.map((v: any) => v.usuarios?.nombre).filter(Boolean))
     return Array.from(setComerciales) as string[]
@@ -60,7 +60,7 @@ export function MapaGlobalWrapper({ visitas }: { visitas: any[] }) {
     }
 
     if (ciudadFiltro !== 'todas') {
-      filtradas = filtradas.filter(v => v.usuarios?.zona === ciudadFiltro)
+      filtradas = filtradas.filter(v => (v.agencias?.ciudad || v.usuarios?.zona) === ciudadFiltro)
     }
 
     if (comercialFiltro !== 'todos') {
