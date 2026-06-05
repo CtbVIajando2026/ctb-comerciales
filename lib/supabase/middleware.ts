@@ -53,7 +53,7 @@ export async function updateSession(request: NextRequest) {
 
     const url = request.nextUrl.clone()
     if (rol === 'admin') {
-      url.pathname = '/admin/comerciales'
+      url.pathname = '/admin'
     } else {
       url.pathname = '/comerciales/dashboard'
     }

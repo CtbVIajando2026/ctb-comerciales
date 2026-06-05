@@ -35,22 +35,24 @@ export function BottomNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`flex flex-col items-center justify-start pt-1 w-full h-full space-y-1 transition-colors ${
-              isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+            className={`flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all ${
+              isActive 
+                ? 'text-primary bg-primary/15 scale-105 shadow-sm' 
+                : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
             }`}
           >
-            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-            <span className="text-[10px] font-medium">{tab.label}</span>
+            <Icon size={isActive ? 22 : 24} strokeWidth={isActive ? 2.5 : 2} />
+            <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{tab.label}</span>
           </Link>
         )
       })}
       
       <button
         onClick={handleLogout}
-        className="flex flex-col items-center justify-start pt-1 w-full h-full space-y-1 transition-colors text-muted-foreground hover:text-destructive"
+        className="flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all text-muted-foreground hover:text-destructive hover:bg-destructive/10"
       >
         <Power size={24} strokeWidth={2} />
-        <span className="text-[10px] font-medium">Salir</span>
+        <span className="text-[9px] mt-0.5 font-medium">Salir</span>
       </button>
     </div>
   )

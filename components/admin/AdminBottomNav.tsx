@@ -38,24 +38,24 @@ export function AdminBottomNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`flex flex-col items-center justify-start pt-1 w-full h-full space-y-1 transition-colors ${
-              isExactOrChild ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+            className={`flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all ${
+              isExactOrChild 
+                ? 'text-primary bg-primary/15 scale-105 shadow-sm' 
+                : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
             }`}
           >
-            <div className={`p-1.5 rounded-xl transition-all ${isExactOrChild ? 'bg-primary text-primary-foreground' : ''}`}>
-              <Icon size={22} strokeWidth={isExactOrChild ? 2.5 : 2} />
-            </div>
-            <span className={`text-[10px] font-medium ${isExactOrChild ? 'text-primary font-bold' : ''}`}>{tab.label}</span>
+            <Icon size={isExactOrChild ? 22 : 24} strokeWidth={isExactOrChild ? 2.5 : 2} />
+            <span className={`text-[9px] mt-0.5 ${isExactOrChild ? 'font-bold' : 'font-medium'}`}>{tab.label}</span>
           </Link>
         )
       })}
       
       <button
         onClick={handleLogout}
-        className="flex flex-col items-center justify-start pt-1 w-full h-full space-y-1 transition-colors text-muted-foreground hover:text-destructive"
+        className="flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all text-muted-foreground hover:text-destructive hover:bg-destructive/10"
       >
         <Power size={24} strokeWidth={2} />
-        <span className="text-[10px] font-medium">Salir</span>
+        <span className="text-[9px] mt-0.5 font-medium">Salir</span>
       </button>
     </div>
   )
