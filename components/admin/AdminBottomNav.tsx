@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { LayoutDashboard, Users, Power, Map as MapIcon, Activity, Trophy } from "lucide-react"
 import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect } from 'react'
 
 const tabs = [
   { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', color: 'text-violet-500', bg: 'bg-violet-500/15', exact: true },
@@ -17,6 +18,11 @@ export function AdminBottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -27,9 +33,9 @@ export function AdminBottomNav() {
     <div className="fixed bottom-0 left-0 w-full bg-background/80 backdrop-blur-xl border-t border-border/50 flex justify-around pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] min-h-[4.5rem] z-50 px-1 md:hidden shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)]">
       {tabs.map((tab) => {
         // Para "Inicio" (Dashboard), solo se activa en la ruta exacta /admin
-        const isActive = tab.exact 
+        const isActive = mounted && (tab.exact 
           ? pathname === '/admin'
-          : pathname.startsWith(tab.href)
+          : pathname.startsWith(tab.href))
         
         const Icon = tab.icon
         return (

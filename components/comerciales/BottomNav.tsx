@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Home, Plus, Building2, BarChart2, Power, Trophy } from "lucide-react"
 import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect } from 'react'
 
 const tabs = [
   { href: '/comerciales/dashboard', icon: Home, label: 'Inicio', color: 'text-violet-500', bg: 'bg-violet-500/15' },
@@ -17,7 +18,11 @@ export function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [mounted, setMounted] = useState(false)
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -27,7 +32,7 @@ export function BottomNav() {
   return (
     <div className="md:hidden fixed bottom-0 left-0 w-full bg-background/80 backdrop-blur-xl border-t border-border/50 flex justify-around pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] min-h-[4.5rem] z-50 px-1 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)]">
       {tabs.map((tab) => {
-        const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/')
+        const isActive = mounted && (pathname === tab.href || pathname.startsWith(tab.href + '/'))
         const Icon = tab.icon
         return (
           <Link
