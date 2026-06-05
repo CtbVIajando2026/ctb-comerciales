@@ -78,14 +78,23 @@ export function AgenciaBuscador({ onSelect, onCrearNueva }: AgenciaBuscadorProps
         </div>
       )}
 
-      {!buscando && haBuscado && resultados.length === 0 && (
-        <div className="text-center p-6 bg-card border border-border border-dashed rounded-xl space-y-4">
+      {!buscando && (!haBuscado || resultados.length === 0) && (
+        <div className="text-center p-6 bg-card border border-border border-dashed rounded-xl space-y-4 mt-4">
           <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center">
             <Building2 className="w-6 h-6 text-muted-foreground" />
           </div>
           <div>
-            <p className="font-medium text-lg">No encontramos "{query}"</p>
-            <p className="text-sm text-muted-foreground mt-1">¿Es una agencia nueva?</p>
+            {haBuscado && resultados.length === 0 ? (
+              <>
+                <p className="font-medium text-lg">No encontramos "{query}"</p>
+                <p className="text-sm text-muted-foreground mt-1">¿Es una agencia nueva?</p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-lg">¿Agencia no registrada?</p>
+                <p className="text-sm text-muted-foreground mt-1">Si la agencia no existe en el sistema, regístrala aquí.</p>
+              </>
+            )}
           </div>
           <Button onClick={onCrearNueva} className="w-full h-12" variant="outline">
             <Plus className="w-5 h-5 mr-2" /> Registrar nueva agencia
