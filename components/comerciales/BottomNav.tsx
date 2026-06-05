@@ -37,12 +37,12 @@ export function BottomNav() {
             href={tab.href}
             className={`flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all ${
               isActive 
-                ? 'text-primary bg-primary/15 scale-105 shadow-sm' 
-                : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
+                ? 'text-primary bg-primary/10 shadow-[inset_0px_2px_4px_rgba(0,0,0,0.05)] dark:shadow-[inset_0px_2px_4px_rgba(0,0,0,0.2)] font-bold' 
+                : 'text-muted-foreground hover:text-primary hover:bg-muted/50 font-medium'
             }`}
           >
             <Icon size={isActive ? 22 : 24} strokeWidth={isActive ? 2.5 : 2} />
-            <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{tab.label}</span>
+            <span className={`text-[9px] mt-0.5`}>{tab.label}</span>
           </Link>
         )
       })}

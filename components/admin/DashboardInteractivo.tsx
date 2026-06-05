@@ -71,16 +71,30 @@ export function DashboardInteractivo({ data }: { data: any }) {
 
   // Serie de tiempo (Power BI style)
   const visitasPorDia = useMemo(() => {
-    const map: Record<string, number> = {}
+    const map: Record<string, { date: Date, value: number }> = {}
     visitas.forEach((v: any) => {
-      if (v.estado === 'completada') {
-        const dia = format(new Date(v.created_at), "dd MMM")
-        map[dia] = (map[dia] || 0) + 1
+      // Filtrar solo las completadas reales (no actividades internas)
+      if (v.estado === 'completada' && !v.es_actividad) {
+        const dateStr = format(new Date(v.created_at), "yyyy-MM-dd")
+        if (!map[dateStr]) {
+          map[dateStr] = { date: new Date(v.created_at), value: 0 }
+        }
+        map[dateStr].value += 1
       }
     })
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .reverse() // Asumiendo que vienen ordenadas desc, revertimos para la gráfica (cronológico)
+    let dataArray = Object.values(map).sort((a, b) => a.date.getTime() - b.date.getTime())
+    
+    // Si solo hay 1 día, Recharts no dibuja la línea. Añadimos un día anterior con 0.
+    if (dataArray.length === 1) {
+      const yesterday = new Date(dataArray[0].date)
+      yesterday.setDate(yesterday.getDate() - 1)
+      dataArray.unshift({ date: yesterday, value: 0 })
+    }
+    
+    return dataArray.map(item => ({
+      name: format(item.date, "dd MMM", { locale: es }),
+      value: item.value
+    }))
   }, [visitas])
 
   const visitasGlobalesFiltradas = useMemo(() => {

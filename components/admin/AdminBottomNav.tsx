@@ -27,8 +27,6 @@ export function AdminBottomNav() {
   return (
     <div className="fixed bottom-0 left-0 w-full bg-background border-t border-border flex justify-around pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] min-h-[4.5rem] z-50 px-2 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
       {tabs.map((tab) => {
-        const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/') && tab.href !== '/admin'
-        // Fix para que /admin no se marque como activo si estamos en /admin/comerciales
         const isExactOrChild = tab.href === '/admin' 
           ? pathname === '/admin' 
           : pathname.startsWith(tab.href)
@@ -40,12 +38,12 @@ export function AdminBottomNav() {
             href={tab.href}
             className={`flex flex-col items-center justify-center pt-1.5 pb-1 w-16 h-[3.25rem] rounded-2xl transition-all ${
               isExactOrChild 
-                ? 'text-primary bg-primary/15 scale-105 shadow-sm' 
-                : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
+                ? 'text-primary bg-primary/10 shadow-[inset_0px_2px_4px_rgba(0,0,0,0.05)] dark:shadow-[inset_0px_2px_4px_rgba(0,0,0,0.2)] font-bold' 
+                : 'text-muted-foreground hover:text-primary hover:bg-muted/50 font-medium'
             }`}
           >
             <Icon size={isExactOrChild ? 22 : 24} strokeWidth={isExactOrChild ? 2.5 : 2} />
-            <span className={`text-[9px] mt-0.5 ${isExactOrChild ? 'font-bold' : 'font-medium'}`}>{tab.label}</span>
+            <span className={`text-[9px] mt-0.5`}>{tab.label}</span>
           </Link>
         )
       })}

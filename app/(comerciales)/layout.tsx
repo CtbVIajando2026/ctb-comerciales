@@ -1,5 +1,6 @@
 import { BottomNav } from "@/components/comerciales/BottomNav"
-import { OfflineSyncProvider } from "@/components/comerciales/OfflineSyncProvider"
+import { OfflineIndicator } from "@/components/comerciales/OfflineIndicator"
+import { OfflineSyncManager } from "@/components/comerciales/OfflineSyncManager"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
@@ -34,7 +35,8 @@ export default async function ComercialesLayout({
   return (
     <>
     <div className="flex h-[100dvh] bg-muted/20">
-      <OfflineSyncProvider />
+      <OfflineIndicator />
+      <OfflineSyncManager />
       
       {/* Sidebar - Oculto en móvil, visible en md+ */}
       <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border">

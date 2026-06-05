@@ -11,7 +11,9 @@ import { ArrowLeft, Clock } from "lucide-react"
 import Link from "next/link"
 import { iniciarVisita } from "@/app/(comerciales)/actions"
 import { AgenciaRegistroModal } from "@/components/comerciales/AgenciaRegistroModal"
+import { addToOfflineQueue } from "@/lib/offlineStore"
 import { toast } from "sonner"
+import { CheckOutForm } from "@/components/comerciales/CheckOutForm"
 
 export default function NuevaVisitaPage() {
   const router = useRouter()
@@ -19,6 +21,7 @@ export default function NuevaVisitaPage() {
   const [contactoSeleccionado, setContactoSeleccionado] = useState<any | null>(null)
   const [timerProgramado, setTimerProgramado] = useState<string>("none")
   const [modalRegistroAbierto, setModalRegistroAbierto] = useState(false)
+  const [offlineTempId, setOfflineTempId] = useState<string | null>(null)
 
   const handleCrearNuevaAgencia = () => {
     setModalRegistroAbierto(true)
@@ -61,26 +64,20 @@ export default function NuevaVisitaPage() {
       router.push(`/comerciales/visitas/${nuevaVisita.id}`)
     } catch (e: any) {
       console.error(e)
-      // Si falla por falta de internet, guardamos en local y redirigimos al dashboard
+      // Si falla por falta de internet, guardamos en local y NO redirigimos
       if (e.message?.includes('fetch') || !navigator.onLine) {
-        toast.warning("Sin conexión. Guardando visita localmente.", { description: "Se sincronizará cuando recuperes el internet." })
+        toast.warning("Sin conexión. Guardando localmente.", { description: "Ahora puedes llenar tus notas de salida (Check-out)." })
         
-        const pendingQueueStr = localStorage.getItem('offline_checkins_queue')
-        const pendingQueue = pendingQueueStr ? JSON.parse(pendingQueueStr) : []
-        
-        pendingQueue.push({
-          id_temporal: Date.now().toString(),
-          timestamp: new Date().toISOString(),
+        const tempId = `temp_${Date.now()}`
+        addToOfflineQueue('CHECKIN', {
           agencia_id: agenciaSeleccionada.id,
-          agencia_nombre: agenciaSeleccionada.nombre,
           contacto_id: contactoSeleccionado?.id,
           gps_lat: lat,
           gps_lng: lng,
           timer_programado_min: timerProgramado === "none" ? null : parseInt(timerProgramado, 10)
-        })
+        }, tempId)
         
-        localStorage.setItem('offline_checkins_queue', JSON.stringify(pendingQueue))
-        router.push('/comerciales/dashboard')
+        setOfflineTempId(tempId)
       } else {
         toast.error("Error", { description: e.message || "Hubo un error al iniciar la visita." })
       }
@@ -100,7 +97,7 @@ export default function NuevaVisitaPage() {
       </header>
 
       <main className="p-4 space-y-8 max-w-lg mx-auto pb-32">
-        {!agenciaSeleccionada ? (
+        {!offlineTempId && !agenciaSeleccionada && (
           <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h2 className="text-2xl font-bold mb-6">¿A qué agencia visitás?</h2>
             <AgenciaBuscador 
@@ -108,7 +105,9 @@ export default function NuevaVisitaPage() {
               onCrearNueva={handleCrearNuevaAgencia} 
             />
           </section>
-        ) : (
+        )}
+        
+        {!offlineTempId && agenciaSeleccionada && (
           <section className="animate-in slide-in-from-right-4 duration-300 space-y-8">
             <div className="bg-muted p-5 rounded-2xl border border-border">
               <div className="flex justify-between items-start mb-1">
@@ -163,6 +162,32 @@ export default function NuevaVisitaPage() {
               <p className="text-center text-[10px] text-muted-foreground mt-3 px-4 uppercase font-bold tracking-wider">
                 Tu ubicación GPS será guardada
               </p>
+            </div>
+          </section>
+        )}
+
+        {offlineTempId && (
+          <section className="animate-in slide-in-from-bottom-4 duration-500 mt-8">
+            <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl mb-6">
+              <h3 className="font-bold text-amber-600 dark:text-amber-400 mb-1">Check-in Local Registrado</h3>
+              <p className="text-sm text-amber-700/80 dark:text-amber-500/80">
+                Tu hora de entrada ha sido guardada en el celular. Por favor, llena tus notas de salida aquí mismo cuando termines.
+              </p>
+            </div>
+            
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
+              <h3 className="text-lg font-bold mb-4">Notas de Salida (Offline)</h3>
+              <CheckOutForm onSubmit={(data) => {
+                addToOfflineQueue('CHECKOUT', {
+                  visitaId: offlineTempId,
+                  data: {
+                    ...data,
+                    hora_checkout_local: new Date().toISOString()
+                  }
+                })
+                toast.success("Visita completada localmente", { description: "Se sincronizará cuando recuperes el internet." })
+                router.push('/comerciales/dashboard')
+              }} esActividad={false} catalogoRegalos={[]} />
             </div>
           </section>
         )}

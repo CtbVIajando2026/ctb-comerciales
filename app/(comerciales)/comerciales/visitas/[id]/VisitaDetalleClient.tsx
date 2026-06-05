@@ -10,6 +10,7 @@ import { CheckOutForm } from "@/components/comerciales/CheckOutForm"
 import { cerrarVisita } from "@/app/(comerciales)/actions"
 import { toast } from "sonner"
 import confetti from "canvas-confetti"
+import { addToOfflineQueue } from "@/lib/offlineStore"
 
 export function VisitaDetalleClient({ visita, catalogoRegalos }: { visita: any, catalogoRegalos?: any[] }) {
   const router = useRouter()
@@ -46,15 +47,12 @@ export function VisitaDetalleClient({ visita, catalogoRegalos }: { visita: any, 
       }
 
       if (!navigator.onLine) {
-        // Guardado Offline
-        const currentQueueStr = localStorage.getItem("offline_visits_queue")
-        const queue = currentQueueStr ? JSON.parse(currentQueueStr) : []
-        queue.push({
+        // Guardado Offline usando el nuevo store
+        addToOfflineQueue('CHECKOUT', {
           visitaId: visita.id,
           data: payload,
           agenciaNombre: visita.es_actividad ? visita.titulo_actividad : visita.agencia?.nombre
         })
-        localStorage.setItem("offline_visits_queue", JSON.stringify(queue))
         
         toast.success("Guardado Offline", { 
           description: "Sin conexión. Se guardó en el celular y se sincronizará automáticamente.",

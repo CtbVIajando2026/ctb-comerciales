@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "sonner"
 import { MapPin, User, Building, Calendar, Users, Plus, Trash2, Phone, Mail } from "lucide-react"
 import { crearAgenciaRapida } from "@/app/(comerciales)/actions_agencias"
+import { addToOfflineQueue } from "@/lib/offlineStore"
 
 interface AgenciaRegistroModalProps {
   isOpen: boolean
@@ -74,7 +75,7 @@ export function AgenciaRegistroModal({ isOpen, onClose, onSuccess, ciudadInicial
     }
 
     try {
-      const { agencia, contacto } = await crearAgenciaRapida({
+      const payload = {
         nombre,
         direccion,
         ciudad,
@@ -87,7 +88,32 @@ export function AgenciaRegistroModal({ isOpen, onClose, onSuccess, ciudadInicial
         otrosContactos: otrosContactos.filter(c => c.nombre.trim() !== ""),
         gps_lat: lat,
         gps_lng: lng
-      })
+      }
+
+      if (!navigator.onLine) {
+        const tempId = `temp_agencia_${Date.now()}`
+        addToOfflineQueue('NUEVA_AGENCIA', payload, tempId)
+        toast.success("Agencia Guardada Localmente", { description: `${nombre} será sincronizada cuando recuperes internet.` })
+        
+        onSuccess(
+          { id: tempId, nombre, direccion, ciudad }, 
+          gerenteNombre ? { id: `temp_contacto_${Date.now()}`, nombre: gerenteNombre } : null
+        )
+        onClose()
+        
+        setNombre("")
+        setDireccion("")
+        setCiudad(ciudadInicial)
+        setAniversario("")
+        setGerenteNombre("")
+        setGerenteCumpleanos("")
+        setGerenteTelefono("")
+        setGerenteEmail("")
+        setOtrosContactos([])
+        return
+      }
+
+      const { agencia, contacto } = await crearAgenciaRapida(payload)
       
       toast.success("Agencia Registrada", { description: `${nombre} ha sido añadida a la base de datos.` })
       onSuccess(agencia, contacto)
