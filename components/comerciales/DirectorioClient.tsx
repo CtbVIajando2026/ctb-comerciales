@@ -21,18 +21,28 @@ interface Agencia {
 export function DirectorioClient({ agenciasIniciales, ciudadComercial = "Quito" }: { agenciasIniciales: Agencia[], ciudadComercial?: string }) {
   const [search, setSearch] = useState("")
   const [filtroCiudad, setFiltroCiudad] = useState("Todas")
-  const [filtroEstado, setFiltroEstado] = useState("Activas")
+  const [filtroTemperatura, setFiltroTemperatura] = useState("Todas")
   const [showFiltros, setShowFiltros] = useState(false)
   const [isRegistroOpen, setIsRegistroOpen] = useState(false)
   const router = useRouter()
 
-  const ciudadesUnicas = Array.from(new Set(agenciasIniciales.map(a => a.ciudad || 'Quito'))).sort()
+  const normalizarCiudad = (c: string | undefined | null) => {
+    if (!c) return 'Quito'
+    const trimmed = c.trim()
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
+  }
+
+  const ciudadesUnicas = Array.from(new Set(agenciasIniciales.map(a => normalizarCiudad(a.ciudad)))).sort()
 
   const filtradas = agenciasIniciales.filter(a => {
     const matchSearch = a.nombre.toLowerCase().includes(search.toLowerCase())
-    const matchCiudad = filtroCiudad === "Todas" || (a.ciudad || 'Quito') === filtroCiudad
-    const matchEstado = filtroEstado === "Todas" || (filtroEstado === "Activas" ? a.activa : !a.activa)
-    return matchSearch && matchCiudad && matchEstado
+    const ciudadAgencia = normalizarCiudad(a.ciudad)
+    const matchCiudad = filtroCiudad === "Todas" || ciudadAgencia === normalizarCiudad(filtroCiudad)
+    const tempAgencia = (a.temperatura || 'fria').toLowerCase()
+    const matchTemp = filtroTemperatura === "Todas" || tempAgencia === filtroTemperatura.toLowerCase()
+    
+    // Solo mostrar las agencias activas en el directorio general
+    return matchSearch && matchCiudad && matchTemp && a.activa
   })
 
   const handleAgenciaRegistrada = (agencia: any) => {
@@ -99,15 +109,16 @@ export function DirectorioClient({ agenciasIniciales, ciudadComercial = "Quito" 
             </select>
           </div>
           <div className="flex-1 space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Estado</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Temperatura</label>
             <select 
               className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
+              value={filtroTemperatura}
+              onChange={(e) => setFiltroTemperatura(e.target.value)}
             >
-              <option value="Activas">Solo Activas</option>
-              <option value="Inactivas">Solo Inactivas</option>
               <option value="Todas">Todas</option>
+              <option value="activa">Activa</option>
+              <option value="tibia">Tibia</option>
+              <option value="fria">Fría</option>
             </select>
           </div>
         </div>
