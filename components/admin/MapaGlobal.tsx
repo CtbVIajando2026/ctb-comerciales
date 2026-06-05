@@ -202,18 +202,23 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
           showCoverageOnHover={false}
           animate
         >
-          {visitasConGps.map((v, index) => {
-            const esFraude = v.alerta_fraude_checkin || v.alerta_fraude_checkout
-            const esActiva = v.estado === 'abierta'
-            const color = esFraude ? '#ef4444' : (esActiva ? '#3b82f6' : '#10b981')
+          {Object.keys(visitasPorComercial).flatMap((comercialId) => {
+            const rutas = visitasPorComercial[comercialId].sort(
+              (a: any, b: any) => new Date(a.hora_checkin).getTime() - new Date(b.hora_checkin).getTime()
+            )
 
-            return (
-              <Marker
-                key={v.id}
-                position={[v.gps_lat, v.gps_lng]}
-                icon={createIcon(color, v.es_actividad, index + 1)}
-              >
-                <Popup className="rounded-xl">
+            return rutas.map((v: any, index: number) => {
+              const esFraude = v.alerta_fraude_checkin || v.alerta_fraude_checkout
+              const esActiva = v.estado === 'abierta'
+              const color = esFraude ? '#ef4444' : (esActiva ? '#3b82f6' : '#10b981')
+
+              return (
+                <Marker
+                  key={v.id}
+                  position={[v.gps_lat, v.gps_lng]}
+                  icon={createIcon(color, v.es_actividad, index + 1)}
+                >
+                  <Popup className="rounded-xl">
                   <div className="p-1 min-w-[200px]">
                     <div className="flex items-center mb-2 border-b border-border pb-2">
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
@@ -263,7 +268,8 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
                 </Popup>
               </Marker>
             )
-          })}
+          })
+        })}
         </MarkerClusterGroup>
 
         {/* ─── ROUTE LINES & DISTANCE LABELS (outside cluster) ─── */}
