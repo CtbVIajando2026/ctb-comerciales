@@ -32,7 +32,7 @@ export function BottomNav() {
   return (
     <div className="md:hidden fixed bottom-0 left-0 w-full bg-background/80 backdrop-blur-xl border-t border-border/50 flex justify-around pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] min-h-[4.5rem] z-50 px-1 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)]">
       {tabs.map((tab) => {
-        const isActive = mounted && (pathname === tab.href || pathname.startsWith(tab.href + '/'))
+        const isActive = mounted && pathname && (pathname === tab.href || pathname.startsWith(tab.href + '/'))
         const Icon = tab.icon
         return (
           <Link

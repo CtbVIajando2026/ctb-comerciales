@@ -33,7 +33,7 @@ export function AdminBottomNav() {
     <div className="fixed bottom-0 left-0 w-full bg-background/80 backdrop-blur-xl border-t border-border/50 flex justify-around pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] min-h-[4.5rem] z-50 px-1 md:hidden shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)]">
       {tabs.map((tab) => {
         // Para "Inicio" (Dashboard), solo se activa en la ruta exacta /admin
-        const isActive = mounted && (tab.exact 
+        const isActive = mounted && pathname && (tab.exact 
           ? pathname === '/admin'
           : pathname.startsWith(tab.href))
         

@@ -16,10 +16,17 @@ const links = [
   { href: '/admin/alertas', icon: ShieldAlert, label: 'Alertas de Fraude', isDanger: true },
 ]
 
+import { useState, useEffect } from 'react'
+
 export function AdminSidebar({ userName }: { userName: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -42,9 +49,9 @@ export function AdminSidebar({ userName }: { userName: string }) {
       
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {links.map((link) => {
-          const isExactOrChild = link.href === '/admin' 
+          const isExactOrChild = mounted && pathname && (link.href === '/admin' 
             ? pathname === '/admin' 
-            : pathname.startsWith(link.href)
+            : pathname.startsWith(link.href))
             
           const Icon = link.icon
 
