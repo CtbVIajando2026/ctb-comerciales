@@ -1,16 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { login } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Building2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -18,17 +19,47 @@ export default function LoginPage() {
     setError(null)
     
     const formData = new FormData(e.currentTarget)
-    const result = await login(formData)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
     
-    if (result?.error) {
-      setError(result.error)
+    if (authError) {
+      setError(authError.message)
       setLoading(false)
-    } else if (result?.success) {
-      if (result.rol === 'admin') {
-        window.location.href = '/admin'
-      } else {
-        window.location.href = '/comerciales/dashboard'
+      return
+    }
+
+    if (data.user) {
+      // Obtener el rol del usuario
+      const { data: usuario, error: dbError } = await supabase
+        .from('usuarios')
+        .select('rol')
+        .eq('id', data.user.id)
+        .single()
+
+      if (dbError) {
+        setError("Error al verificar perfil de usuario.")
+        setLoading(false)
+        return
       }
+
+      const rol = usuario?.rol
+
+      // Pequeño timeout para dar margen a que se procesen las cookies
+      setTimeout(() => {
+        if (rol === 'admin') {
+          window.location.href = '/admin'
+        } else {
+          window.location.href = '/comerciales/dashboard'
+        }
+      }, 150)
+    } else {
+      setError("No se pudo iniciar sesión.")
+      setLoading(false)
     }
   }
 

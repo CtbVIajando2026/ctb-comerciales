@@ -34,9 +34,18 @@ export async function obtenerNotificaciones(comercialId: string): Promise<Notifi
     .from('usuarios_perfil')
     .select('ciudad_zona')
     .eq('id', comercialId)
-    .single()
+    .maybeSingle()
     
-  const ciudadComercial = perfil?.ciudad_zona || 'Quito'
+  let ciudadComercial = perfil?.ciudad_zona
+
+  if (!ciudadComercial) {
+    const { data: usuario } = await supabase
+      .from('usuarios')
+      .select('zona')
+      .eq('id', comercialId)
+      .maybeSingle()
+    ciudadComercial = usuario?.zona || 'Quito'
+  }
 
   // 1. Seguimientos (Próximos pasos de visitas) - Ventana de 7 días, propios del comercial
   const { data: seguimientos } = await supabase

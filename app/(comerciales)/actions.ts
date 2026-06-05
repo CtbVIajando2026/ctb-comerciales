@@ -354,11 +354,29 @@ export async function obtenerMeticasDashboard() {
     .single()
 
   // 5. Perfil
-  const { data: perfil } = await supabase
+  let perfil = null
+  const { data: perfilData } = await supabase
     .from('usuarios_perfil')
     .select('nombre_completo, ciudad_zona')
     .eq('id', user.id)
     .maybeSingle()
+
+  perfil = perfilData
+
+  if (!perfil) {
+    const { data: usuarioData } = await supabase
+      .from('usuarios')
+      .select('nombre, zona')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (usuarioData) {
+      perfil = {
+        nombre_completo: usuarioData.nombre,
+        ciudad_zona: usuarioData.zona
+      }
+    }
+  }
 
   return {
     visitas: visitas || [], // Esto ahora incluye visitas y actividades
