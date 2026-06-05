@@ -47,24 +47,64 @@ const LivePopupTimer = ({ horaCheckin }: { horaCheckin: string }) => {
 // ─────────────────────────────────────────
 // Custom marker icon (numbered sequence dot)
 // ─────────────────────────────────────────
-const createIcon = (color: string, esActividad: boolean, label?: number) => L.divIcon({
-  className: 'custom-div-icon',
-  html: `
-    <div style="
-      background-color: ${color};
-      width: 28px; height: 28px;
-      border-radius: ${esActividad ? '7px' : '50%'};
-      border: 2.5px solid white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.45);
-      display: flex; align-items: center; justify-content: center;
-      color: white; font-weight: 900; font-size: 12px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-    ">${label ?? ''}</div>
-  `,
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-  popupAnchor: [0, -14],
-})
+const createIcon = (color: string, esActividad: boolean, label?: number, nombre?: string) => {
+  const firstName = nombre ? nombre.split(' ')[0] : ''
+  const showNameTag = label === 1 && firstName
+
+  return L.divIcon({
+    className: 'custom-div-icon',
+    html: `
+      <div style="position:relative; width: 28px; height: 28px;">
+        ${showNameTag ? `
+          <div style="
+            position: absolute;
+            bottom: 34px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: white;
+            color: ${color};
+            font-size: 10px;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            white-space: nowrap;
+            border: 1.5px solid ${color};
+            z-index: 20;
+          ">${firstName}</div>
+          <div style="
+            position: absolute;
+            bottom: 29px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; 
+            height: 0; 
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid ${color};
+            z-index: 20;
+          "></div>
+        ` : ''}
+        <div style="
+          position: absolute;
+          top: 0; left: 0;
+          background-color: ${color};
+          width: 28px; height: 28px;
+          border-radius: ${esActividad ? '7px' : '50%'};
+          border: 2.5px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+          display: flex; align-items: center; justify-content: center;
+          color: white; font-weight: 900; font-size: 12px;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+          z-index: 10;
+        ">${label ?? ''}</div>
+      </div>
+    `,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -14],
+  })
+}
 
 // ─────────────────────────────────────────
 // Cluster icon — looks like a STACKED GROUP BADGE
@@ -216,7 +256,7 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
                 <Marker
                   key={v.id}
                   position={[v.gps_lat, v.gps_lng]}
-                  icon={createIcon(color, v.es_actividad, index + 1)}
+                  icon={createIcon(color, v.es_actividad, index + 1, v.usuarios?.nombre)}
                 >
                   <Popup className="rounded-xl">
                   <div className="p-1 min-w-[200px]">
