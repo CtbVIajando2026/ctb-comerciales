@@ -11,7 +11,7 @@ export default async function Home() {
 
   // Verificar el rol del usuario
   const { data: perfil } = await supabase
-    .from('usuarios_perfil')
+    .from('usuarios')
     .select('rol')
     .eq('id', user.id)
     .single()

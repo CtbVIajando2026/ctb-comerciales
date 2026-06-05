@@ -14,11 +14,29 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   // Verificar si es admin
-  const { data: perfil } = await supabase
+  let perfil = null;
+  const { data: perfilData } = await supabase
     .from('usuarios_perfil')
     .select('rol, nombre_completo')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
+
+  perfil = perfilData;
+
+  if (!perfil) {
+    const { data: usuarioData } = await supabase
+      .from('usuarios')
+      .select('rol, nombre')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (usuarioData) {
+      perfil = {
+        rol: usuarioData.rol,
+        nombre_completo: usuarioData.nombre
+      }
+    }
+  }
 
   if (perfil?.rol !== 'admin') {
     // Si no es admin, lo devolvemos a la zona de comerciales

@@ -19,13 +19,28 @@ export default async function ComercialesLayout({
   let perfil = null;
 
   if (user) {
-    const { data } = await supabase
+    const { data: perfilData } = await supabase
       .from('usuarios_perfil')
       .select('rol, nombre_completo')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
       
-    perfil = data;
+    perfil = perfilData;
+
+    if (!perfil) {
+      const { data: usuarioData } = await supabase
+        .from('usuarios')
+        .select('rol, nombre')
+        .eq('id', user.id)
+        .maybeSingle()
+        
+      if (usuarioData) {
+        perfil = {
+          rol: usuarioData.rol,
+          nombre_completo: usuarioData.nombre
+        }
+      }
+    }
 
     if (perfil?.rol === 'admin') {
       redirect('/admin')

@@ -18,8 +18,6 @@ export function BottomNav() {
   const router = useRouter()
   const supabase = createClient()
 
-  // Only show on comerciales routes
-  if (!pathname.startsWith('/comerciales')) return null
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
