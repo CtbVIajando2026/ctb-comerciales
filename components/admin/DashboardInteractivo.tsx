@@ -301,7 +301,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
                 <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Tendencia de Visitas Exitosas</h3>
               </div>
             </div>
-            <div className="flex-1 w-full min-h-[200px]">
+            <div className="w-full h-[250px] mt-2">
               {visitasPorDia.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={visitasPorDia} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
