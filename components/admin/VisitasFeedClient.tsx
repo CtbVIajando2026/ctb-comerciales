@@ -15,13 +15,13 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
   const [showFiltros, setShowFiltros] = useState(false)
 
   // Extract unique filter options
-  const ciudadesUnicas = Array.from(new Set(visitasIniciales.map(v => v.agencias?.ciudad || v.usuarios?.zona || 'Quito').filter(Boolean))).sort()
-  const comercialesUnicos = Array.from(new Set(visitasIniciales.map(v => v.usuarios?.nombre).filter(Boolean))).sort()
+  const ciudadesUnicas = Array.from(new Set(visitasIniciales.map(v => (v.agencias?.ciudad || v.usuarios?.zona || 'Quito').trim()).filter(Boolean))).sort()
+  const comercialesUnicos = Array.from(new Set(visitasIniciales.map(v => v.usuarios?.nombre?.trim()).filter(Boolean))).sort()
 
   const filtradas = visitasIniciales.filter(v => {
     const agenciaNombre = v.agencias?.nombre || v.titulo_actividad || ""
-    const comercialNombre = v.usuarios?.nombre || ""
-    const ciudad = v.agencias?.ciudad || v.usuarios?.zona || 'Quito'
+    const comercialNombre = v.usuarios?.nombre?.trim() || ""
+    const ciudad = (v.agencias?.ciudad || v.usuarios?.zona || 'Quito').trim()
     const fecha = new Date(v.created_at)
 
     // Text search
@@ -30,10 +30,10 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
                         (v.observaciones || "").toLowerCase().includes(search.toLowerCase())
 
     // City
-    const matchCiudad = filtroCiudad === "Todas" || ciudad === filtroCiudad
+    const matchCiudad = filtroCiudad === "Todas" || ciudad === filtroCiudad.trim()
 
     // Comercial
-    const matchComercial = filtroComercial === "Todos" || comercialNombre === filtroComercial
+    const matchComercial = filtroComercial === "Todos" || comercialNombre === filtroComercial.trim()
 
     // Time
     let matchTiempo = true
@@ -46,11 +46,11 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
     } else if (filtroTiempo === "Mes") {
       matchTiempo = fecha.getMonth() === hoy.getMonth() && fecha.getFullYear() === hoy.getFullYear()
     } else if (filtroTiempo === "Especifica" && fechaEspecifica) {
-      const targetDate = new Date(`${fechaEspecifica}T00:00:00`)
-      matchTiempo = 
-        fecha.getDate() === targetDate.getDate() &&
-        fecha.getMonth() === targetDate.getMonth() &&
-        fecha.getFullYear() === targetDate.getFullYear()
+      const yyyy = fecha.getFullYear()
+      const mm = String(fecha.getMonth() + 1).padStart(2, '0')
+      const dd = String(fecha.getDate()).padStart(2, '0')
+      const fechaFormato = `${yyyy}-${mm}-${dd}`
+      matchTiempo = fechaFormato === fechaEspecifica
     }
 
     return matchSearch && matchCiudad && matchComercial && matchTiempo

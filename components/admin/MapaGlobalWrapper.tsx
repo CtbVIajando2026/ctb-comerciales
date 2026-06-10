@@ -43,10 +43,10 @@ export function MapaGlobalWrapper({
 
   const ciudades = useMemo(() => {
     if (todosComerciales && todosComerciales.length > 0) {
-      const setCiudades = new Set(todosComerciales.map((c: any) => c.zona).filter(Boolean))
+      const setCiudades = new Set(todosComerciales.map((c: any) => c.zona?.trim()).filter(Boolean))
       return Array.from(setCiudades) as string[]
     }
-    const setCiudades = new Set(visitas.map((v: any) => v.agencias?.ciudad || v.usuarios?.zona).filter(Boolean))
+    const setCiudades = new Set(visitas.map((v: any) => (v.agencias?.ciudad || v.usuarios?.zona)?.trim()).filter(Boolean))
     return Array.from(setCiudades) as string[]
   }, [visitas, todosComerciales])
 
@@ -54,16 +54,16 @@ export function MapaGlobalWrapper({
     if (todosComerciales && todosComerciales.length > 0) {
       let list = todosComerciales
       if (ciudadFiltro !== 'todas') {
-        list = list.filter((c: any) => c.zona === ciudadFiltro)
+        list = list.filter((c: any) => c.zona?.trim() === ciudadFiltro.trim())
       }
-      const setComerciales = new Set(list.map((c: any) => c.nombre).filter(Boolean))
+      const setComerciales = new Set(list.map((c: any) => c.nombre?.trim()).filter(Boolean))
       return Array.from(setComerciales) as string[]
     }
     let list = visitas
     if (ciudadFiltro !== 'todas') {
-      list = list.filter(v => (v.agencias?.ciudad || v.usuarios?.zona) === ciudadFiltro)
+      list = list.filter(v => (v.agencias?.ciudad || v.usuarios?.zona)?.trim() === ciudadFiltro.trim())
     }
-    const setComerciales = new Set(list.map((v: any) => v.usuarios?.nombre).filter(Boolean))
+    const setComerciales = new Set(list.map((v: any) => v.usuarios?.nombre?.trim()).filter(Boolean))
     return Array.from(setComerciales) as string[]
   }, [visitas, ciudadFiltro, todosComerciales])
 
@@ -93,11 +93,11 @@ export function MapaGlobalWrapper({
     }
 
     if (ciudadFiltro !== 'todas') {
-      filtradas = filtradas.filter(v => (v.agencias?.ciudad || v.usuarios?.zona) === ciudadFiltro)
+      filtradas = filtradas.filter(v => (v.agencias?.ciudad || v.usuarios?.zona)?.trim() === ciudadFiltro.trim())
     }
 
     if (comercialFiltro !== 'todos') {
-      filtradas = filtradas.filter(v => v.usuarios?.nombre === comercialFiltro)
+      filtradas = filtradas.filter(v => v.usuarios?.nombre?.trim() === comercialFiltro.trim())
     }
 
     if (search) {
