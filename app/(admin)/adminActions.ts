@@ -158,15 +158,21 @@ export async function actualizarComercialAdmin(data: {
   return { success: true }
 }
 
-export async function obtenerMetricasEnVivo() {
+export async function obtenerMetricasEnVivo(fechaStr?: string) {
   const supabase = await createAdminClient()
   
-  const now = new Date()
-  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
-  const ecDateStr = formatter.format(now) // "YYYY-MM-DD" en Ecuador
-  const inicioDiaEcuador = new Date(`${ecDateStr}T00:00:00-05:00`).toISOString()
+  // Si no se proporciona fechaStr, usamos el día de hoy en Ecuador
+  let targetDateStr = fechaStr
+  if (!targetDateStr) {
+    const now = new Date()
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+    targetDateStr = formatter.format(now) // "YYYY-MM-DD"
+  }
+  
+  const inicioDiaEcuador = new Date(`${targetDateStr}T00:00:00-05:00`).toISOString()
+  const finDiaEcuador = new Date(`${targetDateStr}T23:59:59.999-05:00`).toISOString()
 
-  // 1. Obtener visitas de hoy
+  // 1. Obtener visitas de ese día
   const { data: visitas, error } = await supabase
     .from('visitas')
     .select(`
@@ -186,6 +192,7 @@ export async function obtenerMetricasEnVivo() {
       agencias(nombre)
     `)
     .gte('created_at', inicioDiaEcuador)
+    .lte('created_at', finDiaEcuador)
 
   // 2. Obtener lista de todos los comerciales para los filtros
   const { data: todosComerciales } = await supabase

@@ -24,10 +24,12 @@ const MapaGlobal = dynamic(() => import('./MapaGlobal'), {
 
 export function MapaGlobalWrapper({ 
   visitas, 
-  todosComerciales = [] 
+  todosComerciales = [],
+  fechaSeleccionada
 }: { 
   visitas: any[]
   todosComerciales?: any[] 
+  fechaSeleccionada: string
 }) {
   const router = useRouter()
   const [filtro, setFiltro] = useState<'todas' | 'completadas' | 'curso' | 'alerta'>('todas')
@@ -116,8 +118,22 @@ export function MapaGlobalWrapper({
       {/* HEADER / CONTROLES */}
       <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between p-3 sm:p-4 border-b border-border/50 bg-background/40 backdrop-blur-xl gap-3 shrink-0 w-full relative z-20">
         
-        {/* ROW 1: SELECTS */}
-        <div className="flex items-center gap-2 sm:gap-3 w-full xl:w-auto">
+        {/* ROW 1: SELECTS & DATE */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full xl:w-auto">
+          {/* DATE PICKER */}
+          <div className="relative shrink-0 flex items-center">
+            <input
+              type="date"
+              value={fechaSeleccionada}
+              onChange={(e) => {
+                const nuevaFecha = e.target.value
+                if (nuevaFecha) {
+                  router.push(`/admin/mapa?fecha=${nuevaFecha}`)
+                }
+              }}
+              className="h-[36px] px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-muted/40 hover:bg-muted/60 border border-border/50 shadow-sm focus:ring-0 focus:outline-none focus:ring-primary/50 text-foreground transition-all cursor-pointer"
+            />
+          </div>
           <Select value={ciudadFiltro} onValueChange={(v) => setCiudadFiltro(v || 'todas')}>
             <SelectTrigger className="flex-1 xl:w-[150px] h-[36px] px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-muted/40 hover:bg-muted/60 border border-border/50 shadow-sm shrink-0 focus:ring-0 focus:ring-offset-0 truncate transition-all flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-primary opacity-70 hidden sm:block shrink-0" />
