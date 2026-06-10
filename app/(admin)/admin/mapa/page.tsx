@@ -14,7 +14,10 @@ export default async function MapaPage() {
       </div>
       
       <div className="flex-1 bg-card rounded-3xl border border-border shadow-sm flex flex-col">
-        <MapaGlobalWrapper visitas={data.visitas || []} />
+        <MapaGlobalWrapper 
+          visitas={data.visitas || []} 
+          todosComerciales={(data as any).todosComerciales || []} 
+        />
       </div>
     </div>
   )

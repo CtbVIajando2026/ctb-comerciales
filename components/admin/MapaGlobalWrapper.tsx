@@ -22,7 +22,13 @@ const MapaGlobal = dynamic(() => import('./MapaGlobal'), {
   )
 })
 
-export function MapaGlobalWrapper({ visitas }: { visitas: any[] }) {
+export function MapaGlobalWrapper({ 
+  visitas, 
+  todosComerciales = [] 
+}: { 
+  visitas: any[]
+  todosComerciales?: any[] 
+}) {
   const router = useRouter()
   const [filtro, setFiltro] = useState<'todas' | 'completadas' | 'curso' | 'alerta'>('todas')
   const [search, setSearch] = useState('')
@@ -32,18 +38,30 @@ export function MapaGlobalWrapper({ visitas }: { visitas: any[] }) {
   const [tipoActividadFiltro, setTipoActividadFiltro] = useState<'todas' | 'agencias' | 'internas'>('todas')
 
   const ciudades = useMemo(() => {
+    if (todosComerciales && todosComerciales.length > 0) {
+      const setCiudades = new Set(todosComerciales.map((c: any) => c.zona).filter(Boolean))
+      return Array.from(setCiudades) as string[]
+    }
     const setCiudades = new Set(visitas.map((v: any) => v.agencias?.ciudad || v.usuarios?.zona).filter(Boolean))
     return Array.from(setCiudades) as string[]
-  }, [visitas])
+  }, [visitas, todosComerciales])
 
   const comercialesFiltrados = useMemo(() => {
+    if (todosComerciales && todosComerciales.length > 0) {
+      let list = todosComerciales
+      if (ciudadFiltro !== 'todas') {
+        list = list.filter((c: any) => c.zona === ciudadFiltro)
+      }
+      const setComerciales = new Set(list.map((c: any) => c.nombre).filter(Boolean))
+      return Array.from(setComerciales) as string[]
+    }
     let list = visitas
     if (ciudadFiltro !== 'todas') {
       list = list.filter(v => (v.agencias?.ciudad || v.usuarios?.zona) === ciudadFiltro)
     }
     const setComerciales = new Set(list.map((v: any) => v.usuarios?.nombre).filter(Boolean))
     return Array.from(setComerciales) as string[]
-  }, [visitas, ciudadFiltro])
+  }, [visitas, ciudadFiltro, todosComerciales])
 
   const visitasFiltradas = useMemo(() => {
     let filtradas = visitas.filter(v => {

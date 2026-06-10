@@ -166,6 +166,7 @@ export async function obtenerMetricasEnVivo() {
   const ecDateStr = formatter.format(now) // "YYYY-MM-DD" en Ecuador
   const inicioDiaEcuador = new Date(`${ecDateStr}T00:00:00-05:00`).toISOString()
 
+  // 1. Obtener visitas de hoy
   const { data: visitas, error } = await supabase
     .from('visitas')
     .select(`
@@ -186,9 +187,22 @@ export async function obtenerMetricasEnVivo() {
     `)
     .gte('created_at', inicioDiaEcuador)
 
+  // 2. Obtener lista de todos los comerciales para los filtros
+  const { data: todosComerciales } = await supabase
+    .from('usuarios')
+    .select('nombre, zona')
+    .eq('rol', 'comercial')
+    .order('nombre')
+
   if (error) {
     console.error("Error obteniendo métricas en vivo:", error)
-    return { visitas: [], activas: 0, comercialesEnRuta: 0, alertas: 0 }
+    return { 
+      visitas: [], 
+      activas: 0, 
+      comercialesEnRuta: 0, 
+      alertas: 0,
+      todosComerciales: todosComerciales || []
+    }
   }
 
   const activas = visitas.filter(v => v.estado === 'abierta').length
@@ -204,7 +218,8 @@ export async function obtenerMetricasEnVivo() {
     visitas,
     activas,
     comercialesEnRuta,
-    alertas
+    alertas,
+    todosComerciales: todosComerciales || []
   }
 }
 
