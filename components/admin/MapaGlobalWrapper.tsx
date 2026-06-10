@@ -116,10 +116,10 @@ export function MapaGlobalWrapper({
   return (
     <div className="flex flex-col flex-1 bg-card rounded-3xl overflow-hidden relative">
       {/* HEADER / CONTROLES */}
-      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between p-3 sm:p-4 border-b border-border/50 bg-background/40 backdrop-blur-xl gap-3 shrink-0 w-full relative z-20">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between p-3 sm:p-4 border-b border-border/50 bg-background/40 backdrop-blur-xl gap-3 shrink-0 w-full relative z-20">
         
-        {/* ROW 1: SELECTS & DATE */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full xl:w-auto">
+        {/* FILTROS PRINCIPALES & ESTADOS */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1">
           {/* DATE PICKER */}
           <div className="relative shrink-0 flex items-center">
             <input
@@ -134,8 +134,9 @@ export function MapaGlobalWrapper({
               className="h-[36px] px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-muted/40 hover:bg-muted/60 border border-border/50 shadow-sm focus:ring-0 focus:outline-none focus:ring-primary/50 text-foreground transition-all cursor-pointer"
             />
           </div>
+
           <Select value={ciudadFiltro} onValueChange={(v) => setCiudadFiltro(v || 'todas')}>
-            <SelectTrigger className="flex-1 xl:w-[150px] h-[36px] px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-muted/40 hover:bg-muted/60 border border-border/50 shadow-sm shrink-0 focus:ring-0 focus:ring-offset-0 truncate transition-all flex items-center gap-1.5">
+            <SelectTrigger className="w-[140px] h-[36px] px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-muted/40 hover:bg-muted/60 border border-border/50 shadow-sm shrink-0 focus:ring-0 focus:ring-offset-0 truncate transition-all flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-primary opacity-70 hidden sm:block shrink-0" />
               <span className="text-muted-foreground font-medium">Ciudad:</span>
               <span className="truncate text-foreground capitalize">{ciudadFiltro === 'todas' ? 'Todas' : ciudadFiltro}</span>
@@ -149,7 +150,7 @@ export function MapaGlobalWrapper({
           </Select>
 
           <Select value={comercialFiltro} onValueChange={(v) => setComercialFiltro(v || 'todos')}>
-            <SelectTrigger className="flex-1 xl:w-[160px] h-[36px] px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-muted/40 hover:bg-muted/60 border border-border/50 shadow-sm shrink-0 focus:ring-0 focus:ring-offset-0 truncate transition-all flex items-center gap-1.5">
+            <SelectTrigger className="w-[155px] h-[36px] px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-muted/40 hover:bg-muted/60 border border-border/50 shadow-sm shrink-0 focus:ring-0 focus:ring-offset-0 truncate transition-all flex items-center gap-1.5">
               <span className="text-primary opacity-70 hidden sm:block shrink-0 text-sm">👤</span>
               <span className="text-muted-foreground font-medium">Comercial:</span>
               <span className="truncate text-foreground capitalize">
@@ -163,55 +164,55 @@ export function MapaGlobalWrapper({
               ))}
             </SelectContent>
           </Select>
-        </div>
 
-        {/* DIVIDER */}
-        <div className="w-px h-6 bg-border/60 mx-2 shrink-0 hidden xl:block" />
+          {/* DIVIDER */}
+          <div className="hidden lg:block w-px h-6 bg-border/60 mx-1 shrink-0" />
 
-        {/* ROW 2: FILTERS & REFRESH */}
-        <div className="flex flex-row items-center justify-between w-full xl:w-auto gap-2">
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 flex-1 justify-start">
+          {/* ESTADO BUTTONS */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <button 
               onClick={() => setFiltro('todas')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center shrink-0 ${filtro === 'todas' ? 'bg-foreground text-background shadow-md scale-105' : 'bg-muted/30 border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center shrink-0 ${filtro === 'todas' ? 'bg-foreground text-background shadow-md' : 'bg-muted/30 border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
               title="Todas"
             >
-              <span className="sm:hidden">Todas</span>
-              <span className="hidden sm:inline">Todas ({visitas.length})</span>
+              <span>Todas ({visitas.length})</span>
             </button>
             <button 
               onClick={() => setFiltro('curso')}
-              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center shrink-0 ${filtro === 'curso' ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-105' : 'bg-muted/30 border border-border/50 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20'}`}
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center shrink-0 ${filtro === 'curso' ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20' : 'bg-muted/30 border border-border/50 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20'}`}
               title="En Curso"
             >
-              <Clock className={`w-4 h-4 sm:mr-1.5 ${filtro === 'curso' ? '' : 'opacity-70'}`} /> 
-              <span className="hidden sm:inline">En Curso</span>
+              <Clock className="w-3.5 h-3.5 mr-1" /> 
+              <span>En Curso</span>
             </button>
             <button 
               onClick={() => setFiltro('completadas')}
-              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center shrink-0 ${filtro === 'completadas' ? 'bg-success text-success-foreground shadow-md shadow-success/20 scale-105' : 'bg-muted/30 border border-border/50 text-muted-foreground hover:bg-success/10 hover:text-success hover:border-success/20'}`}
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center shrink-0 ${filtro === 'completadas' ? 'bg-success text-success-foreground shadow-md shadow-success/20' : 'bg-muted/30 border border-border/50 text-muted-foreground hover:bg-success/10 hover:text-success hover:border-success/20'}`}
               title="Completadas"
             >
-              <CheckCircle2 className={`w-4 h-4 sm:mr-1.5 ${filtro === 'completadas' ? '' : 'opacity-70'}`} /> 
-              <span className="hidden sm:inline">Completadas</span>
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> 
+              <span>Completadas</span>
             </button>
             <button 
               onClick={() => setFiltro('alerta')}
-              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center shrink-0 ${filtro === 'alerta' ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/20 scale-105' : 'bg-muted/30 border border-border/50 text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20'}`}
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center shrink-0 ${filtro === 'alerta' ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/20' : 'bg-muted/30 border border-border/50 text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20'}`}
               title="Con Alerta"
             >
-              <AlertTriangle className={`w-4 h-4 sm:mr-1.5 ${filtro === 'alerta' ? '' : 'opacity-70'}`} /> 
-              <span className="hidden sm:inline">Con Alerta</span>
+              <AlertTriangle className="w-3.5 h-3.5 mr-1" /> 
+              <span>Con Alerta</span>
             </button>
           </div>
+        </div>
 
+        {/* ACCIONES (ACTUALIZAR) */}
+        <div className="flex items-center shrink-0 ml-auto lg:ml-0">
           <button 
             onClick={() => router.refresh()}
-            className="bg-muted/40 hover:bg-muted/60 border border-border/50 text-foreground p-2 sm:px-4 sm:py-2 rounded-full shadow-sm text-[10px] sm:text-xs font-bold transition-all flex items-center shrink-0 justify-center hover:scale-105"
+            className="bg-muted/40 hover:bg-muted/60 border border-border/50 text-foreground px-4 py-2 rounded-full shadow-sm text-[10px] sm:text-xs font-bold transition-all flex items-center shrink-0 justify-center hover:scale-105"
             title="Actualizar"
           >
-            <RefreshCcw className="w-4 h-4 sm:mr-2 opacity-70" />
-            <span className="hidden sm:inline">Actualizar</span>
+            <RefreshCcw className="w-4 h-4 mr-2 opacity-70" />
+            Actualizar
           </button>
         </div>
       </div>

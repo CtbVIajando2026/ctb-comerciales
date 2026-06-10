@@ -8,7 +8,8 @@ import { differenceInMinutes } from 'date-fns'
 export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[] }) {
   // State for filters
   const [search, setSearch] = useState("")
-  const [filtroTiempo, setFiltroTiempo] = useState("Todas") // Hoy, Semana, Mes
+  const [filtroTiempo, setFiltroTiempo] = useState("Todas") // Todas, Hoy, Semana, Mes, Especifica
+  const [fechaEspecifica, setFechaEspecifica] = useState("")
   const [filtroCiudad, setFiltroCiudad] = useState("Todas")
   const [filtroComercial, setFiltroComercial] = useState("Todos")
   const [showFiltros, setShowFiltros] = useState(false)
@@ -44,6 +45,12 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
       matchTiempo = hoy.getTime() - fecha.getTime() < msInWeek
     } else if (filtroTiempo === "Mes") {
       matchTiempo = fecha.getMonth() === hoy.getMonth() && fecha.getFullYear() === hoy.getFullYear()
+    } else if (filtroTiempo === "Especifica" && fechaEspecifica) {
+      const targetDate = new Date(`${fechaEspecifica}T00:00:00`)
+      matchTiempo = 
+        fecha.getDate() === targetDate.getDate() &&
+        fecha.getMonth() === targetDate.getMonth() &&
+        fecha.getFullYear() === targetDate.getFullYear()
     }
 
     return matchSearch && matchCiudad && matchComercial && matchTiempo
@@ -80,16 +87,27 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
         <div className="bg-card p-4 rounded-2xl border border-border grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-2">
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Fecha</label>
-            <select 
-              className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
-              value={filtroTiempo}
-              onChange={(e) => setFiltroTiempo(e.target.value)}
-            >
-              <option value="Todas">Todas las fechas</option>
-              <option value="Hoy">Hoy</option>
-              <option value="Semana">Últimos 7 días</option>
-              <option value="Mes">Este Mes</option>
-            </select>
+            <div className="space-y-2">
+              <select 
+                className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+                value={filtroTiempo}
+                onChange={(e) => setFiltroTiempo(e.target.value)}
+              >
+                <option value="Todas">Todas las fechas</option>
+                <option value="Hoy">Hoy</option>
+                <option value="Semana">Últimos 7 días</option>
+                <option value="Mes">Este Mes</option>
+                <option value="Especifica">Día Específico...</option>
+              </select>
+              {filtroTiempo === "Especifica" && (
+                <input 
+                  type="date" 
+                  className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                  value={fechaEspecifica}
+                  onChange={(e) => setFechaEspecifica(e.target.value)}
+                />
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Ciudad</label>
