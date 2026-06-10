@@ -49,8 +49,7 @@ export default async function ComercialesLayout({
   }
 
   return (
-    <>
-    <div className="flex h-[100dvh] bg-muted/20">
+    <div className="flex h-[100dvh] bg-muted/20 relative">
       <OfflineIndicator />
       <OfflineSyncManager />
       <LiveLocationTracker />
@@ -108,15 +107,14 @@ export default async function ComercialesLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-[100dvh] overflow-hidden pb-16 md:pb-0">
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className="flex-1 flex flex-col h-[100dvh] overflow-hidden pb-[env(safe-area-inset-bottom)] md:pb-0">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 md:pb-8">
           {children}
         </div>
       </main>
-    </div>
-    <div className="md:hidden">
+
+      {/* Bottom Nav - Solo en móvil, dentro del contexto del layout */}
       <BottomNav />
     </div>
-    </>
   )
 }

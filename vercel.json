@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/reporte-telegram",
+      "schedule": "0 14 * * 2-6"
+    },
+    {
+      "path": "/api/cron/reporte-mensual-telegram",
+      "schedule": "0 14 1 * *"
+    }
+  ]
+}

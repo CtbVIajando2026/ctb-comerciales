@@ -32,7 +32,10 @@ export function DirectorioClient({ agenciasIniciales, ciudadComercial = "Quito" 
     return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
   }
 
-  const ciudadesUnicas = Array.from(new Set(agenciasIniciales.map(a => normalizarCiudad(a.ciudad)))).sort()
+  // Ciudades base siempre presentes + las que vengan de la BD
+  const CIUDADES_BASE = ['Cuenca', 'Quito', 'Guayaquil']
+  const ciudadesDeDB = agenciasIniciales.map(a => normalizarCiudad(a.ciudad))
+  const ciudadesUnicas = Array.from(new Set([...CIUDADES_BASE, ...ciudadesDeDB])).sort()
 
   const filtradas = agenciasIniciales.filter(a => {
     const matchSearch = a.nombre.toLowerCase().includes(search.toLowerCase())
@@ -85,30 +88,41 @@ export function DirectorioClient({ agenciasIniciales, ciudadComercial = "Quito" 
           onClick={() => setFiltroCiudad("Todas")}
           className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${filtroCiudad === "Todas" ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}
         >
-          Todas las Agencias
+          Todas
         </button>
+        {/* Chip de mi ciudad si no está ya en las base */}
         <button
-          onClick={() => setFiltroCiudad(ciudadComercial)}
-          className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${filtroCiudad === ciudadComercial ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}
+          onClick={() => setFiltroCiudad(normalizarCiudad(ciudadComercial))}
+          className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
+            normalizarCiudad(filtroCiudad) === normalizarCiudad(ciudadComercial)
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card text-muted-foreground border-border hover:bg-muted"
+          }`}
         >
-          📍 Mi Ciudad ({ciudadComercial})
+          📍 {normalizarCiudad(ciudadComercial)}
         </button>
+        {/* Resto de ciudades (excluir la ciudad del comercial para no duplicar) */}
+        {ciudadesUnicas
+          .filter(c => normalizarCiudad(c) !== normalizarCiudad(ciudadComercial))
+          .map(ciudad => (
+            <button
+              key={ciudad}
+              onClick={() => setFiltroCiudad(ciudad)}
+              className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
+                normalizarCiudad(filtroCiudad) === normalizarCiudad(ciudad)
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-card text-muted-foreground border-border hover:bg-muted"
+              }`}
+            >
+              {ciudad}
+            </button>
+          ))
+        }
       </div>
 
       {showFiltros && (
-        <div className="bg-card p-4 rounded-2xl border border-border flex gap-3 animate-in fade-in slide-in-from-top-2">
-          <div className="flex-1 space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Otras Ciudades</label>
-            <select 
-              className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
-              value={filtroCiudad}
-              onChange={(e) => setFiltroCiudad(e.target.value)}
-            >
-              <option value="Todas">Todas las ciudades</option>
-              {ciudadesUnicas.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="flex-1 space-y-1.5">
+        <div className="bg-card p-4 rounded-2xl border border-border animate-in fade-in slide-in-from-top-2">
+          <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Temperatura</label>
             <select 
               className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
@@ -116,9 +130,9 @@ export function DirectorioClient({ agenciasIniciales, ciudadComercial = "Quito" 
               onChange={(e) => setFiltroTemperatura(e.target.value)}
             >
               <option value="Todas">Todas</option>
-              <option value="activa">Activa</option>
-              <option value="tibia">Tibia</option>
-              <option value="fria">Fría</option>
+              <option value="activa">Activa 🔥</option>
+              <option value="tibia">Tibia 🌡️</option>
+              <option value="fria">Fría ❄️</option>
             </select>
           </div>
         </div>
