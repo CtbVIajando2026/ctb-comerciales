@@ -17,6 +17,8 @@ export function EditarForm({ usuario }: { usuario: any }) {
     setLoading(true)
     
     const formData = new FormData(e.currentTarget)
+    const rawMeta = formData.get('meta') as string
+    const parsedMeta = parseInt(rawMeta, 10)
     const data = {
       id: usuario.id,
       nombre: formData.get('nombre') as string,
@@ -26,7 +28,7 @@ export function EditarForm({ usuario }: { usuario: any }) {
       ciudad: formData.get('ciudad') as string,
       rol: formData.get('rol') as string,
       activo: formData.get('activo') === 'on',
-      metaDiaria: parseInt(formData.get('meta') as string, 10) || 0,
+      metaDiaria: isNaN(parsedMeta) ? 0 : parsedMeta,
     }
 
     try {
@@ -194,7 +196,7 @@ export function EditarForm({ usuario }: { usuario: any }) {
               defaultValue={usuario.metas_comerciales?.[0]?.visitas_diarias || 0}
               className="w-full md:w-1/3 bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
-            <p className="text-[11px] text-muted-foreground">Déjalo en 0 si es Administrador.</p>
+            <p className="text-[11px] text-muted-foreground">Usa 0 para meta libre/infinito, o si es Administrador.</p>
           </div>
         </div>
 

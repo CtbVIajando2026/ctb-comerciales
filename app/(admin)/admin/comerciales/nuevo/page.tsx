@@ -17,6 +17,8 @@ export default function NuevoComercialPage() {
     setLoading(true)
     
     const formData = new FormData(e.currentTarget)
+    const rawMeta = formData.get('meta') as string
+    const parsedMeta = parseInt(rawMeta, 10)
     const data = {
       nombre: formData.get('nombre') as string,
       email: formData.get('email') as string,
@@ -24,7 +26,7 @@ export default function NuevoComercialPage() {
       telefono: formData.get('telefono') as string,
       ciudad: formData.get('ciudad') as string,
       rol: formData.get('rol') as string,
-      metaDiaria: parseInt(formData.get('meta') as string, 10) || 5,
+      metaDiaria: isNaN(parsedMeta) ? 5 : parsedMeta,
     }
 
     try {
@@ -161,12 +163,12 @@ export default function NuevoComercialPage() {
             <input 
               name="meta"
               type="number" 
-              min="1"
+              min="0"
               required
               defaultValue="5"
               className="w-full md:w-1/3 bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
-            <p className="text-[11px] text-muted-foreground">Esta meta activará la gamificación y recompensas visuales del comercial.</p>
+            <p className="text-[11px] text-muted-foreground">Esta meta activará la gamificación y recompensas visuales del comercial. Usa 0 para meta libre/infinito.</p>
           </div>
         </div>
 
