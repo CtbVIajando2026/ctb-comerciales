@@ -22,6 +22,13 @@ const MapaGlobal = dynamic(() => import('./MapaGlobal'), {
   )
 })
 
+const normalizarCiudad = (c: string | undefined | null) => {
+  if (!c) return 'Quito'
+  const trimmed = c.trim()
+  if (!trimmed) return 'Quito'
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
+}
+
 export function MapaGlobalWrapper({ 
   visitas, 
   todosComerciales = [],
@@ -43,10 +50,10 @@ export function MapaGlobalWrapper({
 
   const ciudades = useMemo(() => {
     if (todosComerciales && todosComerciales.length > 0) {
-      const setCiudades = new Set(todosComerciales.map((c: any) => c.zona?.trim()).filter(Boolean))
+      const setCiudades = new Set(todosComerciales.map((c: any) => normalizarCiudad(c.zona)).filter(Boolean))
       return Array.from(setCiudades) as string[]
     }
-    const setCiudades = new Set(visitas.map((v: any) => (v.agencias?.ciudad || v.usuarios?.zona)?.trim()).filter(Boolean))
+    const setCiudades = new Set(visitas.map((v: any) => normalizarCiudad(v.agencias?.ciudad || v.usuarios?.zona)).filter(Boolean))
     return Array.from(setCiudades) as string[]
   }, [visitas, todosComerciales])
 
@@ -54,14 +61,14 @@ export function MapaGlobalWrapper({
     if (todosComerciales && todosComerciales.length > 0) {
       let list = todosComerciales
       if (ciudadFiltro !== 'todas') {
-        list = list.filter((c: any) => c.zona?.trim() === ciudadFiltro.trim())
+        list = list.filter((c: any) => normalizarCiudad(c.zona) === normalizarCiudad(ciudadFiltro))
       }
       const setComerciales = new Set(list.map((c: any) => c.nombre?.trim()).filter(Boolean))
       return Array.from(setComerciales) as string[]
     }
     let list = visitas
     if (ciudadFiltro !== 'todas') {
-      list = list.filter(v => (v.agencias?.ciudad || v.usuarios?.zona)?.trim() === ciudadFiltro.trim())
+      list = list.filter(v => normalizarCiudad(v.agencias?.ciudad || v.usuarios?.zona) === normalizarCiudad(ciudadFiltro))
     }
     const setComerciales = new Set(list.map((v: any) => v.usuarios?.nombre?.trim()).filter(Boolean))
     return Array.from(setComerciales) as string[]
@@ -93,7 +100,7 @@ export function MapaGlobalWrapper({
     }
 
     if (ciudadFiltro !== 'todas') {
-      filtradas = filtradas.filter(v => (v.agencias?.ciudad || v.usuarios?.zona)?.trim() === ciudadFiltro.trim())
+      filtradas = filtradas.filter(v => normalizarCiudad(v.agencias?.ciudad || v.usuarios?.zona) === normalizarCiudad(ciudadFiltro))
     }
 
     if (comercialFiltro !== 'todos') {

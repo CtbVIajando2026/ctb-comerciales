@@ -5,6 +5,13 @@ import { ExportarExcelButton } from "./ExportarExcelButton"
 import { Building2, Clock, MapPin, User, Search, Filter, ShieldAlert, Timer } from "lucide-react"
 import { differenceInMinutes } from 'date-fns'
 
+const normalizarCiudad = (c: string | undefined | null) => {
+  if (!c) return 'Quito'
+  const trimmed = c.trim()
+  if (!trimmed) return 'Quito'
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
+}
+
 export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[] }) {
   // State for filters
   const [search, setSearch] = useState("")
@@ -15,13 +22,13 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
   const [showFiltros, setShowFiltros] = useState(false)
 
   // Extract unique filter options
-  const ciudadesUnicas = Array.from(new Set(visitasIniciales.map(v => (v.agencias?.ciudad || v.usuarios?.zona || 'Quito').trim()).filter(Boolean))).sort()
+  const ciudadesUnicas = Array.from(new Set(visitasIniciales.map(v => normalizarCiudad(v.agencias?.ciudad || v.usuarios?.zona)).filter(Boolean))).sort()
   const comercialesUnicos = Array.from(new Set(visitasIniciales.map(v => v.usuarios?.nombre?.trim()).filter(Boolean))).sort()
 
   const filtradas = visitasIniciales.filter(v => {
     const agenciaNombre = v.agencias?.nombre || v.titulo_actividad || ""
     const comercialNombre = v.usuarios?.nombre?.trim() || ""
-    const ciudad = (v.agencias?.ciudad || v.usuarios?.zona || 'Quito').trim()
+    const ciudad = normalizarCiudad(v.agencias?.ciudad || v.usuarios?.zona)
     const fecha = new Date(v.created_at)
 
     // Text search
@@ -30,7 +37,7 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
                         (v.observaciones || "").toLowerCase().includes(search.toLowerCase())
 
     // City
-    const matchCiudad = filtroCiudad === "Todas" || ciudad === filtroCiudad.trim()
+    const matchCiudad = filtroCiudad === "Todas" || ciudad === normalizarCiudad(filtroCiudad)
 
     // Comercial
     const matchComercial = filtroComercial === "Todos" || comercialNombre === filtroComercial.trim()
