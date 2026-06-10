@@ -103,7 +103,7 @@ export async function iniciarVisita(data: {
       const lngAgencia = agencia.gps_lng_referencia || agencia.gps_lng_registro
       if (latAgencia && lngAgencia) {
         distanciaCheckin = calcularDistanciaMetros(data.gps_lat, data.gps_lng, latAgencia, lngAgencia)
-        if (distanciaCheckin > 200) {
+        if (distanciaCheckin > 500) {
           alertaFraudeCheckin = true
         }
       }
@@ -189,7 +189,7 @@ export async function cerrarVisita(visitaId: string, data: {
         const lngAgencia = agencia.gps_lng_referencia || agencia.gps_lng_registro
         if (latAgencia && lngAgencia) {
           distanciaCheckout = calcularDistanciaMetros(data.gps_lat_checkout, data.gps_lng_checkout, latAgencia, lngAgencia)
-          if (distanciaCheckout > 200) {
+          if (distanciaCheckout > 500) {
             alertaFraudeCheckout = true
           }
         }
