@@ -432,3 +432,24 @@ export async function obtenerDirectorioEquipoComercial() {
     }
   })
 }
+
+export async function actualizarUbicacionTiempoReal(lat: number, lng: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("No autenticado")
+
+  const { error } = await supabase
+    .from('comercial_ubicaciones_live')
+    .upsert({
+      comercial_id: user.id,
+      gps_lat: lat,
+      gps_lng: lng,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'comercial_id' })
+
+  if (error) {
+    console.error("Error guardando ubicación en vivo:", error)
+    return { success: false, error: error.message }
+  }
+  return { success: true }
+}

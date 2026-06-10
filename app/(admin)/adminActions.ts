@@ -201,6 +201,11 @@ export async function obtenerMetricasEnVivo(fechaStr?: string) {
     .eq('rol', 'comercial')
     .order('nombre')
 
+  // 3. Obtener ubicaciones en tiempo real
+  const { data: ubicacionesLive } = await supabase
+    .from('comercial_ubicaciones_live')
+    .select('comercial_id, gps_lat, gps_lng, updated_at, usuarios(nombre, zona)')
+
   if (error) {
     console.error("Error obteniendo métricas en vivo:", error)
     return { 
@@ -208,7 +213,8 @@ export async function obtenerMetricasEnVivo(fechaStr?: string) {
       activas: 0, 
       comercialesEnRuta: 0, 
       alertas: 0,
-      todosComerciales: todosComerciales || []
+      todosComerciales: todosComerciales || [],
+      ubicacionesLive: []
     }
   }
 
@@ -226,7 +232,8 @@ export async function obtenerMetricasEnVivo(fechaStr?: string) {
     activas,
     comercialesEnRuta,
     alertas,
-    todosComerciales: todosComerciales || []
+    todosComerciales: todosComerciales || [],
+    ubicacionesLive: ubicacionesLive || []
   }
 }
 

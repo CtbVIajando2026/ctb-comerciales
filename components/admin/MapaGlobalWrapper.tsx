@@ -25,11 +25,13 @@ const MapaGlobal = dynamic(() => import('./MapaGlobal'), {
 export function MapaGlobalWrapper({ 
   visitas, 
   todosComerciales = [],
-  fechaSeleccionada
+  fechaSeleccionada,
+  ubicacionesLive = []
 }: { 
   visitas: any[]
   todosComerciales?: any[] 
   fechaSeleccionada: string
+  ubicacionesLive?: any[]
 }) {
   const router = useRouter()
   const [filtro, setFiltro] = useState<'todas' | 'completadas' | 'curso' | 'alerta'>('todas')
@@ -64,6 +66,17 @@ export function MapaGlobalWrapper({
     const setComerciales = new Set(list.map((v: any) => v.usuarios?.nombre).filter(Boolean))
     return Array.from(setComerciales) as string[]
   }, [visitas, ciudadFiltro, todosComerciales])
+
+  const ubicacionesLiveFiltradas = useMemo(() => {
+    let list = ubicacionesLive
+    if (comercialFiltro !== 'todos') {
+      list = list.filter((u: any) => u.usuarios?.nombre === comercialFiltro)
+    }
+    if (ciudadFiltro !== 'todas') {
+      list = list.filter((u: any) => u.usuarios?.zona === ciudadFiltro)
+    }
+    return list
+  }, [ubicacionesLive, comercialFiltro, ciudadFiltro])
 
   const visitasFiltradas = useMemo(() => {
     let filtradas = visitas.filter(v => {
@@ -219,7 +232,7 @@ export function MapaGlobalWrapper({
 
       {/* MAPA */}
       <div className="h-[50vh] min-h-[400px] relative z-0 shrink-0">
-        <MapaGlobal visitas={visitasFiltradas} />
+        <MapaGlobal visitas={visitasFiltradas} ubicacionesLive={ubicacionesLiveFiltradas} />
       </div>
 
       {/* LISTA INFERIOR */}

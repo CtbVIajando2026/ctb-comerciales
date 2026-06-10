@@ -142,15 +142,91 @@ const DEFAULT_CENTER: [number, number] = [-1.8312, -78.1834]
 const DEFAULT_ZOOM = 7
 const ROUTE_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#0ea5e9']
 
-interface MapaGlobalProps { visitas: any[] }
+// Pulsing live icon for live tracking
+const createLiveIcon = (nombre?: string) => {
+  const firstName = nombre ? nombre.split(' ')[0] : 'Comercial'
+  return L.divIcon({
+    className: 'live-location-icon',
+    html: `
+      <div style="position:relative; width: 32px; height: 32px; display:flex; align-items:center; justify-content:center;">
+        <div style="
+          position: absolute;
+          bottom: 34px;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: #2563eb;
+          color: white;
+          font-size: 10px;
+          font-weight: 900;
+          padding: 2px 8px;
+          border-radius: 8px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+          white-space: nowrap;
+          border: 1.5px solid white;
+          z-index: 30;
+        ">${firstName} (En Vivo)</div>
+        <div style="
+          position: absolute;
+          bottom: 29px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0; 
+          height: 0; 
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 6px solid #2563eb;
+          z-index: 30;
+        "></div>
+        
+        {/* Pulsing halo */}
+        <div style="
+          position: absolute;
+          width: 26px; height: 26px;
+          border-radius: 50%;
+          background: rgba(37, 99, 235, 0.4);
+          animation: pulse 1.8s infinite ease-in-out;
+          z-index: 5;
+        "></div>
+        
+        {/* Central dot */}
+        <div style="
+          position: absolute;
+          width: 14px; height: 14px;
+          border-radius: 50%;
+          background: #2563eb;
+          border: 2px solid white;
+          box-shadow: 0 0 6px rgba(37, 99, 235, 0.8);
+          z-index: 10;
+        "></div>
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
+  })
+}
 
-export default function MapaGlobal({ visitas }: MapaGlobalProps) {
+interface MapaGlobalProps { 
+  visitas: any[] 
+  ubicacionesLive?: any[] 
+}
+
+export default function MapaGlobal({ visitas, ubicacionesLive = [] }: MapaGlobalProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   if (!mounted) return <div className="w-full h-full bg-muted animate-pulse rounded-2xl" />
 
   const visitasConGps = visitas.filter(v => v.gps_lat && v.gps_lng)
-  const allPositions: [number, number][] = visitasConGps.map(v => [v.gps_lat, v.gps_lng])
+  
+  // Combine all positions for fitting bounds
+  const livePositions: [number, number][] = ubicacionesLive
+    .filter(u => u.gps_lat && u.gps_lng)
+    .map(u => [Number(u.gps_lat), Number(u.gps_lng)])
+  
+  const allPositions: [number, number][] = [
+    ...visitasConGps.map(v => [v.gps_lat, v.gps_lng] as [number, number]),
+    ...livePositions
+  ]
 
   // Group by comercial to draw individual routes
   const visitasPorComercial = visitasConGps.reduce((acc: any, v: any) => {
@@ -166,6 +242,16 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
         @keyframes clusterPulse {
           0%, 100% { box-shadow: 0 4px 14px rgba(99,102,241,0.4); }
           50%       { box-shadow: 0 4px 22px rgba(99,102,241,0.75); }
+        }
+        @keyframes pulse {
+          0% {
+            transform: scale(0.6);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(2.2);
+            opacity: 0;
+          }
         }
         .leaflet-cluster-anim .leaflet-marker-icon,
         .leaflet-cluster-anim .leaflet-marker-shadow {
@@ -183,6 +269,44 @@ export default function MapaGlobal({ visitas }: MapaGlobalProps) {
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
+
+        {/* ─── LIVE LOCATION PING MARKERS ─── */}
+        {ubicacionesLive.filter(u => u.gps_lat && u.gps_lng).map((u: any) => {
+          const diffMinutes = differenceInMinutes(new Date(), new Date(u.updated_at))
+          const lastSeenText = diffMinutes < 1 
+            ? 'Hace un momento' 
+            : `Hace ${diffMinutes} min`
+          
+          return (
+            <Marker
+              key={`live-${u.comercial_id}`}
+              position={[Number(u.gps_lat), Number(u.gps_lng)]}
+              icon={createLiveIcon(u.usuarios?.nombre)}
+            >
+              <Popup className="rounded-xl">
+                <div className="p-1 min-w-[200px]">
+                  <div className="flex items-center mb-2 border-b border-slate-200 pb-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center mr-3">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm leading-tight text-slate-800">{u.usuarios?.nombre || 'Comercial'}</p>
+                      <p className="text-[10px] uppercase font-bold text-blue-500 tracking-wider">
+                        Rastreo En Vivo
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs flex items-center text-slate-500">
+                      <Clock className="w-3 h-3 mr-2" />
+                      Visto: {lastSeenText} ({new Date(u.updated_at).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })})
+                    </p>
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          )
+        })}
 
         {/* Auto-fit all GPS points */}
         <FitBoundsAll positions={allPositions} />

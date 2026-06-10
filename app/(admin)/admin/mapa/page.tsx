@@ -25,6 +25,7 @@ export default async function MapaPage({ searchParams }: { searchParams: Promise
           visitas={data.visitas || []} 
           todosComerciales={(data as any).todosComerciales || []} 
           fechaSeleccionada={fechaQuery}
+          ubicacionesLive={(data as any).ubicacionesLive || []}
         />
       </div>
     </div>
