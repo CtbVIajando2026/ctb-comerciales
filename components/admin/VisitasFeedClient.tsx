@@ -12,7 +12,13 @@ const normalizarCiudad = (c: string | undefined | null) => {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
 }
 
-export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[] }) {
+export function VisitasFeedClient({ 
+  visitasIniciales, 
+  todosComerciales = [] 
+}: { 
+  visitasIniciales: any[]
+  todosComerciales?: any[]
+}) {
   // State for filters
   const [search, setSearch] = useState("")
   const [filtroTiempo, setFiltroTiempo] = useState("Todas") // Todas, Hoy, Semana, Mes, Especifica
@@ -22,8 +28,15 @@ export function VisitasFeedClient({ visitasIniciales }: { visitasIniciales: any[
   const [showFiltros, setShowFiltros] = useState(false)
 
   // Extract unique filter options
-  const ciudadesUnicas = Array.from(new Set(visitasIniciales.map(v => normalizarCiudad(v.agencias?.ciudad || v.usuarios?.zona)).filter(Boolean))).sort()
-  const comercialesUnicos = Array.from(new Set(visitasIniciales.map(v => v.usuarios?.nombre?.trim()).filter(Boolean))).sort()
+  const ciudadesUnicas = Array.from(new Set([
+    ...visitasIniciales.map(v => normalizarCiudad(v.agencias?.ciudad || v.usuarios?.zona)),
+    ...todosComerciales.map(c => normalizarCiudad(c.zona))
+  ].filter(Boolean))).sort()
+
+  const comercialesUnicos = Array.from(new Set([
+    ...visitasIniciales.map(v => v.usuarios?.nombre?.trim()),
+    ...todosComerciales.map(c => c.nombre?.trim())
+  ].filter(Boolean))).sort()
 
   const filtradas = visitasIniciales.filter(v => {
     const agenciaNombre = v.agencias?.nombre || v.titulo_actividad || ""

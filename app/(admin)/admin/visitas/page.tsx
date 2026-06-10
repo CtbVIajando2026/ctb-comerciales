@@ -21,6 +21,12 @@ export default async function AdminVisitasPage() {
     .order('created_at', { ascending: false })
     .limit(1000)
 
+  const { data: todosComerciales } = await supabase
+    .from('usuarios')
+    .select('nombre, zona')
+    .eq('rol', 'comercial')
+    .order('nombre')
+
   return (
     <div className="space-y-6 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -35,7 +41,7 @@ export default async function AdminVisitasPage() {
         </div>
       </div>
 
-      <VisitasFeedClient visitasIniciales={visitas || []} />
+      <VisitasFeedClient visitasIniciales={visitas || []} todosComerciales={todosComerciales || []} />
     </div>
   )
 }
