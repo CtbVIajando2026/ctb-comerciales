@@ -86,7 +86,27 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // 1. Obtener Visitas
+  // 1. Obtener TODOS los comerciales activos
+  const { data: perfiles, error: errorP } = await supabase
+    .from('usuarios_perfil')
+    .select('id, nombre_completo, ciudad_zona')
+    .eq('activo', true)
+    .eq('rol', 'comercial')
+
+  if (errorP) {
+    console.error('Error consultando perfiles:', errorP)
+    return NextResponse.json({ error: errorP.message }, { status: 500 })
+  }
+
+  const comercialIds = perfiles?.map(p => p.id) || []
+
+  // 2. Obtener metas de los comerciales
+  const { data: metas } = await supabase
+    .from('metas_comerciales')
+    .select('comercial_id, visitas_diarias')
+    .in('comercial_id', comercialIds)
+
+  // 3. Obtener Visitas
   const { data: visitas, error } = await supabase
     .from('visitas')
     .select('comercial_id, alerta_fraude_checkin, alerta_fraude_checkout, es_actividad')
@@ -104,22 +124,10 @@ export async function GET(req: NextRequest) {
 
   let mensaje = ''
 
-  if (visitasReales.length === 0) {
-    mensaje = `📊 *Resumen de Visitas — ${label}*\n\n_Sin visitas registradas ayer._`
+  if (comercialIds.length === 0) {
+    mensaje = `📊 *Resumen de Visitas — ${label}*\n\n_No hay comerciales activos en el sistema._`
   } else {
-    // 2. Obtener perfiles de los comerciales involucrados
-    const comercialIds = Array.from(new Set(visitasReales.map(v => v.comercial_id)))
-    const { data: perfiles } = await supabase
-      .from('usuarios_perfil')
-      .select('id, nombre_completo, ciudad_zona')
-      .in('id', comercialIds)
-
-    const { data: metas } = await supabase
-      .from('metas_comerciales')
-      .select('comercial_id, visitas_diarias')
-      .in('comercial_id', comercialIds)
-
-    // 3. Procesar datos
+    // 4. Procesar datos (incluyendo a los de 0 visitas)
     const ciudades = new Map<string, Map<string, {
       nombre: string
       visitas: number
@@ -127,23 +135,27 @@ export async function GET(req: NextRequest) {
       meta: number
     }>>()
 
-    for (const v of visitasReales) {
-      const perfil = perfiles?.find(p => p.id === v.comercial_id)
-      const metaObj = metas?.find(m => m.comercial_id === v.comercial_id)
-
-      const ciudad = capitalizarCiudad(perfil?.ciudad_zona || 'Sin ciudad')
-      const nombre = perfil?.nombre_completo || 'Desconocido'
+    // Inicializar todos los comerciales con 0 visitas
+    for (const p of perfiles || []) {
+      const ciudad = capitalizarCiudad(p.ciudad_zona || 'Sin ciudad')
+      const metaObj = metas?.find(m => m.comercial_id === p.id)
       const meta = metaObj?.visitas_diarias ?? 5
-      const tieneAlerta = v.alerta_fraude_checkin || v.alerta_fraude_checkout
 
       if (!ciudades.has(ciudad)) ciudades.set(ciudad, new Map())
       const comerciales = ciudades.get(ciudad)!
 
-      if (!comerciales.has(v.comercial_id)) {
-        comerciales.set(v.comercial_id, { nombre, visitas: 0, alertas: 0, meta })
-      }
+      comerciales.set(p.id, { nombre: p.nombre_completo, visitas: 0, alertas: 0, meta })
+    }
 
-      const entry = comerciales.get(v.comercial_id)!
+    // Sumar las visitas reales
+    for (const v of visitasReales) {
+      const perfil = perfiles?.find(p => p.id === v.comercial_id)
+      if (!perfil) continue // ignorar si no está en perfiles activos
+
+      const ciudad = capitalizarCiudad(perfil.ciudad_zona || 'Sin ciudad')
+      const tieneAlerta = v.alerta_fraude_checkin || v.alerta_fraude_checkout
+
+      const entry = ciudades.get(ciudad)!.get(v.comercial_id)!
       entry.visitas++
       if (tieneAlerta) entry.alertas++
     }
