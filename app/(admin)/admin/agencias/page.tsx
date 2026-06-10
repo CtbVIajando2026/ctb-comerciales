@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Building2, Search, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import { DeleteAgenciaBtn } from '@/components/admin/DeleteAgenciaBtn'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +40,7 @@ export default async function AgenciasPage() {
                 <tr>
                   <th className="px-4 py-4">Agencia</th>
                   <th className="px-4 py-4">Ciudad / Zona</th>
-                  <th className="px-4 py-4">Status</th>
+                  <th className="px-4 py-4 text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -55,10 +56,11 @@ export default async function AgenciasPage() {
                     <td className="px-4 py-3 font-semibold text-muted-foreground">
                       {a.ciudad || 'N/A'} - {a.zona || 'Global'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 flex items-center justify-end gap-2">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${a.activa ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
                         {a.activa ? 'Activa' : 'Inactiva'}
                       </span>
+                      <DeleteAgenciaBtn id={a.id} />
                     </td>
                   </tr>
                 ))}

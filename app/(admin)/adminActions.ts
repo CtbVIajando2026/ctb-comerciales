@@ -330,3 +330,25 @@ export async function obtenerDirectorioEquipo() {
     }
   })
 }
+
+export async function eliminarVisitaAdmin(id: string) {
+  const supabase = await createAdminClient()
+  const { error } = await supabase.from('visitas').delete().eq('id', id)
+  if (error) {
+    console.error("Error eliminando visita:", error)
+    throw new Error(error.message)
+  }
+  revalidatePath('/admin/visitas')
+  return { success: true }
+}
+
+export async function eliminarAgenciaAdmin(id: string) {
+  const supabase = await createAdminClient()
+  const { error } = await supabase.from('agencias').delete().eq('id', id)
+  if (error) {
+    console.error("Error eliminando agencia:", error)
+    throw new Error(error.message)
+  }
+  revalidatePath('/admin/agencias')
+  return { success: true }
+}

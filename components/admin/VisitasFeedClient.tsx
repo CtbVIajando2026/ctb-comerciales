@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import { ExportarExcelButton } from "./ExportarExcelButton"
-import { Building2, Clock, MapPin, User, Search, Filter, ShieldAlert, Timer } from "lucide-react"
+import { Building2, Clock, MapPin, User, Search, Filter, ShieldAlert, Timer, Trash2 } from "lucide-react"
 import { differenceInMinutes } from 'date-fns'
+import { eliminarVisitaAdmin } from "@/app/(admin)/adminActions"
 
 const normalizarCiudad = (c: string | undefined | null) => {
   if (!c) return 'Quito'
@@ -194,21 +195,34 @@ export function VisitasFeedClient({
                         </p>
                       </div>
                       
-                      <div className="text-right shrink-0 space-y-1">
-                        {v.hora_checkin && v.hora_checkout && differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin)) > 0 && (
-                          <div className="text-xs font-bold bg-muted px-2 py-1 rounded-lg flex items-center text-foreground justify-end">
-                            <Timer className="w-3 h-3 mr-1 text-primary" />
-                            {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
-                          </div>
-                        )}
-                        {(v.agencias?.ciudad || v.usuarios?.zona) && (
-                          <div className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-end">
-                            <MapPin className="w-3 h-3 mr-1" />
-                            {v.agencias?.ciudad || v.usuarios?.zona}
-                          </div>
-                        )}
-                      </div>
+                    <div className="text-right shrink-0 space-y-1 flex flex-col items-end">
+                      <button
+                        onClick={async () => {
+                          if (confirm("¿Seguro que deseas eliminar esta visita de prueba?")) {
+                            await eliminarVisitaAdmin(v.id)
+                            window.location.reload()
+                          }
+                        }}
+                        className="text-destructive hover:bg-destructive/10 p-1.5 rounded-lg transition-colors mb-1"
+                        title="Eliminar registro"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      
+                      {v.hora_checkin && v.hora_checkout && differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin)) > 0 && (
+                        <div className="text-xs font-bold bg-muted px-2 py-1 rounded-lg flex items-center text-foreground justify-end">
+                          <Timer className="w-3 h-3 mr-1 text-primary" />
+                          {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
+                        </div>
+                      )}
+                      {(v.agencias?.ciudad || v.usuarios?.zona) && (
+                        <div className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-end">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          {v.agencias?.ciudad || v.usuarios?.zona}
+                        </div>
+                      )}
                     </div>
+                  </div>
                     
                     {v.observaciones && (
                       <p className="text-sm text-foreground bg-background border border-border p-3 rounded-xl mt-2">
