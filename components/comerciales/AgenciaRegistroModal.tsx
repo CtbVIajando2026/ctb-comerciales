@@ -74,42 +74,47 @@ export function AgenciaRegistroModal({ isOpen, onClose, onSuccess, ciudadInicial
       return // ABORTAR SI NO HAY GPS
     }
 
-    try {
-      const payload = {
-        nombre,
-        direccion,
-        ciudad,
-        aniversario_agencia: aniversario || null,
-        contactoNombre: gerenteNombre,
-        contactoCargo: "Gerente",
-        contactoCumpleanos: gerenteCumpleanos || null,
-        contactoTelefono: gerenteTelefono || null,
-        contactoEmail: gerenteEmail || null,
-        otrosContactos: otrosContactos.filter(c => c.nombre.trim() !== ""),
-        gps_lat: lat,
-        gps_lng: lng
-      }
+    const payload = {
+      nombre,
+      direccion,
+      ciudad,
+      aniversario_agencia: aniversario || null,
+      contactoNombre: gerenteNombre,
+      contactoCargo: "Gerente",
+      contactoCumpleanos: gerenteCumpleanos || null,
+      contactoTelefono: gerenteTelefono || null,
+      contactoEmail: gerenteEmail || null,
+      otrosContactos: otrosContactos.filter(c => c.nombre.trim() !== ""),
+      gps_lat: lat,
+      gps_lng: lng
+    }
 
+    const saveOffline = () => {
+      const tempId = `temp_agencia_${Date.now()}`
+      addToOfflineQueue('NUEVA_AGENCIA', payload, tempId)
+      toast.warning("Sin conexión. Guardado local.", { description: `La agencia ${nombre} se sincronizará cuando recuperes internet.` })
+      
+      onSuccess(
+        { id: tempId, nombre, direccion, ciudad }, 
+        gerenteNombre ? { id: `temp_contacto_${Date.now()}`, nombre: gerenteNombre } : null
+      )
+      onClose()
+      
+      setNombre("")
+      setDireccion("")
+      setCiudad(ciudadInicial)
+      setAniversario("")
+      setGerenteNombre("")
+      setGerenteCumpleanos("")
+      setGerenteTelefono("")
+      setGerenteEmail("")
+      setOtrosContactos([])
+    }
+
+    try {
       if (!navigator.onLine) {
-        const tempId = `temp_agencia_${Date.now()}`
-        addToOfflineQueue('NUEVA_AGENCIA', payload, tempId)
-        toast.success("Agencia Guardada Localmente", { description: `${nombre} será sincronizada cuando recuperes internet.` })
-        
-        onSuccess(
-          { id: tempId, nombre, direccion, ciudad }, 
-          gerenteNombre ? { id: `temp_contacto_${Date.now()}`, nombre: gerenteNombre } : null
-        )
-        onClose()
-        
-        setNombre("")
-        setDireccion("")
-        setCiudad(ciudadInicial)
-        setAniversario("")
-        setGerenteNombre("")
-        setGerenteCumpleanos("")
-        setGerenteTelefono("")
-        setGerenteEmail("")
-        setOtrosContactos([])
+        saveOffline()
+        setGuardando(false)
         return
       }
 
@@ -129,9 +134,13 @@ export function AgenciaRegistroModal({ isOpen, onClose, onSuccess, ciudadInicial
       setGerenteTelefono("")
       setGerenteEmail("")
       setOtrosContactos([])
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      toast.error("Error", { description: "Hubo un problema al registrar la agencia." })
+      if (error.message?.includes('fetch') || error.message?.includes('network') || !navigator.onLine) {
+        saveOffline()
+      } else {
+        toast.error("Error", { description: error.message || "Hubo un problema al registrar la agencia." })
+      }
     } finally {
       setGuardando(false)
     }

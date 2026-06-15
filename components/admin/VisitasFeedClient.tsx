@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ExportarExcelButton } from "./ExportarExcelButton"
 import { Building2, Clock, MapPin, User, Search, Filter, ShieldAlert, Timer, Trash2 } from "lucide-react"
 import { differenceInMinutes } from 'date-fns'
@@ -27,6 +27,14 @@ export function VisitasFeedClient({
   const [filtroCiudad, setFiltroCiudad] = useState("Todas")
   const [filtroComercial, setFiltroComercial] = useState("Todos")
   const [showFiltros, setShowFiltros] = useState(false)
+  const [now, setNow] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date())
+    }, 60000)
+    return () => clearInterval(timer)
+  }, [])
 
   // Extract unique filter options
   const ciudadesUnicas = Array.from(new Set([
@@ -168,8 +176,18 @@ export function VisitasFeedClient({
           ) : (
             filtradas.map(v => {
               const esFraude = v.alerta_fraude_checkin || v.alerta_fraude_checkout
+              const isOpen = v.estado === 'abierta'
+              let minutesOpen = 0
+              let isExceeded = false
+              
+              if (isOpen && v.hora_checkin) {
+                minutesOpen = differenceInMinutes(now, new Date(v.hora_checkin))
+                const timeLimit = v.timer_programado_min || 60
+                isExceeded = minutesOpen > timeLimit
+              }
+
               return (
-                <div key={v.id} className="p-4 hover:bg-muted/50 transition-colors flex flex-col md:flex-row gap-4">
+                <div key={v.id} className={`p-4 hover:bg-muted/50 transition-colors flex flex-col md:flex-row gap-4 ${isExceeded ? 'bg-destructive/5 border-l-4 border-l-destructive' : ''}`}>
                   <div className="md:w-48 shrink-0 space-y-1">
                     <div className="text-xs font-bold text-muted-foreground">
                       {new Date(v.created_at).toLocaleDateString('es-EC')}
@@ -178,8 +196,13 @@ export function VisitasFeedClient({
                       {new Date(v.created_at).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                     <div className="flex items-center text-xs font-medium text-primary bg-primary/10 w-fit px-2 py-0.5 rounded-full uppercase tracking-wider mt-1">
-                      {Array.isArray(v.temas) ? v.temas.join(', ') : (v.temas || 'Visita')}
+                      {Array.isArray(v.temas) ? v.temas.join(', ') : (v.temas || (isOpen ? 'En Ruta' : 'Visita'))}
                     </div>
+                    {isExceeded && (
+                      <div className="animate-pulse bg-destructive text-destructive-foreground text-[10px] font-black px-2 py-1 rounded mt-2 w-fit uppercase tracking-widest">
+                        ¡Tiempo Excedido!
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex-1 space-y-2">
@@ -192,6 +215,11 @@ export function VisitasFeedClient({
                         <p className="text-sm text-muted-foreground flex items-center mt-0.5">
                           <User className="w-3 h-3 mr-1" />
                           {v.usuarios?.nombre || 'Comercial'}
+                          {v.usuarios?.telefono && isExceeded && (
+                            <a href={`tel:${v.usuarios.telefono}`} className="ml-3 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full hover:bg-primary/90 transition-colors">
+                              Llamar: {v.usuarios.telefono}
+                            </a>
+                          )}
                         </p>
                       </div>
                       
@@ -209,14 +237,21 @@ export function VisitasFeedClient({
                         <Trash2 className="w-4 h-4" />
                       </button>
                       
-                      {v.hora_checkin && v.hora_checkout && differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin)) > 0 && (
-                        <div className="text-xs font-bold bg-muted px-2 py-1 rounded-lg flex items-center text-foreground justify-end">
-                          <Timer className="w-3 h-3 mr-1 text-primary" />
-                          {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
+                      {isOpen ? (
+                        <div className={`text-xs font-black px-2 py-1 rounded-lg flex items-center justify-end ${isExceeded ? 'bg-destructive/20 text-destructive' : 'bg-primary/20 text-primary'}`}>
+                          <Timer className={`w-3 h-3 mr-1 ${isExceeded ? 'text-destructive animate-pulse' : 'text-primary animate-pulse'}`} />
+                          {minutesOpen} min (Límite: {v.timer_programado_min || 60})
                         </div>
+                      ) : (
+                        v.hora_checkin && v.hora_checkout && differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin)) > 0 && (
+                          <div className="text-xs font-bold bg-muted px-2 py-1 rounded-lg flex items-center text-foreground justify-end">
+                            <Timer className="w-3 h-3 mr-1 text-primary" />
+                            {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
+                          </div>
+                        )
                       )}
                       {(v.agencias?.ciudad || v.usuarios?.zona) && (
-                        <div className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-end">
+                        <div className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-end mt-1">
                           <MapPin className="w-3 h-3 mr-1" />
                           {v.agencias?.ciudad || v.usuarios?.zona}
                         </div>

@@ -12,7 +12,7 @@ export default async function AdminVisitasPage() {
     .select(`
       id, created_at, comercial_id, agencia_id,
       es_actividad, titulo_actividad, temas, observaciones,
-      hora_checkin, hora_checkout, estado,
+      hora_checkin, hora_checkout, estado, timer_programado_min,
       gps_lat, gps_lng,
       distancia_checkin_metros, alerta_fraude_checkin, alerta_fraude_checkout,
       usuarios:comercial_id ( nombre, zona ),
@@ -23,9 +23,22 @@ export default async function AdminVisitasPage() {
 
   const { data: todosComerciales } = await supabase
     .from('usuarios')
-    .select('nombre, zona')
+    .select('id, nombre, zona')
     .eq('rol', 'comercial')
     .order('nombre')
+    
+  const { data: perfiles } = await supabase
+    .from('usuarios_perfil')
+    .select('id, telefono')
+
+  // Mapear teléfono a las visitas
+  const visitasConTelefono = visitas?.map((v: any) => ({
+    ...v,
+    usuarios: {
+      ...v.usuarios,
+      telefono: perfiles?.find((p: any) => p.id === v.comercial_id)?.telefono || null
+    }
+  }))
 
   return (
     <div className="space-y-6 pb-20">
@@ -41,7 +54,7 @@ export default async function AdminVisitasPage() {
         </div>
       </div>
 
-      <VisitasFeedClient visitasIniciales={visitas || []} todosComerciales={todosComerciales || []} />
+      <VisitasFeedClient visitasIniciales={visitasConTelefono || []} todosComerciales={todosComerciales || []} />
     </div>
   )
 }
