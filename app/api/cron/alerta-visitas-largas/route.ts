@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
 
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    // return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN
