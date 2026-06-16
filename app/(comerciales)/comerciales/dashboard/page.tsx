@@ -89,7 +89,7 @@ export default async function DashboardPage() {
   itemsCronologicos.forEach((item, index) => {
     timelineItems.push({ type: 'visita', data: item })
     
-    if (index < itemsCronologicos.length - 1) {
+    if (esDiaLaboral && index < itemsCronologicos.length - 1) {
       const checkoutActual = new Date(item.hora_checkout).getTime()
       const checkinSiguiente = new Date(itemsCronologicos[index + 1].hora_checkin).getTime()
       const diffMin = (checkinSiguiente - checkoutActual) / 60000
