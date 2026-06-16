@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/alerta-visitas-largas",
-      "schedule": "0 0 * * *"
+      "schedule": "*/15 14-23 * * 1-5"
     },
     {
       "path": "/api/cron/alerta-inactividad",
