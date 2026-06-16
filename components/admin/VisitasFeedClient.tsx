@@ -27,6 +27,7 @@ export function VisitasFeedClient({
   const [filtroCiudad, setFiltroCiudad] = useState("Todas")
   const [filtroComercial, setFiltroComercial] = useState("Todos")
   const [showFiltros, setShowFiltros] = useState(false)
+  const [soloAlertas, setSoloAlertas] = useState(false)
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
@@ -64,6 +65,9 @@ export function VisitasFeedClient({
     // Comercial
     const matchComercial = filtroComercial === "Todos" || comercialNombre === filtroComercial.trim()
 
+    // Alertas
+    const matchAlertas = !soloAlertas || v.alerta_fraude_checkin || v.alerta_fraude_checkout
+
     // Time
     let matchTiempo = true
     const hoy = new Date()
@@ -82,7 +86,7 @@ export function VisitasFeedClient({
       matchTiempo = fechaFormato === fechaEspecifica
     }
 
-    return matchSearch && matchCiudad && matchComercial && matchTiempo
+    return matchSearch && matchCiudad && matchComercial && matchTiempo && matchAlertas
   })
 
   return (
@@ -99,6 +103,16 @@ export function VisitasFeedClient({
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          
+          <button 
+            onClick={() => setSoloAlertas(!soloAlertas)}
+            className={`h-11 shrink-0 rounded-xl flex items-center justify-center transition-colors border px-3 gap-2 ${soloAlertas ? 'bg-destructive/10 text-destructive border-destructive/30' : 'bg-card border-border text-muted-foreground hover:bg-muted'}`}
+            title="Mostrar Sólo Alertas de Fraude"
+          >
+            <ShieldAlert className="w-5 h-5" />
+            <span className="text-sm font-bold hidden sm:inline">Alertas</span>
+          </button>
+
           <button 
             onClick={() => setShowFiltros(!showFiltros)}
             className={`h-11 w-11 shrink-0 rounded-xl flex items-center justify-center transition-colors border ${showFiltros ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-foreground hover:bg-muted'}`}
