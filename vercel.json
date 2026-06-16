@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/alerta-visitas-largas",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
