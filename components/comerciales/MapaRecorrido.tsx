@@ -131,8 +131,30 @@ export default function MapaRecorrido({ visitas }: MapaRecorridoProps) {
     (a, b) => parseUTC(a.hora_checkin).getTime() - parseUTC(b.hora_checkin).getTime()
   )
 
-  // Filter out those without GPS
-  const conGPS = ordenadas.filter(v => v.gps_lat && v.gps_lng)
+  // Jitter points that are in the exact same location so they don't overlap
+  const applyJitter = (arr: any[]) => {
+    const counts = new Map<string, number>();
+    return arr.map(v => {
+      if (!v.gps_lat || !v.gps_lng) return v;
+      const key = `${Number(v.gps_lat).toFixed(4)},${Number(v.gps_lng).toFixed(4)}`;
+      const count = counts.get(key) || 0;
+      counts.set(key, count + 1);
+      
+      if (count > 0) {
+        const radius = 0.0002 * Math.ceil(count / 8);
+        const angle = count * (Math.PI / 4); // 45 degrees apart
+        return {
+          ...v,
+          gps_lat: Number(v.gps_lat) + radius * Math.cos(angle),
+          gps_lng: Number(v.gps_lng) + radius * Math.sin(angle)
+        }
+      }
+      return { ...v, gps_lat: Number(v.gps_lat), gps_lng: Number(v.gps_lng) }
+    })
+  }
+
+  // Filter out those without GPS and apply jitter to prevent overlap
+  const conGPS = applyJitter(ordenadas.filter(v => v.gps_lat && v.gps_lng))
 
   const positions: [number, number][] = conGPS.map(v => [v.gps_lat, v.gps_lng])
 

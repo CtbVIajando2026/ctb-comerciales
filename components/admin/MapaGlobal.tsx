@@ -216,7 +216,29 @@ export default function MapaGlobal({ visitas, ubicacionesLive = [] }: MapaGlobal
   useEffect(() => setMounted(true), [])
   if (!mounted) return <div className="w-full h-full bg-muted animate-pulse rounded-2xl" />
 
-  const visitasConGps = visitas.filter(v => v.gps_lat && v.gps_lng)
+  // Jitter points that are in the exact same location so they don't overlap perfectly
+  const applyJitter = (arr: any[]) => {
+    const counts = new Map<string, number>();
+    return arr.map(v => {
+      if (!v.gps_lat || !v.gps_lng) return v;
+      const key = `${Number(v.gps_lat).toFixed(4)},${Number(v.gps_lng).toFixed(4)}`;
+      const count = counts.get(key) || 0;
+      counts.set(key, count + 1);
+      
+      if (count > 0) {
+        const radius = 0.0002 * Math.ceil(count / 8);
+        const angle = count * (Math.PI / 4); // 45 degrees apart
+        return {
+          ...v,
+          gps_lat: Number(v.gps_lat) + radius * Math.cos(angle),
+          gps_lng: Number(v.gps_lng) + radius * Math.sin(angle)
+        }
+      }
+      return { ...v, gps_lat: Number(v.gps_lat), gps_lng: Number(v.gps_lng) }
+    })
+  }
+
+  const visitasConGps = applyJitter(visitas.filter(v => v.gps_lat && v.gps_lng))
   
   // Combine all positions for fitting bounds
   const livePositions: [number, number][] = ubicacionesLive
