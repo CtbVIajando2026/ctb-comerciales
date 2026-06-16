@@ -43,6 +43,16 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // ─── Validar Jornada Laboral (Hora Ecuador UTC-5) ───────────────────────────
+  const ahora = new Date()
+  const horaEcuador = new Date(ahora.getTime() - 5 * 60 * 60 * 1000)
+  const diaSemana = horaEcuador.getUTCDay()
+  const horaLocal = horaEcuador.getUTCHours()
+
+  if (diaSemana === 0 || diaSemana === 6 || horaLocal < 9 || horaLocal >= 18) {
+    return NextResponse.json({ ok: true, mensaje: 'Fuera de la jornada laboral de Ecuador (09am - 06pm)' })
+  }
+
   // Calcular la fecha límite (hace 60 minutos en UTC)
   const limite = new Date(Date.now() - 60 * 60 * 1000).toISOString()
 
