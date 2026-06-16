@@ -33,8 +33,9 @@ export async function updateSession(request: NextRequest) {
 
   // Protección de rutas
   const isAuthRoute = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/'
+  const isCronRoute = request.nextUrl.pathname.startsWith('/api/cron')
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isAuthRoute && !isCronRoute) {
     // No hay usuario, redirigir al login
     const url = request.nextUrl.clone()
     url.pathname = '/login'
