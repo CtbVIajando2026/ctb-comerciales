@@ -11,6 +11,8 @@ import { obtenerNotificaciones, Notificacion } from "@/app/(comerciales)/actions
 import { createClient } from "@/lib/supabase/server"
 import { CumpleanosPopup } from "@/components/comerciales/CumpleanosPopup"
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const data = await obtenerMeticasDashboard()
   

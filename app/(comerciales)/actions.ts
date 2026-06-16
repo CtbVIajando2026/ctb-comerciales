@@ -303,86 +303,125 @@ export async function iniciarActividad(
 // --- DASHBOARD DATA ---
 
 export async function obtenerMeticasDashboard() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
 
-  // 1. Obtener la meta
-  const { data: meta } = await supabase
-    .from('metas_comerciales')
-    .select('visitas_diarias')
-    .eq('comercial_id', user.id)
-    .eq('activa', true)
-    .single()
+    // 1. Obtener la meta
+    let metaDiaria = 5
+    try {
+      const { data: meta } = await supabase
+        .from('metas_comerciales')
+        .select('visitas_diarias')
+        .eq('comercial_id', user.id)
+        .eq('activa', true)
+        .maybeSingle()
+      
+      if (meta?.visitas_diarias !== undefined) {
+        metaDiaria = meta.visitas_diarias
+      }
+    } catch (e) {
+      console.error("[Dashboard] Error obteniendo meta:", e)
+    }
 
-  // 2. Visitas y actividades de hoy (desde las 00:00:00 en Ecuador)
-  const now = new Date()
-  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
-  const ecDateStr = formatter.format(now)
-  const inicioDiaEcuador = new Date(`${ecDateStr}T00:00:00-05:00`).toISOString()
+    // 2. Visitas y actividades de hoy (desde las 00:00:00 en Ecuador)
+    let visitas: any[] = []
+    const now = new Date()
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+    const ecDateStr = formatter.format(now)
+    const inicioDiaEcuador = new Date(`${ecDateStr}T00:00:00-05:00`).toISOString()
 
-  const { data: visitas } = await supabase
-    .from('visitas')
-    .select(`
-      id,
-      es_actividad,
-      titulo_actividad,
-      hora_checkin,
-      hora_checkout,
-      estado,
-      alerta_fraude_checkin,
-      alerta_fraude_checkout,
-      observaciones,
-      temas,
-      temas_texto_libre,
-      gps_lat,
-      gps_lng,
-      agencia:agencias(nombre, temperatura)
-    `)
-    .eq('comercial_id', user.id)
-    .gte('created_at', inicioDiaEcuador)
-    .order('created_at', { ascending: false })
+    try {
+      const { data } = await supabase
+        .from('visitas')
+        .select(`
+          id,
+          es_actividad,
+          titulo_actividad,
+          hora_checkin,
+          hora_checkout,
+          estado,
+          alerta_fraude_checkin,
+          alerta_fraude_checkout,
+          observaciones,
+          temas,
+          temas_texto_libre,
+          gps_lat,
+          gps_lng,
+          agencia:agencias(nombre, temperatura)
+        `)
+        .eq('comercial_id', user.id)
+        .gte('created_at', inicioDiaEcuador)
+        .order('created_at', { ascending: false })
+      visitas = data || []
+    } catch (e) {
+      console.error("[Dashboard] Error obteniendo visitas:", e)
+    }
 
-  const metaDiaria = meta?.visitas_diarias !== undefined ? meta.visitas_diarias : 5 // default fallback
+    // 4. Justificación
+    let justificacionHoy = false
+    try {
+      const { data: justificacion } = await supabase
+        .from('justificaciones_comerciales')
+        .select('id')
+        .eq('comercial_id', user.id)
+        .eq('fecha', ecDateStr)
+        .maybeSingle()
+      justificacionHoy = !!justificacion
+    } catch (e) {
+      console.error("[Dashboard] Error obteniendo justificación:", e)
+    }
 
-  // 4. Justificación
-  const { data: justificacion } = await supabase
-    .from('justificaciones_comerciales')
-    .select('id')
-    .eq('comercial_id', user.id)
-    .eq('fecha', ecDateStr)
-    .single()
+    // 5. Perfil
+    let perfil = null
+    try {
+      const { data: perfilData } = await supabase
+        .from('usuarios_perfil')
+        .select('nombre_completo, ciudad_zona')
+        .eq('id', user.id)
+        .maybeSingle()
+      perfil = perfilData
+    } catch (e) {
+      console.error("[Dashboard] Error obteniendo perfil:", e)
+    }
 
-  // 5. Perfil
-  let perfil = null
-  const { data: perfilData } = await supabase
-    .from('usuarios_perfil')
-    .select('nombre_completo, ciudad_zona')
-    .eq('id', user.id)
-    .maybeSingle()
+    if (!perfil) {
+      try {
+        const { data: usuarioData } = await supabase
+          .from('usuarios')
+          .select('nombre, zona')
+          .eq('id', user.id)
+          .maybeSingle()
 
-  perfil = perfilData
-
-  if (!perfil) {
-    const { data: usuarioData } = await supabase
-      .from('usuarios')
-      .select('nombre, zona')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    if (usuarioData) {
-      perfil = {
-        nombre_completo: usuarioData.nombre,
-        ciudad_zona: usuarioData.zona
+        if (usuarioData) {
+          perfil = {
+            nombre_completo: usuarioData.nombre,
+            ciudad_zona: usuarioData.zona
+          }
+        }
+      } catch (e) {
+        console.error("[Dashboard] Error obteniendo usuario legacy:", e)
       }
     }
-  }
 
-  return {
-    visitas: visitas || [], // Esto ahora incluye visitas y actividades
-    meta: metaDiaria,
-    justificacionHoy: !!justificacion,
-    perfil: perfil
+    return {
+      visitas,
+      meta: metaDiaria,
+      justificacionHoy,
+      perfil
+    }
+  } catch (error: any) {
+    if (error && (error.digest === 'DYNAMIC_SERVER_USAGE' || error.message?.includes('Dynamic server usage'))) {
+      throw error
+    }
+    console.error("[Dashboard] Critical error in obtenerMeticasDashboard:", error)
+    return {
+      visitas: [],
+      meta: 5,
+      justificacionHoy: false,
+      perfil: null
+    }
   }
 }
 
