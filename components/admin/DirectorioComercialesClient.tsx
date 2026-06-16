@@ -9,9 +9,39 @@ import { Button } from '@/components/ui/button'
 export function DirectorioComercialesClient({ initialData, isComercialView = false }: { initialData: any[], isComercialView?: boolean }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filtroRol, setFiltroRol] = useState<string>('all')
+  const [timeFilter, setTimeFilter] = useState<string>('30dias')
+
+  const processedData = useMemo(() => {
+    const now = new Date()
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+    const ecDateStr = formatter.format(now)
+    const ecMonthStr = ecDateStr.substring(0, 7)
+
+    return initialData.map(user => {
+      const historial = user.visitas_historial || []
+      const filteredHistorial = historial.filter((v: any) => {
+        const fechaVisita = new Date(v.created_at)
+        if (timeFilter === 'hoy') {
+          return formatter.format(fechaVisita) === ecDateStr
+        } else if (timeFilter === 'semana') {
+          const msInWeek = 7 * 24 * 60 * 60 * 1000
+          return now.getTime() - fechaVisita.getTime() < msInWeek
+        } else if (timeFilter === 'mes') {
+          return formatter.format(fechaVisita).substring(0, 7) === ecMonthStr
+        }
+        return true // 30dias
+      })
+
+      const visitasReales = filteredHistorial.filter((v:any) => !v.es_actividad).length
+      return {
+        ...user,
+        visitas_mes: visitasReales
+      }
+    })
+  }, [initialData, timeFilter])
 
   const filteredData = useMemo(() => {
-    const data = initialData.filter(user => {
+    const data = processedData.filter(user => {
       const matchesSearch = 
         user.nombre_completo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.ciudad_zona?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -23,7 +53,7 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
 
     // Sort as a ranking (most visits first)
     return data.sort((a, b) => (b.visitas_mes || 0) - (a.visitas_mes || 0))
-  }, [initialData, searchTerm, filtroRol])
+  }, [processedData, searchTerm, filtroRol])
 
   const totalUsuarios = initialData.length
   const totalActivos = initialData.filter(u => u.activo).length
@@ -60,10 +90,22 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
           />
         </div>
         
-        <div className="flex bg-muted/50 p-1 rounded-xl w-full sm:w-auto overflow-x-auto shrink-0 border border-border/50">
-          <button onClick={() => setFiltroRol('all')} className={`px-4 py-2 text-[11px] font-bold rounded-lg uppercase tracking-wider transition-all whitespace-nowrap ${filtroRol === 'all' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}>Todos</button>
-          <button onClick={() => setFiltroRol('comercial')} className={`px-4 py-2 text-[11px] font-bold rounded-lg uppercase tracking-wider transition-all whitespace-nowrap ${filtroRol === 'comercial' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}>Comerciales</button>
-          <button onClick={() => setFiltroRol('admin')} className={`px-4 py-2 text-[11px] font-bold rounded-lg uppercase tracking-wider transition-all whitespace-nowrap ${filtroRol === 'admin' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}>Admin</button>
+        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+          <div className="flex bg-muted/50 p-1 rounded-xl shrink-0 border border-border/50">
+            <button onClick={() => setFiltroRol('all')} className={`px-4 py-2 text-[11px] font-bold rounded-lg uppercase tracking-wider transition-all whitespace-nowrap ${filtroRol === 'all' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}>Todos</button>
+            <button onClick={() => setFiltroRol('comercial')} className={`px-4 py-2 text-[11px] font-bold rounded-lg uppercase tracking-wider transition-all whitespace-nowrap ${filtroRol === 'comercial' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}>Comerciales</button>
+            <button onClick={() => setFiltroRol('admin')} className={`px-4 py-2 text-[11px] font-bold rounded-lg uppercase tracking-wider transition-all whitespace-nowrap ${filtroRol === 'admin' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}>Admin</button>
+          </div>
+          <select 
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value)}
+            className="h-10 px-3 rounded-xl border border-border bg-card text-[11px] font-bold uppercase tracking-wider text-foreground outline-none cursor-pointer shrink-0"
+          >
+            <option value="hoy">Hoy</option>
+            <option value="semana">Últimos 7 días</option>
+            <option value="mes">Este Mes</option>
+            <option value="30dias">Últimos 30 días</option>
+          </select>
         </div>
       </div>
 
@@ -198,7 +240,7 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
                   {user.rol === 'comercial' ? (
                     <div className="bg-muted/30 rounded-2xl p-3 border border-border/50 grid grid-cols-2 gap-2 mb-4">
                       <div className={user.meta_diaria > 0 ? "" : "col-span-2 text-center"}>
-                        <p className={`text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center ${user.meta_diaria > 0 ? '' : 'justify-center'}`}><CalendarDays className="w-3 h-3 mr-1"/> Visitas Mes</p>
+                        <p className={`text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center ${user.meta_diaria > 0 ? '' : 'justify-center'}`}><CalendarDays className="w-3 h-3 mr-1"/> {timeFilter === 'hoy' ? 'Visitas Hoy' : timeFilter === 'semana' ? 'Visitas Sem.' : timeFilter === 'mes' ? 'Visitas Mes' : 'Visitas (30d)'}</p>
                         <p className="font-black text-lg leading-none">{user.visitas_mes}</p>
                       </div>
                       {user.meta_diaria > 0 && (

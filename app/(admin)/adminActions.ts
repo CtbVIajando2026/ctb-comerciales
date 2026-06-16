@@ -302,31 +302,26 @@ export async function obtenerDirectorioEquipo() {
     .select('comercial_id, visitas_diarias')
     .eq('activa', true)
 
-  // 3. Obtener visitas completadas del mes actual
-  const now = new Date()
-  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit' })
-  const ecMonthStr = formatter.format(now) // "YYYY-MM" en Ecuador
-  const inicioMesEcuador = new Date(`${ecMonthStr}-01T00:00:00-05:00`).toISOString()
+  // 3. Obtener visitas completadas de los últimos 30 días
+  const hace30Dias = new Date()
+  hace30Dias.setDate(hace30Dias.getDate() - 30)
 
   const { data: visitas } = await supabase
     .from('visitas')
-    .select('comercial_id, es_actividad')
+    .select('comercial_id, es_actividad, created_at')
     .eq('estado', 'completada')
-    .gte('created_at', inicioMesEcuador)
+    .gte('created_at', hace30Dias.toISOString())
 
   return comerciales.map(c => {
     const metaObj = metas?.find(m => m.comercial_id === c.id)
     const meta = metaObj?.visitas_diarias !== undefined ? metaObj.visitas_diarias : 0 // 0 = Libre
     
     const misVisitas = visitas?.filter(v => v.comercial_id === c.id) || []
-    const visitasReales = misVisitas.filter(v => !v.es_actividad).length
-    const actividades = misVisitas.filter(v => v.es_actividad).length
 
     return {
       ...c,
       meta_diaria: meta,
-      visitas_mes: visitasReales,
-      actividades_mes: actividades
+      visitas_historial: misVisitas
     }
   })
 }
