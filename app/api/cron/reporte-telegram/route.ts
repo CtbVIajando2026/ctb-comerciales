@@ -119,18 +119,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // 3.5 Obtener alertas de inactividad
-  const { data: alertasInact, error: errorInact } = await supabase
-    .from('alertas_inactividad')
-    .select('comercial_id')
-    .gte('created_at', inicio)
-    .lte('created_at', fin)
-
-  if (errorInact) {
-    console.error('Error consultando inactividad:', errorInact)
-  }
-
-  // Filtrar solo reales
+  // Filtrar solo reales (para las métricas de visitas a agencias)
   const visitasReales = (visitas || []).filter(v => !v.es_actividad)
 
   let mensaje = ''
@@ -148,7 +137,14 @@ export async function GET(req: NextRequest) {
       meta: number
     }>>()
 
-    // Inicializar todos los comerciales con 0 visitas
+    // Agrupar TODAS las visitas (incluyendo actividades) por comercial para calcular inactividad
+    const todasVisitasPorComercial = new Map<string, any[]>()
+    for (const v of (visitas || [])) {
+      if (!todasVisitasPorComercial.has(v.comercial_id)) todasVisitasPorComercial.set(v.comercial_id, [])
+      todasVisitasPorComercial.get(v.comercial_id)!.push(v)
+    }
+
+    // Inicializar todos los comerciales con 0 visitas y calcular inactividad
     for (const p of perfiles || []) {
       const ciudad = capitalizarCiudad(p.ciudad_zona || 'Sin ciudad')
       const metaObj = metas?.find(m => m.comercial_id === p.id)
@@ -157,15 +153,37 @@ export async function GET(req: NextRequest) {
       if (!ciudades.has(ciudad)) ciudades.set(ciudad, new Map())
       const comerciales = ciudades.get(ciudad)!
 
-      comerciales.set(p.id, { nombre: p.nombre_completo, visitas: 0, alertas_checkin: 0, alertas_checkout: 0, inactividad: 0, meta })
-    }
+      // Calcular inactividad matemática (gaps > 30 mins)
+      let inactividadCount = 0
+      const vComercial = todasVisitasPorComercial.get(p.id) || []
+      vComercial.sort((a, b) => new Date(a.hora_checkin).getTime() - new Date(b.hora_checkin).getTime())
 
-    // Sumar alertas de inactividad
-    for (const a of alertasInact || []) {
-      const perfil = perfiles?.find(p => p.id === a.comercial_id)
-      if (!perfil) continue
-      const ciudad = capitalizarCiudad(perfil.ciudad_zona || 'Sin ciudad')
-      ciudades.get(ciudad)!.get(a.comercial_id)!.inactividad++
+      const fechaBase = new Date(inicio)
+      const jornadaInicio = new Date(fechaBase)
+      jornadaInicio.setHours(9, 0, 0, 0)
+      const jornadaFin = new Date(fechaBase)
+      jornadaFin.setHours(18, 0, 0, 0)
+
+      let lastTime = jornadaInicio.getTime()
+
+      for (const v of vComercial) {
+        if (!v.hora_checkin || !v.hora_checkout) continue
+        const checkinTime = new Date(v.hora_checkin).getTime()
+        const checkoutTime = new Date(v.hora_checkout).getTime()
+        
+        if (checkinTime > lastTime) {
+          const gapMins = (checkinTime - lastTime) / 60000
+          if (gapMins > 30) inactividadCount++
+        }
+        lastTime = Math.max(lastTime, checkoutTime)
+      }
+      
+      if (lastTime < jornadaFin.getTime()) {
+        const gapMins = (jornadaFin.getTime() - lastTime) / 60000
+        if (gapMins > 30) inactividadCount++
+      }
+
+      comerciales.set(p.id, { nombre: p.nombre_completo, visitas: 0, alertas_checkin: 0, alertas_checkout: 0, inactividad: inactividadCount, meta })
     }
 
     // Sumar las visitas reales
