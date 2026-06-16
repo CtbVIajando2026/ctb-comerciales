@@ -119,6 +119,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // 3.5 Obtener alertas de inactividad
+  const { data: alertasInact, error: errorInact } = await supabase
+    .from('alertas_inactividad')
+    .select('comercial_id')
+    .gte('created_at', inicio)
+    .lte('created_at', fin)
+
+  if (errorInact) {
+    console.error('Error consultando inactividad:', errorInact)
+  }
+
   // Filtrar solo reales
   const visitasReales = (visitas || []).filter(v => !v.es_actividad)
 
@@ -131,7 +142,9 @@ export async function GET(req: NextRequest) {
     const ciudades = new Map<string, Map<string, {
       nombre: string
       visitas: number
-      alertas: number
+      alertas_checkin: number
+      alertas_checkout: number
+      inactividad: number
       meta: number
     }>>()
 
@@ -144,7 +157,15 @@ export async function GET(req: NextRequest) {
       if (!ciudades.has(ciudad)) ciudades.set(ciudad, new Map())
       const comerciales = ciudades.get(ciudad)!
 
-      comerciales.set(p.id, { nombre: p.nombre_completo, visitas: 0, alertas: 0, meta })
+      comerciales.set(p.id, { nombre: p.nombre_completo, visitas: 0, alertas_checkin: 0, alertas_checkout: 0, inactividad: 0, meta })
+    }
+
+    // Sumar alertas de inactividad
+    for (const a of alertasInact || []) {
+      const perfil = perfiles?.find(p => p.id === a.comercial_id)
+      if (!perfil) continue
+      const ciudad = capitalizarCiudad(perfil.ciudad_zona || 'Sin ciudad')
+      ciudades.get(ciudad)!.get(a.comercial_id)!.inactividad++
     }
 
     // Sumar las visitas reales
@@ -153,11 +174,11 @@ export async function GET(req: NextRequest) {
       if (!perfil) continue // ignorar si no está en perfiles activos
 
       const ciudad = capitalizarCiudad(perfil.ciudad_zona || 'Sin ciudad')
-      const tieneAlerta = v.alerta_fraude_checkin || v.alerta_fraude_checkout
-
+      
       const entry = ciudades.get(ciudad)!.get(v.comercial_id)!
       entry.visitas++
-      if (tieneAlerta) entry.alertas++
+      if (v.alerta_fraude_checkin) entry.alertas_checkin++
+      if (v.alerta_fraude_checkout) entry.alertas_checkout++
     }
 
     const ORDEN_CIUDADES = ['Cuenca', 'Guayaquil', 'Quito']
@@ -186,14 +207,23 @@ export async function GET(req: NextRequest) {
       )
 
       for (const c of lista) {
+        const totalAlertasUbicacion = c.alertas_checkin + c.alertas_checkout
         const metaAlcanzada = c.meta > 0 && c.visitas >= c.meta
         const checkMeta = metaAlcanzada ? ' ✅' : ''
         lineas.push(`👤 ${c.nombre} — *${c.visitas} visita${c.visitas !== 1 ? 's' : ''}*${checkMeta}`)
-        if (c.alertas > 0) {
-          lineas.push(`   ⚠️ ${c.alertas} sin coincidencia de ubicación`)
+        
+        if (c.alertas_checkin > 0) {
+          lineas.push(`   📍 ${c.alertas_checkin} Check-in lejos de agencia`)
         }
+        if (c.alertas_checkout > 0) {
+          lineas.push(`   🏃 ${c.alertas_checkout} Check-out lejos de agencia`)
+        }
+        if (c.inactividad > 0) {
+          lineas.push(`   💤 ${c.inactividad} alerta${c.inactividad !== 1 ? 's' : ''} de inactividad (>30m)`)
+        }
+        
         totalVisitas += c.visitas
-        totalAlertas += c.alertas
+        totalAlertas += totalAlertasUbicacion
       }
       lineas.push('')
     }
