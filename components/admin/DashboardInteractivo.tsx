@@ -32,16 +32,37 @@ function exportToCSV(data: any[], filename: string) {
 }
 
 export function DashboardInteractivo({ data }: { data: any }) {
-  const { visitas, metas, comerciales } = data
+  const { visitas: visitasRaw, metas, comerciales } = data
   const [vista, setVista] = useState<VistaType>('global')
   const [ciudadSeleccionada, setCiudadSeleccionada] = useState<string>('Quito')
   const [comercialSeleccionado, setComercialSeleccionado] = useState<string>('all')
+  const [timeFilter, setTimeFilter] = useState<string>('30dias')
   
   // Filtros y Paginación
   const [searchAgencia, setSearchAgencia] = useState('')
   const [searchGlobalAgencia, setSearchGlobalAgencia] = useState('')
   const [globalPage, setGlobalPage] = useState(1)
   const [comercialPage, setComercialPage] = useState(1)
+
+  const visitas = useMemo(() => {
+    const now = new Date()
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+    const ecDateStr = formatter.format(now)
+    const ecMonthStr = ecDateStr.substring(0, 7)
+    
+    return visitasRaw.filter((v: any) => {
+      const fechaVisita = new Date(v.created_at)
+      if (timeFilter === 'hoy') {
+        return formatter.format(fechaVisita) === ecDateStr
+      } else if (timeFilter === 'semana') {
+        const msInWeek = 7 * 24 * 60 * 60 * 1000
+        return now.getTime() - fechaVisita.getTime() < msInWeek
+      } else if (timeFilter === 'mes') {
+        return formatter.format(fechaVisita).substring(0, 7) === ecMonthStr
+      }
+      return true // 30dias
+    })
+  }, [visitasRaw, timeFilter])
 
   // ---------------- DATOS GLOBALES ----------------
   const totalVisitas = visitas.length
@@ -219,9 +240,19 @@ export function DashboardInteractivo({ data }: { data: any }) {
           </div>
           <div>
             <h2 className="text-xl font-black tracking-tight leading-tight">Business Intelligence</h2>
-            <p className="text-xs text-muted-foreground flex items-center mt-0.5">
-              <CalendarIcon className="w-3 h-3 mr-1" /> Últimos 30 días
-            </p>
+            <div className="flex items-center mt-0.5 text-xs text-muted-foreground">
+              <CalendarIcon className="w-3 h-3 mr-1" />
+              <select 
+                className="bg-transparent font-medium cursor-pointer outline-none focus:ring-0 p-0 text-foreground"
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+              >
+                <option value="hoy">Hoy</option>
+                <option value="semana">Últimos 7 días</option>
+                <option value="mes">Este Mes</option>
+                <option value="30dias">Últimos 30 días</option>
+              </select>
+            </div>
           </div>
         </div>
         
