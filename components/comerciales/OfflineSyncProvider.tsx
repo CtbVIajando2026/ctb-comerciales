@@ -36,14 +36,19 @@ export function OfflineSyncProvider() {
             
             for (const item of checkinQueue) {
               try {
-                await iniciarVisita({
+                const res = await iniciarVisita({
                   agencia_id: item.agencia_id,
                   contacto_id: item.contacto_id,
                   gps_lat: item.gps_lat,
                   gps_lng: item.gps_lng,
                   timer_programado_min: item.timer_programado_min
                 })
-                syncedCheckins++
+                if (res.success) {
+                  syncedCheckins++
+                } else {
+                  console.error("Error sincronizando checkin offline:", res.error)
+                  remainingCheckins.push(item)
+                }
               } catch (e) {
                 console.error("Error sincronizando checkin offline", e)
                 remainingCheckins.push(item)

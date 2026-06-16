@@ -52,13 +52,20 @@ export default function NuevaVisitaPage() {
     }
 
     try {
-      const nuevaVisita = await iniciarVisita({
+      const res = await iniciarVisita({
         agencia_id: agenciaSeleccionada.id,
         contacto_id: contactoSeleccionado?.id,
         gps_lat: lat,
         gps_lng: lng,
         timer_programado_min: timerProgramado === "none" ? null : parseInt(timerProgramado, 10)
       })
+
+      if (!res.success) {
+        toast.error("Error", { description: res.error || "Hubo un error al iniciar la visita." })
+        return
+      }
+
+      const nuevaVisita = res.data
       toast.success("Check-In exitoso", { description: `Iniciaste visita en ${agenciaSeleccionada.nombre}` })
       // Redirigir directamente a la interfaz del timer y checkout
       router.push(`/comerciales/visitas/${nuevaVisita.id}`)

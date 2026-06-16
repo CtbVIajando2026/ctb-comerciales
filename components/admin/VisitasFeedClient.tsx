@@ -5,6 +5,8 @@ import { ExportarExcelButton } from "./ExportarExcelButton"
 import { Building2, Clock, MapPin, User, Search, Filter, ShieldAlert, Timer, Trash2 } from "lucide-react"
 import { differenceInMinutes } from 'date-fns'
 import { eliminarVisitaAdmin } from "@/app/(admin)/adminActions"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 const normalizarCiudad = (c: string | undefined | null) => {
   if (!c) return 'Quito'
@@ -20,6 +22,7 @@ export function VisitasFeedClient({
   visitasIniciales: any[]
   todosComerciales?: any[]
 }) {
+  const router = useRouter()
   // State for filters
   const [search, setSearch] = useState("")
   const [filtroTiempo, setFiltroTiempo] = useState("Todas") // Todas, Hoy, Semana, Mes, Especifica
@@ -241,8 +244,13 @@ export function VisitasFeedClient({
                       <button
                         onClick={async () => {
                           if (confirm("¿Seguro que deseas eliminar esta visita de prueba?")) {
-                            await eliminarVisitaAdmin(v.id)
-                            window.location.reload()
+                            try {
+                              await eliminarVisitaAdmin(v.id)
+                              toast.success("Visita eliminada", { description: "El registro ha sido borrado exitosamente." })
+                              router.refresh()
+                            } catch (e: any) {
+                              toast.error("Error al eliminar", { description: e.message || "No se pudo eliminar la visita." })
+                            }
                           }
                         }}
                         className="text-destructive hover:bg-destructive/10 p-1.5 rounded-lg transition-colors mb-1"

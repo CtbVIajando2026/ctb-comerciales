@@ -27,18 +27,22 @@ export function ExportarExcelButton({ datos }: { datos: any }) {
       "Resumen"
     ]
 
+    const escapeCSV = (val: any) => {
+      if (val === null || val === undefined) return '""'
+      const str = String(val)
+      return `"${str.replace(/"/g, '""').replace(/\n/g, ' ')}"`
+    }
+
     // Map rows
     const rows = visitas.map((v: any) => {
-      const fecha = new Date(v.created_at).toLocaleString('es-EC')
-      const comercial = v.usuarios?.nombre || "Desconocido"
-      const agencia = v.agencias?.nombre || "Desconocida"
-      const ciudad = v.agencias?.ciudad || "Quito"
-      const tipo = v.temas || ""
+      const fecha = escapeCSV(new Date(v.created_at).toLocaleString('es-EC'))
+      const comercial = escapeCSV(v.usuarios?.nombre || "Desconocido")
+      const agencia = escapeCSV(v.agencias?.nombre || "Desconocida")
+      const ciudad = escapeCSV(v.agencias?.ciudad || "Quito")
+      const tipo = escapeCSV(Array.isArray(v.temas) ? v.temas.join('; ') : (v.temas || ""))
       const duracion = v.hora_checkout && v.hora_checkin ? differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin)) : 0
       const distancia = v.distancia_checkin_metros || 0
-      
-      // Clean up text for CSV (quotes, newlines)
-      const resumen = `"${(v.observaciones || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
+      const resumen = escapeCSV(v.observaciones || '')
 
       return [v.id, fecha, comercial, agencia, ciudad, tipo, duracion, distancia, resumen].join(",")
     })

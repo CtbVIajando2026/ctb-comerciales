@@ -14,7 +14,6 @@ export function AlertasClient({ alertasIniciales }: { alertasIniciales: any[] })
   const [page, setPage] = useState(1)
 
   const alertasFiltradas = useMemo(() => {
-    if (!search) return alertasIniciales
     const searchLower = search.toLowerCase()
     return alertasIniciales.filter(v => {
       const comercial = v.usuarios?.nombre?.toLowerCase() || ''
@@ -22,7 +21,8 @@ export function AlertasClient({ alertasIniciales }: { alertasIniciales: any[] })
       const agencia = v.agencias?.nombre?.toLowerCase() || ''
       const fechaStr = format(parseISO(v.created_at), 'dd MMM yyyy', { locale: es }).toLowerCase()
       
-      const matchSearch = comercial.includes(searchLower) ||
+      const matchSearch = !search ||
+             comercial.includes(searchLower) ||
              zona.includes(searchLower) ||
              agencia.includes(searchLower) ||
              fechaStr.includes(searchLower)

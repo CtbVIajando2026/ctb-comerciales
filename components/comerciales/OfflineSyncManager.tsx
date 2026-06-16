@@ -69,9 +69,13 @@ export function OfflineSyncManager() {
 
         switch (action.type) {
           case 'CHECKIN':
-            const visita = await iniciarVisita(payload)
-            if (action.tempId && visita?.id) {
-              idMap[action.tempId] = visita.id
+            const res = await iniciarVisita(payload)
+            if (res.success && res.data) {
+              if (action.tempId && res.data.id) {
+                idMap[action.tempId] = res.data.id
+              }
+            } else {
+              throw new Error(res.error || "Error al sincronizar visita")
             }
             break
             

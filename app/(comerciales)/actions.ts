@@ -72,67 +72,72 @@ export async function iniciarVisita(data: {
   gps_lng?: number | null,
   timer_programado_min?: number | null
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("No autenticado")
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: "No autenticado" }
 
-  // Evitar múltiples visitas abiertas
-  const { data: visitaActiva } = await supabase
-    .from('visitas')
-    .select('id')
-    .eq('comercial_id', user.id)
-    .eq('estado', 'abierta')
-    .maybeSingle()
+    // Evitar múltiples visitas abiertas
+    const { data: visitaActiva } = await supabase
+      .from('visitas')
+      .select('id')
+      .eq('comercial_id', user.id)
+      .eq('estado', 'abierta')
+      .maybeSingle()
 
-  if (visitaActiva) {
-    throw new Error("Ya tienes una visita en curso. Debes finalizarla antes de iniciar otra.")
-  }
+    if (visitaActiva) {
+      return { success: false, error: "Ya tienes una visita en curso. Debes finalizarla antes de iniciar otra." }
+    }
 
-  let distanciaCheckin: number | null = null;
-  let alertaFraudeCheckin = false;
+    let distanciaCheckin: number | null = null;
+    let alertaFraudeCheckin = false;
 
-  if (data.gps_lat && data.gps_lng) {
-    const { data: agencia } = await supabase
-      .from('agencias')
-      .select('gps_lat_referencia, gps_lng_referencia, gps_lat_registro, gps_lng_registro')
-      .eq('id', data.agencia_id)
-      .single()
-      
-    if (agencia) {
-      const latAgencia = agencia.gps_lat_referencia || agencia.gps_lat_registro
-      const lngAgencia = agencia.gps_lng_referencia || agencia.gps_lng_registro
-      if (latAgencia && lngAgencia) {
-        distanciaCheckin = calcularDistanciaMetros(data.gps_lat, data.gps_lng, latAgencia, lngAgencia)
-        if (distanciaCheckin > 500) {
-          alertaFraudeCheckin = true
+    if (data.gps_lat && data.gps_lng) {
+      const { data: agencia } = await supabase
+        .from('agencias')
+        .select('gps_lat_referencia, gps_lng_referencia, gps_lat_registro, gps_lng_registro')
+        .eq('id', data.agencia_id)
+        .single()
+        
+      if (agencia) {
+        const latAgencia = agencia.gps_lat_referencia || agencia.gps_lat_registro
+        const lngAgencia = agencia.gps_lng_referencia || agencia.gps_lng_registro
+        if (latAgencia && lngAgencia) {
+          distanciaCheckin = calcularDistanciaMetros(data.gps_lat, data.gps_lng, latAgencia, lngAgencia)
+          if (distanciaCheckin > 500) {
+            alertaFraudeCheckin = true
+          }
         }
       }
     }
+
+    const { data: visita, error } = await supabase
+      .from('visitas')
+      .insert({
+        comercial_id: user.id,
+        agencia_id: data.agencia_id,
+        contacto_id: data.contacto_id || null,
+        gps_lat: data.gps_lat,
+        gps_lng: data.gps_lng,
+        distancia_checkin_metros: distanciaCheckin,
+        alerta_fraude_checkin: alertaFraudeCheckin,
+        timer_programado_min: data.timer_programado_min,
+        estado: 'abierta'
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Error iniciando visita:", error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/comerciales/dashboard')
+    return { success: true, data: visita }
+  } catch (e: any) {
+    console.error("Excepción en iniciarVisita:", e)
+    return { success: false, error: e.message || "Ocurrió un error inesperado." }
   }
-
-  const { data: visita, error } = await supabase
-    .from('visitas')
-    .insert({
-      comercial_id: user.id,
-      agencia_id: data.agencia_id,
-      contacto_id: data.contacto_id || null,
-      gps_lat: data.gps_lat,
-      gps_lng: data.gps_lng,
-      distancia_checkin_metros: distanciaCheckin,
-      alerta_fraude_checkin: alertaFraudeCheckin,
-      timer_programado_min: data.timer_programado_min,
-      estado: 'abierta'
-    })
-    .select()
-    .single()
-
-  if (error) {
-    console.error("Error iniciando visita:", error)
-    throw new Error(error.message)
-  }
-
-  revalidatePath('/comerciales/dashboard')
-  return visita
 }
 
 export async function obtenerCatalogoRegalos() {
@@ -325,7 +330,7 @@ export async function obtenerMeticasDashboard() {
       console.error("[Dashboard] Error obteniendo meta:", e)
     }
 
-    // 2. Visitas y actividades de hoy (desde las 00:00:00 en Ecuador)
+    // 2. Visitas y actividades de hoy (desde las 00:00:00 en Ecuador) más la visita activa (incluso si fue ayer)
     let visitas: any[] = []
     const now = new Date()
     const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
@@ -333,7 +338,31 @@ export async function obtenerMeticasDashboard() {
     const inicioDiaEcuador = new Date(`${ecDateStr}T00:00:00-05:00`).toISOString()
 
     try {
-      const { data } = await supabase
+      // Obtener la visita activa del comercial (sin límite de fecha)
+      const { data: visitaActiva } = await supabase
+        .from('visitas')
+        .select(`
+          id,
+          es_actividad,
+          titulo_actividad,
+          hora_checkin,
+          hora_checkout,
+          estado,
+          alerta_fraude_checkin,
+          alerta_fraude_checkout,
+          observaciones,
+          temas,
+          temas_texto_libre,
+          gps_lat,
+          gps_lng,
+          agencia:agencias(nombre, temperatura)
+        `)
+        .eq('comercial_id', user.id)
+        .eq('estado', 'abierta')
+        .maybeSingle()
+
+      // Obtener visitas completadas hoy
+      const { data: visitasCompletadas } = await supabase
         .from('visitas')
         .select(`
           id,
@@ -353,8 +382,11 @@ export async function obtenerMeticasDashboard() {
         `)
         .eq('comercial_id', user.id)
         .gte('created_at', inicioDiaEcuador)
+        .eq('estado', 'completada')
         .order('created_at', { ascending: false })
-      visitas = data || []
+
+      const completadas = visitasCompletadas || []
+      visitas = visitaActiva ? [visitaActiva, ...completadas] : completadas
     } catch (e) {
       console.error("[Dashboard] Error obteniendo visitas:", e)
     }
