@@ -37,6 +37,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
   const [ciudadSeleccionada, setCiudadSeleccionada] = useState<string>('Quito')
   const [comercialSeleccionado, setComercialSeleccionado] = useState<string>('all')
   const [timeFilter, setTimeFilter] = useState<string>('30dias')
+  const [specificDate, setSpecificDate] = useState<string>('')
   
   // Filtros y Paginación
   const [searchAgencia, setSearchAgencia] = useState('')
@@ -59,10 +60,12 @@ export function DashboardInteractivo({ data }: { data: any }) {
         return now.getTime() - fechaVisita.getTime() < msInWeek
       } else if (timeFilter === 'mes') {
         return formatter.format(fechaVisita).substring(0, 7) === ecMonthStr
+      } else if (timeFilter === 'dia_especifico' && specificDate) {
+        return formatter.format(fechaVisita) === specificDate
       }
       return true // 30dias
     })
-  }, [visitasRaw, timeFilter])
+  }, [visitasRaw, timeFilter, specificDate])
 
   // ---------------- DATOS GLOBALES ----------------
   const totalVisitas = visitas.length
@@ -240,10 +243,23 @@ export function DashboardInteractivo({ data }: { data: any }) {
           </div>
           <div>
             <h2 className="text-xl font-black tracking-tight leading-tight">Business Intelligence</h2>
-            <div className="flex items-center mt-0.5 text-xs text-muted-foreground">
-              <CalendarIcon className="w-3 h-3 mr-1" />
+            <p className="text-xs text-muted-foreground mt-0.5">Análisis interactivo de desempeño</p>
+          </div>
+        </div>
+        
+        {/* TAB MENU & TIME FILTER */}
+        <div className="flex flex-col xl:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="flex w-full md:w-auto p-1 bg-muted/50 rounded-xl border border-border/50">
+            <button onClick={() => setVista('global')} className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold text-center transition-all ${vista === 'global' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Global</button>
+            <button onClick={() => setVista('ciudad')} className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold text-center transition-all ${vista === 'ciudad' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Por Ciudad</button>
+            <button onClick={() => setVista('comercial')} className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold text-center transition-all ${vista === 'comercial' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Comercial</button>
+          </div>
+          
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center flex-1 sm:flex-none gap-2 bg-card border border-border p-1.5 rounded-xl shadow-sm">
+              <CalendarIcon className="w-4 h-4 ml-2 text-primary shrink-0" />
               <select 
-                className="bg-transparent font-medium cursor-pointer outline-none focus:ring-0 p-0 text-foreground"
+                className="h-7 px-1 w-full bg-transparent text-xs font-bold uppercase tracking-wider text-foreground outline-none cursor-pointer"
                 value={timeFilter}
                 onChange={(e) => setTimeFilter(e.target.value)}
               >
@@ -251,16 +267,19 @@ export function DashboardInteractivo({ data }: { data: any }) {
                 <option value="semana">Últimos 7 días</option>
                 <option value="mes">Este Mes</option>
                 <option value="30dias">Últimos 30 días</option>
+                <option value="dia_especifico">Día Específico</option>
               </select>
             </div>
+            
+            {timeFilter === 'dia_especifico' && (
+              <Input
+                type="date"
+                value={specificDate}
+                onChange={(e) => setSpecificDate(e.target.value)}
+                className="h-10 text-xs font-bold bg-card border-border rounded-xl shadow-sm w-full sm:w-36"
+              />
+            )}
           </div>
-        </div>
-        
-        {/* TAB MENU */}
-        <div className="flex w-full md:flex-1 p-1 bg-muted/50 rounded-xl border border-border/50 md:max-w-md">
-          <button onClick={() => setVista('global')} className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold text-center transition-all ${vista === 'global' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Global</button>
-          <button onClick={() => setVista('ciudad')} className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold text-center transition-all ${vista === 'ciudad' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Por Ciudad</button>
-          <button onClick={() => setVista('comercial')} className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold text-center transition-all ${vista === 'comercial' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Comercial</button>
         </div>
       </div>
 
@@ -505,8 +524,12 @@ export function DashboardInteractivo({ data }: { data: any }) {
         <div className="space-y-4 animate-in fade-in duration-300">
           <div className="flex items-center mb-2 print:hidden">
             <Select value={comercialSeleccionado} onValueChange={(v) => { setComercialSeleccionado(v || ""); setComercialPage(1); }}>
-              <SelectTrigger className="w-full max-w-xs h-9 rounded-xl border-border bg-card text-xs">
-                <SelectValue placeholder="Comercial" />
+              <SelectTrigger className="w-full max-w-xs h-10 rounded-xl border-border bg-card text-xs font-bold shadow-sm">
+                <SelectValue placeholder="Seleccionar Comercial">
+                  {comercialSeleccionado === 'all' 
+                    ? "Resumen General de Equipo" 
+                    : comerciales.find((c: any) => c.id === comercialSeleccionado)?.nombre_completo || "Comercial Desconocido"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Resumen General de Equipo</SelectItem>
