@@ -266,9 +266,19 @@ export function VisitasFeedClient({
                     )}
                     
                     {esFraude && (
-                      <div className="flex items-center text-xs font-bold text-destructive bg-destructive/10 px-2 py-1.5 rounded-lg w-fit mt-2">
-                        <ShieldAlert className="w-3.5 h-3.5 mr-1.5" />
-                        Alerta de Lejanía ({(v.distancia_checkin_metros || 0).toFixed(0)}m de la agencia)
+                      <div className="flex flex-col gap-1 mt-2">
+                        {v.alerta_fraude_checkin && (
+                          <div className="flex items-center text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-1 rounded-lg w-fit uppercase">
+                            <ShieldAlert className="w-3.5 h-3.5 mr-1.5" />
+                            Alerta Check-IN ({(v.distancia_checkin_metros || 0).toFixed(0)}m de la agencia)
+                          </div>
+                        )}
+                        {v.alerta_fraude_checkout && (
+                          <div className="flex items-center text-[10px] font-bold text-orange-600 bg-orange-500/10 px-2 py-1 rounded-lg w-fit uppercase">
+                            <ShieldAlert className="w-3.5 h-3.5 mr-1.5" />
+                            Alerta Check-OUT ({(v.distancia_checkout_metros || 0).toFixed(0)}m de la agencia)
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
