@@ -375,10 +375,16 @@ export default function MapaGlobal({ visitas, ubicacionesLive = [] }: MapaGlobal
                       {esActiva ? (
                         <LivePopupTimer horaCheckin={v.hora_checkin} />
                       ) : v.hora_checkout ? (
-                        <p className="text-[10px] font-bold flex items-center bg-slate-100 px-2 py-1 rounded text-slate-700 mt-1">
-                          <Timer className="w-3 h-3 mr-1 text-primary" />
-                          Tiempo: {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
-                        </p>
+                        <>
+                          <p className="text-xs flex items-center text-slate-500">
+                            <Clock className="w-3 h-3 mr-2 opacity-0" />
+                            Salida: {new Date(v.hora_checkout).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          <p className="text-[10px] font-bold flex items-center bg-slate-100 px-2 py-1 rounded text-slate-700 mt-1">
+                            <Timer className="w-3 h-3 mr-1 text-primary" />
+                            Tiempo: {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
+                          </p>
+                        </>
                       ) : null}
                       {esFraude && (
                         <p className="text-[10px] font-bold text-destructive flex items-center bg-destructive/10 px-2 py-1 rounded mt-2">
