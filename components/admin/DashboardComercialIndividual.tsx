@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts'
-import { Target, CheckCircle, Clock, ShieldAlert, Filter, Search, Printer, Download, ChevronLeft, ChevronRight, Activity, CalendarDays, Map } from 'lucide-react'
+import { ArrowLeft, MapPin, Target, CalendarDays, Search, Filter, ShieldAlert, Building2, Briefcase, FileText, Printer, Download, Clock, Map, List, AlertTriangle, Activity, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { format, isSameDay, isSameWeek, isSameMonth, parseISO, subDays, subWeeks, subMonths, startOfWeek, endOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -137,6 +137,35 @@ export function DashboardComercialIndividual({ usuario, visitas }: DashboardCome
     const start = (page - 1) * ITEMS_PER_PAGE
     return visitasFiltradas.slice(start, start + ITEMS_PER_PAGE)
   }, [visitasFiltradas, page])
+
+  const formatMinutos = (mins: number) => {
+    if (mins < 60) return `${mins} min`
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return `${h}h ${m > 0 ? m + 'm' : ''}`
+  }
+
+  const { agencias, actividades, minutosAgencias, minutosActividades } = useMemo(() => {
+    const agenciasList = visitasFiltradas.filter((v:any) => !v.es_actividad)
+    const actividadesList = visitasFiltradas.filter((v:any) => v.es_actividad)
+
+    const calcMinutos = (lista: any[]) => {
+      return lista.reduce((acc, curr) => {
+        if (curr.hora_checkin && curr.hora_checkout) {
+          let mins = Math.floor((new Date(curr.hora_checkout).getTime() - new Date(curr.hora_checkin).getTime()) / 60000)
+          return acc + mins
+        }
+        return acc
+      }, 0)
+    }
+
+    return {
+      agencias: agenciasList,
+      actividades: actividadesList,
+      minutosAgencias: calcMinutos(agenciasList),
+      minutosActividades: calcMinutos(actividadesList)
+    }
+  }, [visitasFiltradas])
 
   const handlePrint = () => window.print()
   const handleExport = () => {
@@ -314,6 +343,42 @@ export function DashboardComercialIndividual({ usuario, visitas }: DashboardCome
         </div>
       </div>
 
+      {/* Resumen Gerencial Integrado */}
+      {visitasFiltradas.length > 0 && (
+        <div className="bg-muted/30 p-4 rounded-2xl border border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full">
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Agencias</p>
+              <div className="flex items-center">
+                <Building2 className="w-5 h-5 text-primary mr-2" />
+                <span className="text-2xl font-black">{agencias.length}</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Tiempo Agencias</p>
+              <div className="flex items-center">
+                <Clock className="w-5 h-5 text-primary mr-2" />
+                <span className="text-2xl font-black">{formatMinutos(minutosAgencias)}</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Internas</p>
+              <div className="flex items-center">
+                <Briefcase className="w-5 h-5 text-warning mr-2" />
+                <span className="text-2xl font-black">{actividades.length}</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Tiempo Internas</p>
+              <div className="flex items-center">
+                <Clock className="w-5 h-5 text-warning mr-2" />
+                <span className="text-2xl font-black">{formatMinutos(minutosActividades)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tabla Inteligente de Registro */}
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         <div className="p-4 border-b border-border bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -345,28 +410,42 @@ export function DashboardComercialIndividual({ usuario, visitas }: DashboardCome
               {paginatedVisitas.length === 0 ? (
                 <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">No hay visitas en este periodo.</td></tr>
               ) : (
-                paginatedVisitas.map((v: any) => (
-                  <tr key={v.id} className="hover:bg-muted/10">
-                    <td className="px-4 py-3 font-bold">
-                      <span className="truncate max-w-[150px] inline-block">{v.agencias?.nombre || 'Agencia Desc.'}</span>
-                      <div className="text-[10px] text-muted-foreground font-medium">{format(parseISO(v.created_at), "d MMM, HH:mm", { locale: es })}</div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <span className="text-[10px] text-muted-foreground">In: {v.hora_checkin ? format(parseISO(v.hora_checkin), "HH:mm") : '--:--'}</span>
-                        <span className="text-[10px] text-muted-foreground">Out: {v.hora_checkout ? format(parseISO(v.hora_checkout), "HH:mm") : '--:--'}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${v.estado === 'completada' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>{v.estado}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {(v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? (
-                        <span className="text-destructive text-[9px] font-bold inline-flex items-center uppercase tracking-wider"><ShieldAlert className="w-3 h-3 mr-1" /> Riesgo</span>
-                      ) : <span className="text-muted-foreground text-xs">—</span>}
-                    </td>
-                  </tr>
-                ))
+                paginatedVisitas.map((v: any) => {
+                  let mins = 0
+                  if (v.hora_checkin && v.hora_checkout) {
+                    mins = Math.floor((new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000)
+                  }
+                  const isNovedad = mins > 60
+
+                  return (
+                    <tr key={v.id} className={`hover:bg-muted/10 transition-colors ${isNovedad ? 'bg-destructive/10' : ''}`}>
+                      <td className="px-4 py-3 font-bold">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate max-w-[150px] inline-block">{v.es_actividad ? v.titulo_actividad : (v.agencias?.nombre || 'Agencia Desc.')}</span>
+                          {v.es_actividad && <span className="text-[9px] uppercase tracking-widest bg-muted text-muted-foreground px-1.5 py-0.5 rounded-sm">Interna</span>}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-medium">{format(parseISO(v.created_at), "d MMM, HH:mm", { locale: es })}</div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <span className="text-[10px] text-muted-foreground">In: {v.hora_checkin ? format(parseISO(v.hora_checkin), "HH:mm") : '--:--'}</span>
+                          <span className="text-[10px] text-muted-foreground">Out: {v.hora_checkout ? format(parseISO(v.hora_checkout), "HH:mm") : '--:--'}</span>
+                          {mins > 0 && <span className={`text-[9px] mt-0.5 font-bold px-1.5 py-0.5 rounded ${isNovedad ? 'bg-destructive text-destructive-foreground animate-pulse' : 'bg-muted text-muted-foreground'}`}>{formatMinutos(mins)}</span>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${v.estado === 'completada' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>{v.estado}</span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {isNovedad ? (
+                          <span className="text-destructive text-[9px] font-bold inline-flex items-center uppercase tracking-wider bg-destructive/10 px-2 py-0.5 rounded-md"><AlertTriangle className="w-3 h-3 mr-1" /> Novedad: &gt; 1h</span>
+                        ) : (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? (
+                          <span className="text-destructive text-[9px] font-bold inline-flex items-center uppercase tracking-wider"><ShieldAlert className="w-3 h-3 mr-1" /> Riesgo</span>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

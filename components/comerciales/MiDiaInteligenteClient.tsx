@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Building2, Briefcase, Search, Calendar, ChevronLeft, ChevronRight, Clock, RefreshCcw, Map, List, Download } from "lucide-react"
+import { Building2, Briefcase, Search, Calendar, ChevronLeft, ChevronRight, Clock, RefreshCcw, Map, List, Download, AlertTriangle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { TimeDistributionChart } from "./TimeDistributionChart"
 import { Button } from "@/components/ui/button"
@@ -324,6 +324,13 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
     })
   }
 
+  const formatMinutos = (mins: number) => {
+    if (mins < 60) return `${mins} min`
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return `${h}h ${m > 0 ? m + 'm' : ''}`
+  }
+
   const handleExportExcel = () => {
     if (visitasFiltradas.length === 0) return
     const dataToExport = visitasFiltradas.map(v => {
@@ -578,6 +585,40 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
           </div>
         </div>
 
+        {/* Resumen Gerencial Integrado */}
+        {visitasFiltradas.length > 0 && (
+          <div className="bg-muted/30 p-4 rounded-2xl border border-border mb-4 grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in duration-300">
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Agencias</p>
+              <div className="flex items-center">
+                <Building2 className="w-4 h-4 text-primary mr-2" />
+                <span className="text-xl font-black">{agencias.length}</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Tiempo Agencias</p>
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 text-primary mr-2" />
+                <span className="text-xl font-black">{formatMinutos(minutosAgencias)}</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Internas</p>
+              <div className="flex items-center">
+                <Briefcase className="w-4 h-4 text-warning mr-2" />
+                <span className="text-xl font-black">{actividades.length}</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Tiempo Internas</p>
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 text-warning mr-2" />
+                <span className="text-xl font-black">{formatMinutos(minutosActividades)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Lista Paginada (Siempre Visible) */}
         <div className="space-y-3 animate-in fade-in duration-300">
           {paginados.length === 0 ? (
@@ -597,16 +638,16 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
 
               if (v.hora_checkin && v.hora_checkout) {
                 mins = Math.floor((new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000)
-                etiquetaTiempo = `${mins} min`
+                etiquetaTiempo = formatMinutos(mins)
                 if (mins < 30) {
                   colorClass = 'bg-success/15 text-success' // Verde
                   borderClass = 'border-success/30'
-                } else if (mins <= 45) {
+                } else if (mins <= 60) {
                   colorClass = 'bg-warning/15 text-warning-foreground' // Amarillo
                   borderClass = 'border-warning/50'
                 } else {
-                  colorClass = 'bg-destructive/15 text-destructive' // Rojo
-                  borderClass = 'border-destructive/30'
+                  colorClass = 'bg-destructive text-destructive-foreground' // Rojo fuerte para >60m
+                  borderClass = 'border-destructive ring-1 ring-destructive'
                 }
               }
 
@@ -618,8 +659,11 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
                         {v.es_actividad ? <Briefcase className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
                       </div>
                       <div>
-                        <h3 className="font-bold text-foreground">
+                        <h3 className="font-bold text-foreground flex items-center gap-2">
                           {v.es_actividad ? v.titulo_actividad : v.agenciaNombre}
+                          {v.es_actividad && (
+                            <span className="text-[9px] uppercase tracking-widest bg-muted text-muted-foreground px-1.5 py-0.5 rounded-sm">Interna</span>
+                          )}
                         </h3>
                         <div className="flex items-center text-xs text-muted-foreground mt-0.5 space-x-3">
                           <span className="flex items-center"><Clock className="w-3 h-3 mr-1" /> Llegada: {formatearFechaHora(v.hora_checkin)}</span>
@@ -629,8 +673,12 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
                     <div className="text-right flex flex-col items-end space-y-1">
                       {v.hora_checkout ? (
                         <>
-                          <span className="text-[10px] font-bold bg-muted text-muted-foreground px-2 py-0.5 rounded-md uppercase">Completado</span>
-                          <span className={`text-xs font-black px-2 py-1 rounded-md ${colorClass}`}>
+                          {mins > 60 && (
+                            <span className="text-[10px] font-bold bg-destructive text-destructive-foreground px-2 py-0.5 rounded-md uppercase flex items-center shadow-sm animate-pulse">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Novedad: Larga
+                            </span>
+                          )}
+                          <span className={`text-xs font-black px-2 py-1 rounded-md ${colorClass} ${mins > 60 ? 'shadow-sm' : ''}`}>
                             {etiquetaTiempo}
                           </span>
                         </>
