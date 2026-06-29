@@ -1,12 +1,30 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Building2, Briefcase, Search, Calendar, ChevronLeft, ChevronRight, Clock, RefreshCcw, Map, List } from "lucide-react"
+import { Building2, Briefcase, Search, Calendar, ChevronLeft, ChevronRight, Clock, RefreshCcw, Map, List, Download } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { TimeDistributionChart } from "./TimeDistributionChart"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { MapaWrapper } from "./MapaWrapper"
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function exportToCSV(data: Record<string, any>[], filename: string) {
+  if (data.length === 0) return
+  const headers = Object.keys(data[0]).join(',') + '\n'
+  const rows = data.map(obj => 
+    Object.values(obj).map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',')
+  ).join('\n')
+  
+  // Agregar BOM para forzar UTF-8 en Excel
+  const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `${filename}.csv`)
+  document.body.appendChild(link)
+  link.click()
+}
 
 interface Visita {
   id: string
@@ -306,27 +324,63 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
     })
   }
 
+  const handleExportExcel = () => {
+    if (visitasFiltradas.length === 0) return
+    const dataToExport = visitasFiltradas.map(v => {
+      let mins = 0
+      if (v.hora_checkin && v.hora_checkout) {
+        mins = Math.floor((new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000)
+      }
+      const extracto = v.es_actividad 
+        ? v.observaciones 
+        : (v.temas && v.temas.length > 0 ? `${v.temas.join(', ')}${v.temas_texto_libre ? `: ${v.temas_texto_libre}` : ''}` : v.observaciones)
+
+      return {
+        "Tipo": v.es_actividad ? "Actividad Interna" : "Visita Agencia",
+        "Nombre/Agencia": v.es_actividad ? v.titulo_actividad : v.agenciaNombre,
+        "Estado": v.estado,
+        "Check-in": new Date(v.hora_checkin).toLocaleString('es-EC'),
+        "Check-out": v.hora_checkout ? new Date(v.hora_checkout).toLocaleString('es-EC') : "Pendiente",
+        "Duración (min)": mins > 0 ? mins : 0,
+        "Observaciones": extracto || ""
+      }
+    })
+    
+    exportToCSV(dataToExport, `Mis_Visitas_${modo}_${new Date().getTime()}`)
+  }
+
   return (
     <div className="space-y-6">
       
       {/* UI Híbrida de Fechas */}
       <div className="bg-card p-2 rounded-xl border border-border shadow-sm print:hidden">
         
-        {/* Segmented Control */}
-        <div className="flex bg-muted p-1 rounded-lg mb-3">
-          {(['hoy', 'semana', 'mes', 'personalizado'] as FiltroModo[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => cambiarModo(m)}
-              className={`flex-1 py-1.5 text-[11px] sm:text-xs font-bold uppercase rounded-md transition-all ${
-                modo === m 
-                  ? 'bg-background text-foreground shadow-sm' 
-                  : 'text-muted-foreground hover:bg-muted/50'
-              }`}
-            >
-              {m}
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-3 gap-2">
+          {/* Segmented Control */}
+          <div className="flex bg-muted p-1 rounded-lg flex-1">
+            {(['hoy', 'semana', 'mes', 'personalizado'] as FiltroModo[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => cambiarModo(m)}
+                className={`flex-1 py-1.5 text-[11px] sm:text-xs font-bold uppercase rounded-md transition-all ${
+                  modo === m 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:bg-muted/50'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          
+          <Button 
+            onClick={handleExportExcel} 
+            disabled={visitasFiltradas.length === 0}
+            className="h-9 px-3 rounded-lg bg-success text-success-foreground hover:bg-success/90 font-bold shadow-sm flex items-center gap-1.5 shrink-0"
+            title="Descargar Excel"
+          >
+            <Download className="w-4 h-4" /> <span className="hidden sm:inline">Excel</span>
+          </Button>
         </div>
 
         {/* Controles Contextuales Nativo */}
@@ -501,16 +555,26 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
           <h2 className="text-lg font-bold">Registro Detallado</h2>
           
-          {/* Input de búsqueda */}
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar agencia o actividad..."
-              className="w-full bg-card border border-border rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
+          <div className="flex flex-col sm:flex-row items-center w-full sm:w-auto gap-3">
+            {/* Input de búsqueda */}
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar agencia o actividad..."
+                className="w-full bg-card border border-border rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+            </div>
+
+            <Button 
+              onClick={handleExportExcel} 
+              disabled={visitasFiltradas.length === 0}
+              className="w-full sm:w-auto rounded-xl bg-success text-success-foreground hover:bg-success/90 font-bold shadow-sm"
+            >
+              <Download className="w-4 h-4 mr-2" /> Excel / CSV
+            </Button>
           </div>
         </div>
 
@@ -577,7 +641,7 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
                   </div>
                   {extracto && v.hora_checkout && (
                     <div className="mt-3 text-xs text-muted-foreground italic line-clamp-1 border-l-2 border-border pl-2">
-                      "{extracto}"
+                      &quot;{extracto}&quot;
                     </div>
                   )}
                 </div>

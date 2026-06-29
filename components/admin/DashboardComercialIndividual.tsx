@@ -15,14 +15,15 @@ const ITEMS_PER_PAGE = 10
 
 type Periodo = 'hoy' | 'semana' | 'mes'
 
-function exportToCSV(data: any[], filename: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function exportToCSV(data: Record<string, any>[], filename: string) {
   if (data.length === 0) return
   const headers = Object.keys(data[0]).join(',') + '\n'
   const rows = data.map(obj => 
-    Object.values(obj).map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
+    Object.values(obj).map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',')
   ).join('\n')
   
-  const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })
+  const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.setAttribute('href', url)
@@ -139,14 +140,27 @@ export function DashboardComercialIndividual({ usuario, visitas }: DashboardCome
 
   const handlePrint = () => window.print()
   const handleExport = () => {
-    const exportData = visitasFiltradas.map((v:any) => ({
-      Agencia: v.agencias?.nombre || 'Desc',
-      Fecha: format(parseISO(v.created_at), "yyyy-MM-dd HH:mm"),
-      Estado: v.estado,
-      CheckIn: v.hora_checkin ? format(parseISO(v.hora_checkin), "HH:mm:ss") : '',
-      CheckOut: v.hora_checkout ? format(parseISO(v.hora_checkout), "HH:mm:ss") : '',
-      Fraude: (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? 'SI' : 'NO'
-    }))
+    const exportData = visitasFiltradas.map((v:any) => {
+      let mins = 0
+      if (v.hora_checkin && v.hora_checkout) {
+        mins = Math.floor((new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000)
+      }
+      const extracto = v.es_actividad 
+        ? v.observaciones 
+        : (v.temas && v.temas.length > 0 ? `${v.temas.join(', ')}${v.temas_texto_libre ? `: ${v.temas_texto_libre}` : ''}` : v.observaciones)
+
+      return {
+        "Tipo": v.es_actividad ? "Actividad Interna" : "Visita Agencia",
+        "Agencia/Actividad": v.es_actividad ? v.titulo_actividad : (v.agencias?.nombre || 'Desc'),
+        "Fecha": format(parseISO(v.created_at), "yyyy-MM-dd"),
+        "Estado": v.estado,
+        "CheckIn": v.hora_checkin ? format(parseISO(v.hora_checkin), "HH:mm:ss") : '',
+        "CheckOut": v.hora_checkout ? format(parseISO(v.hora_checkout), "HH:mm:ss") : '',
+        "Duración (min)": mins > 0 ? mins : 0,
+        "Observaciones": extracto || "",
+        "Fraude": (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? 'SI' : 'NO'
+      }
+    })
     exportToCSV(exportData, `Visitas_${usuario.nombre_completo}_${periodo}_${refDateStr}`)
   }
 
@@ -167,7 +181,8 @@ export function DashboardComercialIndividual({ usuario, visitas }: DashboardCome
           <button onClick={() => changePeriod('mes')} className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold text-center transition-all ${periodo === 'mes' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Mes</button>
         </div>
 
-        <div className="w-full md:w-auto print:hidden">
+        <div className="w-full md:w-auto print:hidden flex items-center gap-2">
+          <div className="flex-1">
           {periodo === 'hoy' && (
             <Select value={refDateStr} onValueChange={(v) => { setRefDateStr(v || ""); setPage(1); }}>
               <SelectTrigger className="w-full md:w-[220px] h-9 rounded-xl border-border bg-card text-xs capitalize">
@@ -198,6 +213,14 @@ export function DashboardComercialIndividual({ usuario, visitas }: DashboardCome
               </SelectContent>
             </Select>
           )}
+          </div>
+          <button 
+            onClick={handleExport} 
+            className="px-3 h-9 bg-success text-success-foreground border border-success/20 rounded-xl hover:bg-success/90 shrink-0 font-bold flex items-center text-xs shadow-sm"
+            title="Descargar Excel"
+          >
+            <Download className="w-4 h-4 mr-1.5" /> Excel
+          </button>
         </div>
       </div>
 
@@ -304,7 +327,7 @@ export function DashboardComercialIndividual({ usuario, visitas }: DashboardCome
               <Input placeholder="Buscar agencia..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-8 h-8 text-xs rounded-lg w-full" />
             </div>
             <button onClick={handlePrint} className="p-1.5 h-8 bg-background border border-border rounded-lg hover:bg-muted shrink-0"><Printer className="w-4 h-4 text-muted-foreground" /></button>
-            <button onClick={handleExport} className="p-1.5 h-8 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 shrink-0"><Download className="w-4 h-4" /></button>
+            <button onClick={handleExport} className="px-3 h-8 bg-success text-success-foreground border border-success/20 rounded-lg hover:bg-success/90 shrink-0 font-bold flex items-center text-xs shadow-sm"><Download className="w-3.5 h-3.5 mr-1.5" /> Excel / CSV</button>
           </div>
         </div>
         
