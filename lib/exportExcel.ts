@@ -350,19 +350,22 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     excelRow.height = 18;
     const bgColor = i % 2 === 0 ? 'FFFAFAFA' : 'FFFFFFFF';
     
+    // Verificar si la fila completa tiene alguna alerta
+    const hasAlert = row['alerta de lejania'].startsWith('Sí') || row['alerta de tiempo inactivo'].startsWith('Sí');
+
     excelRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
       cell.alignment = { vertical: 'middle', wrapText: false };
-      cell.font = { size: 10 };
+      
+      // Si hay alerta, poner toda la letra de la fila en rojo
+      if (hasAlert) {
+        cell.font = { size: 10, bold: true, color: { argb: 'FFCC0000' } };
+      } else {
+        cell.font = { size: 10 };
+      }
 
       // Observaciones a la izquierda
       if (colNumber === 9) cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
-      
-      // Alertas
-      if (colNumber >= 10) {
-        const val = String(cell.value || '');
-        if (val.startsWith('Sí')) cell.font = { size: 10, bold: true, color: { argb: 'FFCC0000' } };
-      }
     });
   });
 
