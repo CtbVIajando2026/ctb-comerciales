@@ -377,7 +377,21 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   // === SUMATORIAS INTELIGENTES AL FINAL DE LA BASE DE DATOS ===
   const totalRowStart = rows.length + 3;
   
-  const addTotalRow = (rowNum: number, label: string, mins: number, isBold: boolean = false) => {
+  const formatMinsStr = (mins: number) => {
+    if (mins < 60) return `${mins} mins`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h} hrs ${m} mins`;
+  };
+
+  const countAgencias = rows.filter(r => r.Categoría === 'Gestión Comercial (Agencias)').length;
+  const countAdmin = rows.filter(r => r.Categoría === 'Trabajo Administrativo').length;
+  const countReuniones = rows.filter(r => r.Categoría === 'Reunión / Capacitación').length;
+  const countAlmuerzo = rows.filter(r => r.Categoría === 'Almuerzo / Personal').length;
+  const countOtras = rows.filter(r => r.Categoría === 'Actividad Interna (Otras)').length;
+  const countActividades = countAdmin + countReuniones + countAlmuerzo + countOtras;
+
+  const addTotalRow = (rowNum: number, label: string, value: string, isBold: boolean = false) => {
     ws.mergeCells(`A${rowNum}:G${rowNum}`);
     const lblCell = ws.getCell(`A${rowNum}`);
     lblCell.value = label;
@@ -385,7 +399,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     lblCell.font = { bold: isBold, size: isBold ? 11 : 10 };
     
     const valCell = ws.getCell(`H${rowNum}`);
-    valCell.value = `${mins} mins`;
+    valCell.value = value;
     valCell.font = { bold: isBold, size: isBold ? 11 : 10 };
     valCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
@@ -398,12 +412,12 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     }
   };
 
-  addTotalRow(totalRowStart, 'TOTAL VISITAS COMERCIALES:', minAgencias);
-  addTotalRow(totalRowStart + 1, 'TOTAL TRABAJOS ADMINISTRATIVOS:', minAdmin);
-  addTotalRow(totalRowStart + 2, 'TOTAL REUNIONES / CAPACITACIONES:', minReuniones);
-  addTotalRow(totalRowStart + 3, 'TOTAL ALMUERZO / PERSONAL:', minAlmuerzo);
-  addTotalRow(totalRowStart + 4, 'TOTAL ACTIVIDADES EXTRAS:', minOtras);
-  addTotalRow(totalRowStart + 5, 'GRAN TOTAL DE TIEMPO REGISTRADO:', totalMins, true);
+  addTotalRow(totalRowStart, `TOTAL VISITAS COMERCIALES (${countAgencias} visitas):`, formatMinsStr(minAgencias));
+  addTotalRow(totalRowStart + 1, `TOTAL TRABAJOS ADMINISTRATIVOS (${countAdmin} act.):`, formatMinsStr(minAdmin));
+  addTotalRow(totalRowStart + 2, `TOTAL REUNIONES / CAPACITACIONES (${countReuniones} act.):`, formatMinsStr(minReuniones));
+  addTotalRow(totalRowStart + 3, `TOTAL ALMUERZO / PERSONAL (${countAlmuerzo} act.):`, formatMinsStr(minAlmuerzo));
+  addTotalRow(totalRowStart + 4, `TOTAL ACTIVIDADES EXTRAS (${countOtras} act.):`, formatMinsStr(minOtras));
+  addTotalRow(totalRowStart + 5, `GRAN TOTAL DE TIEMPO REGISTRADO (${countAgencias + countActividades} registros):`, formatMinsStr(totalMins), true);
 
 
   // Convertir a blob nativamente
