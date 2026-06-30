@@ -6,6 +6,8 @@ export interface ExcelRow {
   Categoría: string;
   Tipo: string;
   'Nombre Agencia': string;
+  Comercial: string;
+  Ciudad: string;
   Estado: string;
   Duracion: string;
   Observaciones: string;
@@ -18,6 +20,8 @@ const COLUMN_DEFS: { key: keyof ExcelRow; header: string; width: number }[] = [
   { key: 'Categoría',                 header: 'Categoría',                 width: 30 },
   { key: 'Tipo',                      header: 'Tipo',                      width: 18 },
   { key: 'Nombre Agencia',            header: 'Nombre Agencia',            width: 30 },
+  { key: 'Comercial',                 header: 'Comercial',                 width: 25 },
+  { key: 'Ciudad',                    header: 'Ciudad',                    width: 15 },
   { key: 'Estado',                    header: 'Estado',                    width: 14 },
   { key: 'Duracion',                  header: 'Duracion',                  width: 16 },
   { key: 'Observaciones',             header: 'Observaciones',             width: 50 },
@@ -95,11 +99,16 @@ export function buildExcelRow(v: any): ExcelRow {
     }
   }
 
+  const comercial = v.usuarios?.nombre || v.usuario?.nombre || v.usuarioNombre || v.comercialNombre || 'Desconocido';
+  const ciudad = v.agencias?.ciudad || v.usuarios?.zona || v.usuario?.zona || v.ciudad || v.zona || 'Desconocido';
+
   return {
     fecha: fecha,
     Categoría: categoria,
     Tipo: v.es_actividad ? 'Actividad Interna' : 'Visita Agencia',
     'Nombre Agencia': nombre,
+    Comercial: comercial,
+    Ciudad: ciudad,
     Estado: v.estado || '',
     Duracion: duracionStr,
     Observaciones: observaciones,
