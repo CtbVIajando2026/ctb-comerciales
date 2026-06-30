@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
+// import { saveAs } from 'file-saver';
 
 export interface ExcelRow {
   fecha: string;
@@ -316,5 +316,13 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-  saveAs(blob, `${filename}.xlsx`);
+  
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filename}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 }

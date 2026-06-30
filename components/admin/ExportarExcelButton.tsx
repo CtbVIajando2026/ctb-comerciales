@@ -21,7 +21,7 @@ export function ExportarExcelButton({ datos }: { datos: any }) {
 
     try {
       await exportToExcel(rows, `Reporte_Visitas_${new Date().toISOString().split('T')[0]}`)
-      toast.success("Descarga iniciada", { description: "El reporte de Excel ha sido generado exitosamente." })
+      toast.success("¡Descarga completada! (v2.0)", { description: "El reporte de Excel ha sido generado exitosamente." })
     } catch (err: any) {
       console.error(err);
       toast.error("Error en la descarga", { description: err.message || "No se pudo generar el archivo." })

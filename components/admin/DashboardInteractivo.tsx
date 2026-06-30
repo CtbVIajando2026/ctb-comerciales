@@ -201,7 +201,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
     try {
       const exportData = visitasGlobalesFiltradas.map((v:any) => buildExcelRow(v))
       await exportToExcel(exportData, 'Visitas_Globales')
-      toast.success("Descarga iniciada", { description: "El reporte global ha sido generado." })
+      toast.success("¡Descarga completada! (v2.0)", { description: "El reporte global ha sido generado." })
     } catch (e: any) {
       console.error(e)
       toast.error("Error al exportar", { description: e.message || "No se pudo generar el archivo" })
@@ -212,7 +212,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
     try {
       const exportData = visitasDelComercial.map((v:any) => buildExcelRow(v))
       await exportToExcel(exportData, `Visitas_${comercialData?.nombre_completo || 'Comercial'}`)
-      toast.success("Descarga iniciada", { description: "El reporte del comercial ha sido generado." })
+      toast.success("¡Descarga completada! (v2.0)", { description: "El reporte del comercial ha sido generado." })
     } catch (e: any) {
       console.error(e)
       toast.error("Error al exportar", { description: e.message || "No se pudo generar el archivo" })
