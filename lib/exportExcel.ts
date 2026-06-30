@@ -16,10 +16,10 @@ export interface ExcelRow {
 
 const COLUMN_DEFS: { key: keyof ExcelRow; header: string; width: number }[] = [
   { key: 'fecha',                     header: 'Fecha',                     width: 20 },
+  { key: 'Comercial',                 header: 'Comercial',                 width: 25 },
   { key: 'Categoría',                 header: 'Categoría',                 width: 30 },
   { key: 'Tipo',                      header: 'Tipo',                      width: 18 },
   { key: 'Nombre Agencia',            header: 'Nombre Agencia',            width: 30 },
-  { key: 'Comercial',                 header: 'Comercial',                 width: 25 },
   { key: 'Ciudad',                    header: 'Ciudad',                    width: 15 },
   { key: 'Estado',                    header: 'Estado',                    width: 14 },
   { key: 'Duracion',                  header: 'Duracion',                  width: 16 },
@@ -344,6 +344,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
     cell.border = { bottom: { style: 'thin', color: { argb: 'FF990000' } } };
   });
+
+  // Habilitar Filtros Inteligentes (AutoFilter)
+  ws.autoFilter = 'A1:K1';
 
   rows.forEach((row, i) => {
     const excelRow = ws.addRow(row);
