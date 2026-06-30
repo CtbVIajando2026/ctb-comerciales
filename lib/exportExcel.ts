@@ -155,9 +155,13 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   dash.getColumn('J').width = 15;
 
   // Título Principal
+  let cleanTitle = filename.replace(/_/g, ' ')
+  // Limpiar el timestamp final (ej: 17180000000)
+  cleanTitle = cleanTitle.replace(/\s\d{12,14}$/, '')
+  
   dash.mergeCells('B2:J3');
   const title = dash.getCell('B2');
-  title.value = 'DASHBOARD INTELIGENTE DE VISITAS Y ACTIVIDADES (CRM)';
+  title.value = `DASHBOARD INTELIGENTE (CRM) - ${cleanTitle.toUpperCase()}`;
   title.font = { size: 18, bold: true, color: { argb: 'FFFFFFFF' } };
   title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A237E' } }; // Azul oscuro profundo
   title.alignment = { vertical: 'middle', horizontal: 'center' };

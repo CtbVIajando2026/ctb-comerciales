@@ -104,7 +104,8 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
             temas,
             temas_texto_libre,
             observaciones,
-            agencia:agencias(nombre),
+            agencia:agencias(nombre, ciudad),
+            usuario:usuarios(nombre, zona),
             alerta_fraude_checkin,
             distancia_checkin_metros
           `)
@@ -138,6 +139,8 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
               temas_texto_libre: v.temas_texto_libre,
               observaciones: v.observaciones,
               agenciaNombre: (v.agencia as any)?.nombre,
+              agencias: v.agencia, // Pasar agencia completa para ciudad
+              usuario: v.usuario,  // Pasar usuario completo para zona y nombre
               alerta_fraude_checkin: v.alerta_fraude_checkin,
               distancia_checkin_metros: v.distancia_checkin_metros
             }
@@ -320,11 +323,28 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
     return `${h}h ${m > 0 ? m + 'm' : ''}`
   }
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (visitasFiltradas.length === 0) return
-    const dataToExport = visitasFiltradas.map(v => buildExcelRow(v))
+    const { data: { user } } = await supabase.auth.getUser()
     
-    exportToExcel(dataToExport, `Mis_Visitas_${modo}_${new Date().getTime()}`)
+    // Obtener nombre del comercial actual para el título y excel
+    let comercialName = 'Comercial'
+    if (user) {
+      const { data: profile } = await supabase.from('usuarios').select('nombre').eq('id', user.id).single()
+      if (profile) comercialName = profile.nombre
+    }
+
+    // Inyectar el nombre del comercial en los datos si faltara (como fallback)
+    const dataToExport = visitasFiltradas.map(v => {
+      const mapped = { ...v }
+      if (!mapped.usuario) {
+         mapped.usuario = { nombre: comercialName }
+      }
+      return buildExcelRow(mapped)
+    })
+    
+    // Añadimos indicador de que es el reporte "Mi Día"
+    exportToExcel(dataToExport, `Reporte_MiDia_${comercialName.replace(/\s+/g, '_')}_${new Date().getTime()}`)
   }
 
   return (
