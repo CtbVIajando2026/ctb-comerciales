@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { format, isSameDay, isSameWeek, isSameMonth, parseISO, subDays, subWeeks, subMonths, startOfWeek, endOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { MapaWrapper } from '@/components/comerciales/MapaWrapper'
+import { exportToExcel, buildExcelRow } from '@/lib/exportExcel'
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -15,23 +16,7 @@ const ITEMS_PER_PAGE = 10
 
 type Periodo = 'hoy' | 'semana' | 'mes'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function exportToCSV(data: Record<string, any>[], filename: string) {
-  if (data.length === 0) return
-  const headers = Object.keys(data[0]).join(',') + '\n'
-  const rows = data.map(obj => 
-    Object.values(obj).map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',')
-  ).join('\n')
-  
-  const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.setAttribute('href', url)
-  link.setAttribute('download', `${filename}.csv`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
+// Función local eliminada. Se usa exportToExcel de lib.
 
 interface DashboardComercialProps {
   usuario: any
@@ -169,28 +154,8 @@ export function DashboardComercialIndividual({ usuario, visitas }: DashboardCome
 
   const handlePrint = () => window.print()
   const handleExport = () => {
-    const exportData = visitasFiltradas.map((v:any) => {
-      let mins = 0
-      if (v.hora_checkin && v.hora_checkout) {
-        mins = Math.floor((new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000)
-      }
-      const extracto = v.es_actividad 
-        ? v.observaciones 
-        : (v.temas && v.temas.length > 0 ? `${v.temas.join(', ')}${v.temas_texto_libre ? `: ${v.temas_texto_libre}` : ''}` : v.observaciones)
-
-      return {
-        "Tipo": v.es_actividad ? "Actividad Interna" : "Visita Agencia",
-        "Agencia/Actividad": v.es_actividad ? v.titulo_actividad : (v.agencias?.nombre || 'Desc'),
-        "Fecha": format(parseISO(v.created_at), "yyyy-MM-dd"),
-        "Estado": v.estado,
-        "CheckIn": v.hora_checkin ? format(parseISO(v.hora_checkin), "HH:mm:ss") : '',
-        "CheckOut": v.hora_checkout ? format(parseISO(v.hora_checkout), "HH:mm:ss") : '',
-        "Duración (min)": mins > 0 ? mins : 0,
-        "Observaciones": extracto || "",
-        "Fraude": (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? 'SI' : 'NO'
-      }
-    })
-    exportToCSV(exportData, `Visitas_${usuario.nombre_completo}_${periodo}_${refDateStr}`)
+    const exportData = visitasFiltradas.map((v:any) => buildExcelRow(v))
+    exportToExcel(exportData, `Visitas_${usuario.nombre_completo}_${periodo}_${refDateStr}`)
   }
 
   const changePeriod = (p: Periodo) => {

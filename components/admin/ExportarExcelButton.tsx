@@ -2,8 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import { Download } from 'lucide-react'
-import { differenceInMinutes } from 'date-fns'
+import { differenceInMinutes, format, parseISO } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { toast } from "sonner"
+import { exportToExcel, buildExcelRow } from "@/lib/exportExcel"
 
 export function ExportarExcelButton({ datos }: { datos: any }) {
   const handleExport = () => {
@@ -14,60 +16,17 @@ export function ExportarExcelButton({ datos }: { datos: any }) {
       return
     }
 
-    // Prepare headers
-    const headers = [
-      "ID Visita", 
-      "Fecha", 
-      "Comercial", 
-      "Agencia", 
-      "Ciudad",
-      "Tipo Actividad", 
-      "Duracion (min)", 
-      "Distancia a Agencia (m)", 
-      "Resumen"
-    ]
-
-    const escapeCSV = (val: any) => {
-      if (val === null || val === undefined) return '""'
-      const str = String(val)
-      return `"${str.replace(/"/g, '""').replace(/\n/g, ' ')}"`
-    }
-
     // Map rows
-    const rows = visitas.map((v: any) => {
-      const fecha = escapeCSV(new Date(v.created_at).toLocaleString('es-EC'))
-      const comercial = escapeCSV(v.usuarios?.nombre || "Desconocido")
-      const agencia = escapeCSV(v.agencias?.nombre || "Desconocida")
-      const ciudad = escapeCSV(v.agencias?.ciudad || "Quito")
-      const tipo = escapeCSV(Array.isArray(v.temas) ? v.temas.join('; ') : (v.temas || ""))
-      const duracion = v.hora_checkout && v.hora_checkin ? differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin)) : 0
-      const distancia = v.distancia_checkin_metros || 0
-      const resumen = escapeCSV(v.observaciones || '')
+    const rows = visitas.map((v: any) => buildExcelRow(v))
 
-      return [v.id, fecha, comercial, agencia, ciudad, tipo, duracion, distancia, resumen].join(",")
-    })
-
-    // Add BOM for Excel UTF-8 support
-    const csvContent = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n")
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
+    exportToExcel(rows, `Reporte_Visitas_${new Date().toISOString().split('T')[0]}`)
     
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", `Reporte_Visitas_${new Date().toISOString().split('T')[0]}.csv`)
-    document.body.appendChild(link)
-    
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    
-    toast.success("Descarga iniciada", { description: "El reporte CSV ha sido generado exitosamente." })
+    toast.success("Descarga iniciada", { description: "El reporte de Excel ha sido generado exitosamente." })
   }
 
   return (
     <Button variant="outline" size="sm" onClick={handleExport} className="rounded-full bg-card hover:bg-muted text-foreground border-border shadow-sm h-9">
-      <Download className="w-4 h-4 mr-1.5" /> Exportar CSV
+      <Download className="w-4 h-4 mr-1.5" /> Exportar Excel
     </Button>
   )
 }

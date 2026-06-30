@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { exportToExcel, buildExcelRow } from '@/lib/exportExcel'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4']
 const AREA_COLOR = '#3b82f6'
@@ -14,22 +15,7 @@ const ITEMS_PER_PAGE = 10
 
 type VistaType = 'global' | 'ciudad' | 'comercial'
 
-function exportToCSV(data: any[], filename: string) {
-  if (data.length === 0) return
-  const headers = Object.keys(data[0]).join(',') + '\n'
-  const rows = data.map(obj => 
-    Object.values(obj).map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-  ).join('\n')
-  
-  const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.setAttribute('href', url)
-  link.setAttribute('download', `${filename}.csv`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
+// Eliminamos función local de exportToCSV y usamos exportToExcel de lib
 
 export function DashboardInteractivo({ data }: { data: any }) {
   const { visitas: visitasRaw, metas, comerciales } = data
@@ -212,25 +198,13 @@ export function DashboardInteractivo({ data }: { data: any }) {
   const handlePrint = () => window.print()
   
   const handleExportGlobal = () => {
-    const exportData = visitasGlobalesFiltradas.map((v:any) => ({
-      Agencia: v.agencias?.nombre || 'Desc',
-      Comercial: v.usuarios?.nombre,
-      Zona: v.usuarios?.zona,
-      Fecha: format(new Date(v.created_at), "yyyy-MM-dd HH:mm"),
-      Estado: v.estado,
-      Fraude: (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? 'SI' : 'NO'
-    }))
-    exportToCSV(exportData, 'Visitas_Globales')
+    const exportData = visitasGlobalesFiltradas.map((v:any) => buildExcelRow(v))
+    exportToExcel(exportData, 'Visitas_Globales')
   }
 
   const handleExportComercial = () => {
-    const exportData = visitasDelComercial.map((v:any) => ({
-      Agencia: v.agencias?.nombre || 'Desc',
-      Fecha: format(new Date(v.created_at), "yyyy-MM-dd HH:mm"),
-      Estado: v.estado,
-      Fraude: (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? 'SI' : 'NO'
-    }))
-    exportToCSV(exportData, `Visitas_${comercialData?.nombre_completo || 'Comercial'}`)
+    const exportData = visitasDelComercial.map((v:any) => buildExcelRow(v))
+    exportToExcel(exportData, `Visitas_${comercialData?.nombre_completo || 'Comercial'}`)
   }
 
   return (

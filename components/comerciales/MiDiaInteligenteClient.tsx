@@ -7,24 +7,9 @@ import { TimeDistributionChart } from "./TimeDistributionChart"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { MapaWrapper } from "./MapaWrapper"
+import { exportToExcel, buildExcelRow } from "@/lib/exportExcel"
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function exportToCSV(data: Record<string, any>[], filename: string) {
-  if (data.length === 0) return
-  const headers = Object.keys(data[0]).join(',') + '\n'
-  const rows = data.map(obj => 
-    Object.values(obj).map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(',')
-  ).join('\n')
-  
-  // Agregar BOM para forzar UTF-8 en Excel
-  const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.setAttribute('href', url)
-  link.setAttribute('download', `${filename}.csv`)
-  document.body.appendChild(link)
-  link.click()
-}
+// Eliminamos exportToCSV local porque usamos lib/exportExcel
 
 interface Visita {
   id: string
@@ -119,7 +104,9 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
             temas,
             temas_texto_libre,
             observaciones,
-            agencia:agencias(nombre)
+            agencia:agencias(nombre),
+            alerta_fraude_checkin,
+            distancia_checkin_metros
           `)
           .eq('comercial_id', user.id)
           .in('estado', ['en_curso', 'completada'])
@@ -150,7 +137,9 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
               temas: v.temas,
               temas_texto_libre: v.temas_texto_libre,
               observaciones: v.observaciones,
-              agenciaNombre: (v.agencia as any)?.nombre
+              agenciaNombre: (v.agencia as any)?.nombre,
+              alerta_fraude_checkin: v.alerta_fraude_checkin,
+              distancia_checkin_metros: v.distancia_checkin_metros
             }
           })
           setVisitasDB(mapeadas)
@@ -333,27 +322,9 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
 
   const handleExportExcel = () => {
     if (visitasFiltradas.length === 0) return
-    const dataToExport = visitasFiltradas.map(v => {
-      let mins = 0
-      if (v.hora_checkin && v.hora_checkout) {
-        mins = Math.floor((new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000)
-      }
-      const extracto = v.es_actividad 
-        ? v.observaciones 
-        : (v.temas && v.temas.length > 0 ? `${v.temas.join(', ')}${v.temas_texto_libre ? `: ${v.temas_texto_libre}` : ''}` : v.observaciones)
-
-      return {
-        "Tipo": v.es_actividad ? "Actividad Interna" : "Visita Agencia",
-        "Nombre/Agencia": v.es_actividad ? v.titulo_actividad : v.agenciaNombre,
-        "Estado": v.estado,
-        "Check-in": new Date(v.hora_checkin).toLocaleString('es-EC'),
-        "Check-out": v.hora_checkout ? new Date(v.hora_checkout).toLocaleString('es-EC') : "Pendiente",
-        "Duración (min)": mins > 0 ? mins : 0,
-        "Observaciones": extracto || ""
-      }
-    })
+    const dataToExport = visitasFiltradas.map(v => buildExcelRow(v))
     
-    exportToCSV(dataToExport, `Mis_Visitas_${modo}_${new Date().getTime()}`)
+    exportToExcel(dataToExport, `Mis_Visitas_${modo}_${new Date().getTime()}`)
   }
 
   return (
