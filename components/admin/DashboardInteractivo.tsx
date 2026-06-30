@@ -197,14 +197,26 @@ export function DashboardInteractivo({ data }: { data: any }) {
   // ---------------- HANDLERS EXPORTACIÓN ----------------
   const handlePrint = () => window.print()
   
-  const handleExportGlobal = () => {
-    const exportData = visitasGlobalesFiltradas.map((v:any) => buildExcelRow(v))
-    exportToExcel(exportData, 'Visitas_Globales')
+  const handleExportGlobal = async () => {
+    try {
+      const exportData = visitasGlobalesFiltradas.map((v:any) => buildExcelRow(v))
+      await exportToExcel(exportData, 'Visitas_Globales')
+      toast.success("Descarga iniciada", { description: "El reporte global ha sido generado." })
+    } catch (e: any) {
+      console.error(e)
+      toast.error("Error al exportar", { description: e.message || "No se pudo generar el archivo" })
+    }
   }
 
-  const handleExportComercial = () => {
-    const exportData = visitasDelComercial.map((v:any) => buildExcelRow(v))
-    exportToExcel(exportData, `Visitas_${comercialData?.nombre_completo || 'Comercial'}`)
+  const handleExportComercial = async () => {
+    try {
+      const exportData = visitasDelComercial.map((v:any) => buildExcelRow(v))
+      await exportToExcel(exportData, `Visitas_${comercialData?.nombre_completo || 'Comercial'}`)
+      toast.success("Descarga iniciada", { description: "El reporte del comercial ha sido generado." })
+    } catch (e: any) {
+      console.error(e)
+      toast.error("Error al exportar", { description: e.message || "No se pudo generar el archivo" })
+    }
   }
 
   return (

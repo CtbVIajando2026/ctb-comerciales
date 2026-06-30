@@ -221,10 +221,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     rules: [
       {
         type: 'dataBar',
+        cfvo: [{ type: 'num', value: 0 }, { type: 'num', value: 100 }],
         gradient: false,
         color: { argb: 'FF5A8DEE' }, // Azul
-        minLength: 0,
-        maxLength: 100,
         showValue: false
       } as any // exceljs types might be slightly incomplete for dataBar
     ]

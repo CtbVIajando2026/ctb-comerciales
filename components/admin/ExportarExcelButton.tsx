@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { exportToExcel, buildExcelRow } from "@/lib/exportExcel"
 
 export function ExportarExcelButton({ datos }: { datos: any }) {
-  const handleExport = () => {
+  const handleExport = async () => {
     // We expect datos to contain .visitas, or be an array of visitas directly
     const visitas = Array.isArray(datos) ? datos : (datos?.visitas || [])
     if (visitas.length === 0) {
@@ -19,9 +19,13 @@ export function ExportarExcelButton({ datos }: { datos: any }) {
     // Map rows
     const rows = visitas.map((v: any) => buildExcelRow(v))
 
-    exportToExcel(rows, `Reporte_Visitas_${new Date().toISOString().split('T')[0]}`)
-    
-    toast.success("Descarga iniciada", { description: "El reporte de Excel ha sido generado exitosamente." })
+    try {
+      await exportToExcel(rows, `Reporte_Visitas_${new Date().toISOString().split('T')[0]}`)
+      toast.success("Descarga iniciada", { description: "El reporte de Excel ha sido generado exitosamente." })
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Error en la descarga", { description: err.message || "No se pudo generar el archivo." })
+    }
   }
 
   return (
