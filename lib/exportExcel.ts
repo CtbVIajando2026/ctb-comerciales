@@ -391,16 +391,16 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   const countOtras = rows.filter(r => r.Categoría === 'Actividad Interna (Otras)').length;
   const countActividades = countAdmin + countReuniones + countAlmuerzo + countOtras;
 
-  const addTotalRow = (rowNum: number, label: string, value: string, isBold: boolean = false) => {
+  const addTotalRow = (rowNum: number, label: string, value: string, isBold: boolean = false, fontColor?: string) => {
     ws.mergeCells(`A${rowNum}:G${rowNum}`);
     const lblCell = ws.getCell(`A${rowNum}`);
     lblCell.value = label;
     lblCell.alignment = { horizontal: 'right', vertical: 'middle' };
-    lblCell.font = { bold: isBold, size: isBold ? 11 : 10 };
+    lblCell.font = { bold: isBold, size: isBold ? 11 : 10, color: fontColor ? { argb: fontColor } : undefined };
     
     const valCell = ws.getCell(`H${rowNum}`);
     valCell.value = value;
-    valCell.font = { bold: isBold, size: isBold ? 11 : 10 };
+    valCell.font = { bold: isBold, size: isBold ? 11 : 10, color: fontColor ? { argb: fontColor } : undefined };
     valCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
     // Si es negrita (Totales generales), agregar un fondo o borde
@@ -412,12 +412,18 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     }
   };
 
+  const countInactividad = rows.filter(r => String(r['alerta de tiempo inactivo'] || '').startsWith('Sí')).length;
+  const countLejania = rows.filter(r => String(r['alerta de lejania'] || '').startsWith('Sí')).length;
+
   addTotalRow(totalRowStart, `TOTAL VISITAS COMERCIALES (${countAgencias} visitas):`, formatMinsStr(minAgencias));
   addTotalRow(totalRowStart + 1, `TOTAL TRABAJOS ADMINISTRATIVOS (${countAdmin} act.):`, formatMinsStr(minAdmin));
   addTotalRow(totalRowStart + 2, `TOTAL REUNIONES / CAPACITACIONES (${countReuniones} act.):`, formatMinsStr(minReuniones));
   addTotalRow(totalRowStart + 3, `TOTAL ALMUERZO / PERSONAL (${countAlmuerzo} act.):`, formatMinsStr(minAlmuerzo));
   addTotalRow(totalRowStart + 4, `TOTAL ACTIVIDADES EXTRAS (${countOtras} act.):`, formatMinsStr(minOtras));
   addTotalRow(totalRowStart + 5, `GRAN TOTAL DE TIEMPO REGISTRADO (${countAgencias + countActividades} registros):`, formatMinsStr(totalMins), true);
+  
+  addTotalRow(totalRowStart + 6, `TOTAL ALERTAS DE INACTIVIDAD (VISITAS > 1 HORA):`, `${countInactividad} novedades`, true, 'FFCC0000');
+  addTotalRow(totalRowStart + 7, `TOTAL ALERTAS POR DISTANCIA (FUERA DE AGENCIA):`, `${countLejania} novedades`, true, 'FFCC0000');
 
 
   // Convertir a blob nativamente
