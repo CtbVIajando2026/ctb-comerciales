@@ -198,8 +198,13 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
 
   const totalAlertas = rows.filter(r => r['alerta de lejania'].startsWith('Sí') || r['alerta de tiempo inactivo'].startsWith('Sí')).length;
 
-  const comercialesUnicos = new Set(rows.map(r => r.Comercial)).size;
-  const ciudadesUnicas = new Set(rows.map(r => r.Ciudad)).size;
+  const getListLabel = (count: number, names: string[]) => {
+    if (count === 0) return '0';
+    if (count === 1) return names[0];
+    const maxShow = 3;
+    const shown = names.slice(0, maxShow).join(', ');
+    return `${count} (${shown}${count > maxShow ? ', ...' : ''})`;
+  };
 
   // --- BLOQUE 1: RESUMEN EJECUTIVO (KPIs) ---
   dash.getCell('B5').value = 'Total Registros:';
@@ -219,11 +224,11 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
 
   dash.getCell('B6').value = 'Comerciales:';
   dash.getCell('B6').font = { bold: true, color: { argb: 'FF555555' } };
-  dash.getCell('C6').value = comercialesUnicos;
+  dash.getCell('C6').value = getListLabel(comercialesNombres.length, comercialesNombres);
 
   dash.getCell('D6').value = 'Ciudades Abarcadas:';
   dash.getCell('D6').font = { bold: true, color: { argb: 'FF555555' } };
-  dash.getCell('E6').value = ciudadesUnicas;
+  dash.getCell('E6').value = getListLabel(ciudadesNombres.length, ciudadesNombres);
 
   dash.getCell('G6').value = 'Alertas Detectadas:';
   dash.getCell('G6').font = { bold: true, color: { argb: 'FFCC0000' } };
