@@ -166,6 +166,25 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A237E' } }; // Azul oscuro profundo
   title.alignment = { vertical: 'middle', horizontal: 'center' };
 
+  // Subtítulo Inteligente
+  const comercialesNombres = Array.from(new Set(rows.map(r => r.Comercial).filter(c => c && c !== 'Desconocido')));
+  const ciudadesNombres = Array.from(new Set(rows.map(r => r.Ciudad).filter(c => c && c !== 'Desconocido')));
+
+  let dynamicSubtitle = "INFORME GENERAL (TODOS LOS COMERCIALES)";
+  if (comercialesNombres.length === 1) {
+    dynamicSubtitle = `COMERCIAL: ${comercialesNombres[0].toUpperCase()}`;
+  } else if (ciudadesNombres.length === 1) {
+    dynamicSubtitle = `INFORME GENERAL - CIUDAD: ${ciudadesNombres[0].toUpperCase()}`;
+  }
+
+  dash.mergeCells('B4:J4');
+  const subtitle = dash.getCell('B4');
+  subtitle.value = dynamicSubtitle;
+  subtitle.font = { size: 14, bold: true, color: { argb: 'FF1A237E' } };
+  subtitle.alignment = { vertical: 'middle', horizontal: 'center' };
+  subtitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EAF6' } }; // Azul muy clarito
+  subtitle.border = { bottom: { style: 'medium', color: { argb: 'FF1A237E' } } };
+
   // Cálculos de Minutos por Categoría
   const minAgencias = rows.filter(r => r.Categoría === 'Gestión Comercial (Agencias)').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
   const minAdmin = rows.filter(r => r.Categoría === 'Trabajo Administrativo').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
