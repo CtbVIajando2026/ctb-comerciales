@@ -351,7 +351,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     const bgColor = i % 2 === 0 ? 'FFFAFAFA' : 'FFFFFFFF';
     
     // Verificar si la fila completa tiene alguna alerta
-    const hasAlert = row['alerta de lejania'].startsWith('Sí') || row['alerta de tiempo inactivo'].startsWith('Sí');
+    const alertaLej = String(row['alerta de lejania'] || '');
+    const alertaInact = String(row['alerta de tiempo inactivo'] || '');
+    const hasAlert = alertaLej.startsWith('Sí') || alertaInact.startsWith('Sí');
 
     excelRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
