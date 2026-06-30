@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BeautifulDateTimePicker } from "./BeautifulDateTimePicker"
-import { Plus, Trash2, Gift } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 
 interface CheckOutFormProps {
   onSubmit: (data: any) => void
@@ -13,7 +13,7 @@ interface CheckOutFormProps {
   catalogoRegalos?: any[]
 }
 
-export function CheckOutForm({ onSubmit, esActividad = false, catalogoRegalos = [] }: CheckOutFormProps) {
+export function CheckOutForm({ onSubmit, esActividad = false }: CheckOutFormProps) {
   const [motivo, setMotivo] = useState("")
   const [motivoDetalle, setMotivoDetalle] = useState("")
   const [observaciones, setObservaciones] = useState("")
@@ -22,7 +22,7 @@ export function CheckOutForm({ onSubmit, esActividad = false, catalogoRegalos = 
   const [proximoPasoFecha, setProximoPasoFecha] = useState("")
   
   // Entregas state
-  const [entregas, setEntregas] = useState<{regalo_id: string, cantidad: number, entregado_a: string}[]>([])
+  const [entregas, setEntregas] = useState<{tipo: string, descripcion: string, cantidad: number, costo: string}[]>([])
 
   // Validate date if proximoPaso requires it (i.e. not "none")
   const isDateValid = proximoPaso === "none" || proximoPasoFecha !== ""
@@ -51,8 +51,7 @@ export function CheckOutForm({ onSubmit, esActividad = false, catalogoRegalos = 
   }
 
   const addEntrega = () => {
-    if (catalogoRegalos.length === 0) return
-    setEntregas([...entregas, { regalo_id: catalogoRegalos[0].id, cantidad: 1, entregado_a: "" }])
+    setEntregas([...entregas, { tipo: "souvenir", descripcion: "", cantidad: 1, costo: "" }])
   }
 
   const removeEntrega = (index: number) => {
@@ -115,11 +114,11 @@ export function CheckOutForm({ onSubmit, esActividad = false, catalogoRegalos = 
         </section>
       )}
 
-      {!esActividad && catalogoRegalos.length > 0 && (
+      {!esActividad && (
         <section className="space-y-3 border-t border-border pt-6">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              ENTREGAS (OPCIONAL)
+              REGALOS / GASTOS (OPCIONAL)
             </h3>
             <Button 
               type="button" 
@@ -128,12 +127,12 @@ export function CheckOutForm({ onSubmit, esActividad = false, catalogoRegalos = 
               onClick={addEntrega}
               className="h-8 text-xs rounded-full"
             >
-              <Plus className="w-3 h-3 mr-1" /> Añadir Entrega
+              <Plus className="w-3 h-3 mr-1" /> Añadir Regalo
             </Button>
           </div>
 
           {entregas.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic mt-2">No se han registrado entregas de regalos o souvenirs.</p>
+            <p className="text-sm text-muted-foreground italic mt-2">No se han registrado regalos ni comidas.</p>
           ) : (
             <div className="space-y-4 mt-4">
               {entregas.map((entrega, index) => (
@@ -147,41 +146,55 @@ export function CheckOutForm({ onSubmit, esActividad = false, catalogoRegalos = 
                   </button>
 
                   <div className="space-y-3">
-                    <div>
+                    <div className="grid grid-cols-2 gap-3">
                       <Select 
-                        value={entrega.regalo_id} 
-                        onValueChange={(val) => updateEntrega(index, 'regalo_id', val)}
+                        value={entrega.tipo} 
+                        onValueChange={(val) => updateEntrega(index, 'tipo', val)}
                       >
                         <SelectTrigger className="h-10 bg-card">
-                          <SelectValue placeholder="Seleccionar regalo" />
+                          <SelectValue placeholder="Tipo" />
                         </SelectTrigger>
                         <SelectContent>
-                          {catalogoRegalos.map((r: any) => (
-                            <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>
-                          ))}
+                          <SelectItem value="souvenir">Souvenir</SelectItem>
+                          <SelectItem value="comida">Comida</SelectItem>
+                          <SelectItem value="otro">Otro</SelectItem>
                         </SelectContent>
                       </Select>
+                      
+                      <Input 
+                        placeholder="Ej: Llavero, Torta..." 
+                        value={entrega.descripcion} 
+                        onChange={(e) => updateEntrega(index, 'descripcion', e.target.value)}
+                        className="h-10"
+                        required
+                      />
                     </div>
 
                     <div className="flex space-x-3">
-                      <div className="w-1/3">
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          value={entrega.cantidad} 
-                          onChange={(e) => updateEntrega(index, 'cantidad', parseInt(e.target.value) || 1)}
-                          className="h-10 text-center"
-                          placeholder="Cant."
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Input 
-                          value={entrega.entregado_a} 
-                          onChange={(e) => updateEntrega(index, 'entregado_a', e.target.value)}
-                          className="h-10"
-                          placeholder="¿A quién? (Opcional)"
-                        />
-                      </div>
+                      {entrega.tipo === 'souvenir' ? (
+                        <div className="w-full">
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            value={entrega.cantidad} 
+                            onChange={(e) => updateEntrega(index, 'cantidad', parseInt(e.target.value) || 1)}
+                            className="h-10"
+                            placeholder="Cantidad"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full">
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            min="0"
+                            value={entrega.costo} 
+                            onChange={(e) => updateEntrega(index, 'costo', e.target.value)}
+                            className="h-10"
+                            placeholder="Costo total ($)"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

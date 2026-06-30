@@ -359,8 +359,8 @@ export function DashboardInteractivo({ data }: { data: any }) {
                   <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input placeholder="Filtrar datos (agencia, comercial, zona, fecha)..." value={searchGlobalAgencia} onChange={(e) => { setSearchGlobalAgencia(e.target.value); setGlobalPage(1); }} className="pl-8 h-8 text-xs rounded-lg w-full" />
                 </div>
-                <button onClick={handlePrint} className="p-1.5 h-8 bg-background border border-border rounded-lg hover:bg-muted shrink-0"><Printer className="w-4 h-4 text-muted-foreground" /></button>
-                <button onClick={handleExportGlobal} className="p-1.5 h-8 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 shrink-0"><Download className="w-4 h-4" /></button>
+                <button onClick={handlePrint} className="px-3 h-8 bg-background border border-border rounded-lg hover:bg-muted shrink-0 flex items-center text-xs font-bold text-muted-foreground"><Printer className="w-4 h-4 mr-1.5" /> Imprimir</button>
+                <button onClick={handleExportGlobal} className="px-3 h-8 bg-success text-success-foreground border border-success/20 rounded-lg hover:bg-success/90 shrink-0 font-bold flex items-center text-xs shadow-sm"><Download className="w-4 h-4 mr-1.5" /> Excel / CSV</button>
               </div>
             </div>
             
@@ -607,8 +607,8 @@ export function DashboardInteractivo({ data }: { data: any }) {
                   <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input placeholder="Filtrar datos (agencia, fecha)..." value={searchAgencia} onChange={(e) => { setSearchAgencia(e.target.value); setComercialPage(1); }} className="pl-8 h-8 text-xs rounded-lg w-full" />
                 </div>
-                <button onClick={handlePrint} className="p-1.5 h-8 bg-background border border-border rounded-lg hover:bg-muted shrink-0"><Printer className="w-4 h-4 text-muted-foreground" /></button>
-                <button onClick={handleExportComercial} className="p-1.5 h-8 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 shrink-0"><Download className="w-4 h-4" /></button>
+                <button onClick={handlePrint} className="px-3 h-8 bg-background border border-border rounded-lg hover:bg-muted shrink-0 flex items-center text-xs font-bold text-muted-foreground"><Printer className="w-4 h-4 mr-1.5" /> Imprimir</button>
+                <button onClick={handleExportComercial} className="px-3 h-8 bg-success text-success-foreground border border-success/20 rounded-lg hover:bg-success/90 shrink-0 font-bold flex items-center text-xs shadow-sm"><Download className="w-4 h-4 mr-1.5" /> Excel / CSV</button>
               </div>
             </div>
             

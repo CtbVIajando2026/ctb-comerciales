@@ -57,7 +57,7 @@ export default async function ComercialesLayout({
       {/* Sidebar - Oculto en móvil, visible en md+ */}
       <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border">
         <div className="p-6 border-b border-border">
-          <img src="/logo.png" alt="CTB Logo" className="h-16 object-contain" />
+          <img src="/logo.png" alt="CTB Logo" className="h-16 w-auto object-contain drop-shadow-sm ml-4" />
           <div className="mt-3">
             <span className="text-[10px] uppercase font-black tracking-widest text-primary/70 bg-primary/10 px-2 py-0.5 rounded-full">
               COMERCIAL

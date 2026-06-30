@@ -229,19 +229,27 @@ export async function cerrarVisita(visitaId: string, data: {
 
   // Insertar entregas si las hay
   if (entregas.length > 0) {
-    const entregasInsert = entregas.map((e: any) => ({
-      visita_id: visitaId,
-      regalo_id: e.regalo_id,
-      cantidad: e.cantidad,
-      entregado_a: e.entregado_a
-    }))
+    const { data: v } = await supabase.from('visitas').select('agencia_id').eq('id', visitaId).single()
+    const agencia_id = v?.agencia_id
     
-    const { error: entregasError } = await supabase
-      .from('visita_entregas')
-      .insert(entregasInsert)
+    if (agencia_id) {
+      const entregasInsert = entregas.map((e: any) => ({
+        comercial_id: user.id,
+        agencia_id: agencia_id,
+        visita_id: visitaId,
+        tipo: e.tipo,
+        descripcion: e.descripcion,
+        cantidad: e.cantidad || null,
+        costo: e.costo ? parseFloat(e.costo) : null
+      }))
       
-    if (entregasError) {
-      console.error("Error guardando entregas:", entregasError)
+      const { error: entregasError } = await supabase
+        .from('registro_regalos')
+        .insert(entregasInsert)
+        
+      if (entregasError) {
+        console.error("Error guardando entregas:", entregasError)
+      }
     }
   }
 

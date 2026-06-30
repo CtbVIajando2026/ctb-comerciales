@@ -39,8 +39,7 @@ export default async function AdminDashboardPage() {
         </div>
         <div className="flex items-center space-x-4 shrink-0">
           <ThemeToggle className="!bg-muted border-border" />
-          <ExportarExcelButton datos={datosHistoricos} />
-          <img src="/logo.png" alt="CTB" className="h-20 w-auto object-contain drop-shadow-sm" />
+          <img src="/logo.png" alt="CTB" className="h-16 w-auto object-contain drop-shadow-sm ml-4" />
         </div>
       </header>
 
