@@ -1,5 +1,4 @@
 import ExcelJS from 'exceljs';
-// import { saveAs } from 'file-saver';
 
 export interface ExcelRow {
   fecha: string;
@@ -16,7 +15,7 @@ export interface ExcelRow {
 }
 
 const COLUMN_DEFS: { key: keyof ExcelRow; header: string; width: number }[] = [
-  { key: 'fecha',                     header: 'fecha',                     width: 20 },
+  { key: 'fecha',                     header: 'Fecha',                     width: 20 },
   { key: 'Categoría',                 header: 'Categoría',                 width: 30 },
   { key: 'Tipo',                      header: 'Tipo',                      width: 18 },
   { key: 'Nombre Agencia',            header: 'Nombre Agencia',            width: 30 },
@@ -25,8 +24,8 @@ const COLUMN_DEFS: { key: keyof ExcelRow; header: string; width: number }[] = [
   { key: 'Estado',                    header: 'Estado',                    width: 14 },
   { key: 'Duracion',                  header: 'Duracion',                  width: 16 },
   { key: 'Observaciones',             header: 'Observaciones',             width: 50 },
-  { key: 'alerta de lejania',         header: 'alerta de lejania',         width: 22 },
-  { key: 'alerta de tiempo inactivo', header: 'alerta de tiempo inactivo', width: 22 },
+  { key: 'alerta de lejania',         header: 'Alerta Lejanía',         width: 22 },
+  { key: 'alerta de tiempo inactivo', header: 'Alerta Inactividad', width: 22 },
 ];
 
 export function buildExcelRow(v: any): ExcelRow {
@@ -49,6 +48,8 @@ export function buildExcelRow(v: any): ExcelRow {
       categoria = 'Trabajo Administrativo';
     } else if (act.includes('reunion') || act.includes('capacita')) {
       categoria = 'Reunión / Capacitación';
+    } else if (act.includes('almuerzo') || act.includes('personal')) {
+      categoria = 'Almuerzo / Personal';
     } else {
       categoria = 'Actividad Interna (Otras)';
     }
@@ -56,7 +57,7 @@ export function buildExcelRow(v: any): ExcelRow {
     categoria = 'Gestión Comercial (Agencias)';
   }
 
-  // Observaciones: unificar temas + texto libre + observaciones en una sola línea
+  // Observaciones
   let observaciones = '';
   if (v.es_actividad) {
     observaciones = v.observaciones || '';
@@ -135,89 +136,113 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   workbook.created = new Date();
 
   // =========================================================================
-  // HOJA 1: DASHBOARD ANALÍTICO
+  // HOJA 1: DASHBOARD ANALÍTICO (CRM VISUAL)
   // =========================================================================
   const dash = workbook.addWorksheet('Dashboard Analítico', {
     views: [{ showGridLines: false }]
   });
 
-  // Anchos de columna para el dashboard
+  // Anchos de columna ampliados para CRM Visual
   dash.getColumn('A').width = 4;
-  dash.getColumn('B').width = 40;
-  dash.getColumn('C').width = 25;
+  dash.getColumn('B').width = 30;
+  dash.getColumn('C').width = 15;
   dash.getColumn('D').width = 15;
-  dash.getColumn('E').width = 40;
+  dash.getColumn('E').width = 35;
   dash.getColumn('F').width = 4;
+  dash.getColumn('G').width = 25;
+  dash.getColumn('H').width = 15;
+  dash.getColumn('I').width = 15;
+  dash.getColumn('J').width = 15;
 
-  // Título
-  dash.mergeCells('B2:E3');
+  // Título Principal
+  dash.mergeCells('B2:J3');
   const title = dash.getCell('B2');
-  title.value = 'DASHBOARD INTELIGENTE DE VISITAS Y ACTIVIDADES';
-  title.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
-  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A2E' } };
+  title.value = 'DASHBOARD INTELIGENTE DE VISITAS Y ACTIVIDADES (CRM)';
+  title.font = { size: 18, bold: true, color: { argb: 'FFFFFFFF' } };
+  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A237E' } }; // Azul oscuro profundo
   title.alignment = { vertical: 'middle', horizontal: 'center' };
 
-  // Cálculos Globales
-  const totalVisitas = rows.filter(r => r.Tipo === 'Visita Agencia').length;
-  const totalActividades = rows.filter(r => r.Tipo === 'Actividad Interna').length;
-  
-  const minAgencias = rows.filter(r => r.Tipo === 'Visita Agencia').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
-  const minActividades = rows.filter(r => r.Tipo === 'Actividad Interna').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
-  const totalMins = minAgencias + minActividades;
+  // Cálculos de Minutos por Categoría
+  const minAgencias = rows.filter(r => r.Categoría === 'Gestión Comercial (Agencias)').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minAdmin = rows.filter(r => r.Categoría === 'Trabajo Administrativo').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minReuniones = rows.filter(r => r.Categoría === 'Reunión / Capacitación').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minAlmuerzo = rows.filter(r => r.Categoría === 'Almuerzo / Personal').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minOtras = rows.filter(r => r.Categoría === 'Actividad Interna (Otras)').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+
+  const totalMins = minAgencias + minAdmin + minReuniones + minAlmuerzo + minOtras;
   const horasTotales = (totalMins / 60).toFixed(1);
+  const productividad = totalMins > 0 ? ((minAgencias / totalMins) * 100).toFixed(1) : '0.0';
 
   const totalAlertas = rows.filter(r => r['alerta de lejania'].startsWith('Sí') || r['alerta de tiempo inactivo'].startsWith('Sí')).length;
 
-  // KPIs
+  const comercialesUnicos = new Set(rows.map(r => r.Comercial)).size;
+  const ciudadesUnicas = new Set(rows.map(r => r.Ciudad)).size;
+
+  // --- BLOQUE 1: RESUMEN EJECUTIVO (KPIs) ---
   dash.getCell('B5').value = 'Total Registros:';
-  dash.getCell('B5').font = { bold: true };
+  dash.getCell('B5').font = { bold: true, color: { argb: 'FF555555' } };
   dash.getCell('C5').value = rows.length;
-  
+  dash.getCell('C5').font = { bold: true, size: 14 };
+
   dash.getCell('D5').value = 'Horas Invertidas:';
-  dash.getCell('D5').font = { bold: true };
+  dash.getCell('D5').font = { bold: true, color: { argb: 'FF555555' } };
   dash.getCell('E5').value = `${horasTotales} hrs`;
+  dash.getCell('E5').font = { bold: true, size: 14 };
 
-  dash.getCell('B6').value = 'Alertas Detectadas:';
-  dash.getCell('B6').font = { bold: true, color: { argb: 'FFCC0000' } };
-  dash.getCell('C6').value = totalAlertas;
+  dash.getCell('G5').value = '% Productividad:';
+  dash.getCell('G5').font = { bold: true, color: { argb: 'FF555555' } };
+  dash.getCell('H5').value = `${productividad} %`;
+  dash.getCell('H5').font = { bold: true, size: 14, color: { argb: 'FF2E7D32' } };
 
-  // Distribución del Tiempo
+  dash.getCell('B6').value = 'Comerciales:';
+  dash.getCell('B6').font = { bold: true, color: { argb: 'FF555555' } };
+  dash.getCell('C6').value = comercialesUnicos;
+
+  dash.getCell('D6').value = 'Ciudades Abarcadas:';
+  dash.getCell('D6').font = { bold: true, color: { argb: 'FF555555' } };
+  dash.getCell('E6').value = ciudadesUnicas;
+
+  dash.getCell('G6').value = 'Alertas Detectadas:';
+  dash.getCell('G6').font = { bold: true, color: { argb: 'FFCC0000' } };
+  dash.getCell('H6').value = totalAlertas;
+  dash.getCell('H6').font = { bold: true, color: { argb: 'FFCC0000' }, size: 14 };
+
+  // --- BLOQUE 2: DISTRIBUCIÓN DEL TIEMPO ---
   dash.mergeCells('B8:E8');
   dash.getCell('B8').value = 'DISTRIBUCIÓN DEL TIEMPO (MINUTOS)';
   dash.getCell('B8').font = { bold: true, color: { argb: 'FFFFFFFF' } };
   dash.getCell('B8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC0000' } };
   dash.getCell('B8').alignment = { vertical: 'middle', horizontal: 'center' };
 
-  // Tabla
-  const headersDash = ['Categoría', 'Minutos', '% del Tiempo', 'Gráfico Visual'];
-  ['B', 'C', 'D', 'E'].forEach((col, i) => {
+  ['Categoría', 'Minutos', '% del Tiempo', 'Gráfico Visual'].forEach((h, i) => {
+    const col = ['B', 'C', 'D', 'E'][i];
     const cell = dash.getCell(`${col}9`);
-    cell.value = headersDash[i];
+    cell.value = h;
     cell.font = { bold: true };
     cell.border = { bottom: { style: 'thick', color: { argb: 'FF000000' } } };
   });
 
-  dash.getCell('B10').value = 'Gestión Comercial (Agencias)';
-  dash.getCell('C10').value = minAgencias;
-  const pctAgencias = totalMins > 0 ? (minAgencias / totalMins) * 100 : 0;
-  dash.getCell('D10').value = pctAgencias / 100; // formato %
-  dash.getCell('E10').value = pctAgencias; // Para data bar
+  const categoriasData = [
+    { name: 'Gestión Comercial (Agencias)', mins: minAgencias },
+    { name: 'Trabajo Administrativo', mins: minAdmin },
+    { name: 'Reunión / Capacitación', mins: minReuniones },
+    { name: 'Almuerzo / Personal', mins: minAlmuerzo },
+    { name: 'Otras Actividades', mins: minOtras }
+  ];
 
-  dash.getCell('B11').value = 'Actividades Internas (Oficina/Otros)';
-  dash.getCell('C11').value = minActividades;
-  const pctActividades = totalMins > 0 ? (minActividades / totalMins) * 100 : 0;
-  dash.getCell('D11').value = pctActividades / 100; // formato %
-  dash.getCell('E11').value = pctActividades; // Para data bar
-
-  dash.getCell('D10').numFmt = '0.0%';
-  dash.getCell('D11').numFmt = '0.0%';
-  
-  // Ocultar número en el gráfico
-  dash.getCell('E10').numFmt = ';;;';
-  dash.getCell('E11').numFmt = ';;;';
+  categoriasData.forEach((cat, index) => {
+    const row = 10 + index;
+    dash.getCell(`B${row}`).value = cat.name;
+    dash.getCell(`C${row}`).value = cat.mins;
+    const pct = totalMins > 0 ? (cat.mins / totalMins) * 100 : 0;
+    dash.getCell(`D${row}`).value = pct / 100;
+    dash.getCell(`D${row}`).numFmt = '0.0%';
+    dash.getCell(`E${row}`).value = pct;
+    dash.getCell(`E${row}`).numFmt = ';;;'; // ocultar el número para dejar solo la barra
+  });
 
   dash.addConditionalFormatting({
-    ref: 'E10:E11',
+    ref: 'E10:E14',
     rules: [
       {
         type: 'dataBar',
@@ -225,25 +250,57 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
         gradient: false,
         color: { argb: 'FF5A8DEE' }, // Azul
         showValue: false
-      } as any // exceljs types might be slightly incomplete for dataBar
+      } as any
     ]
   });
 
-  // Top 5 Agencias
-  dash.mergeCells('B14:E14');
-  dash.getCell('B14').value = 'TOP 5 AGENCIAS MÁS VISITADAS (Por Tiempo)';
-  dash.getCell('B14').font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  dash.getCell('B14').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC0000' } };
-  dash.getCell('B14').alignment = { vertical: 'middle', horizontal: 'center' };
+  // --- BLOQUE 3: RENDIMIENTO POR CIUDAD (Columna Izquierda) ---
+  dash.mergeCells('B16:E16');
+  dash.getCell('B16').value = 'DISTRIBUCIÓN POR CIUDADES';
+  dash.getCell('B16').font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  dash.getCell('B16').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00838F' } }; // Teal oscuro
+  dash.getCell('B16').alignment = { vertical: 'middle', horizontal: 'center' };
 
-  ['B', 'C', 'D', 'E'].forEach((col, i) => {
-    const cell = dash.getCell(`${col}15`);
-    cell.value = ['Agencia', 'Minutos', 'N° Visitas', 'Promedio (min/visita)'][i];
+  ['Ciudad', 'Minutos', 'N° Visitas', 'Promedio (min)'].forEach((h, i) => {
+    const col = ['B', 'C', 'D', 'E'][i];
+    const cell = dash.getCell(`${col}17`);
+    cell.value = h;
     cell.font = { bold: true };
     cell.border = { bottom: { style: 'thick', color: { argb: 'FF000000' } } };
   });
 
-  // Calcular top 5
+  const ciudadesMap: Record<string, { mins: number, count: number }> = {};
+  rows.forEach(r => {
+    const c = r.Ciudad;
+    if (!ciudadesMap[c]) ciudadesMap[c] = { mins: 0, count: 0 };
+    ciudadesMap[c].mins += parseDuracion(r.Duracion);
+    ciudadesMap[c].count += 1;
+  });
+
+  const topCiudades = Object.entries(ciudadesMap).sort((a, b) => b[1].mins - a[1].mins).slice(0, 5);
+  topCiudades.forEach(([cName, data], index) => {
+    const row = 18 + index;
+    dash.getCell(`B${row}`).value = cName;
+    dash.getCell(`C${row}`).value = data.mins;
+    dash.getCell(`D${row}`).value = data.count;
+    dash.getCell(`E${row}`).value = Math.round(data.mins / data.count);
+  });
+
+  // --- BLOQUE 4: TOP AGENCIAS (Columna Derecha) ---
+  dash.mergeCells('G8:J8');
+  dash.getCell('G8').value = 'TOP 5 AGENCIAS MÁS VISITADAS';
+  dash.getCell('G8').font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  dash.getCell('G8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC0000' } };
+  dash.getCell('G8').alignment = { vertical: 'middle', horizontal: 'center' };
+
+  ['Agencia', 'Minutos', 'N° Visitas', 'Promedio (min)'].forEach((h, i) => {
+    const col = ['G', 'H', 'I', 'J'][i];
+    const cell = dash.getCell(`${col}9`);
+    cell.value = h;
+    cell.font = { bold: true };
+    cell.border = { bottom: { style: 'thick', color: { argb: 'FF000000' } } };
+  });
+
   const agenciasMap: Record<string, { mins: number, count: number }> = {};
   rows.filter(r => r.Tipo === 'Visita Agencia').forEach(r => {
     const nombre = r['Nombre Agencia'];
@@ -252,17 +309,13 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     agenciasMap[nombre].count += 1;
   });
 
-  const topAgencias = Object.entries(agenciasMap)
-    .sort((a, b) => b[1].mins - a[1].mins)
-    .slice(0, 5);
-
-  let rowIdx = 16;
-  topAgencias.forEach(([nombre, data]) => {
-    dash.getCell(`B${rowIdx}`).value = nombre;
-    dash.getCell(`C${rowIdx}`).value = data.mins;
-    dash.getCell(`D${rowIdx}`).value = data.count;
-    dash.getCell(`E${rowIdx}`).value = Math.round(data.mins / data.count);
-    rowIdx++;
+  const topAgencias = Object.entries(agenciasMap).sort((a, b) => b[1].mins - a[1].mins).slice(0, 5);
+  topAgencias.forEach(([nombre, data], index) => {
+    const row = 10 + index;
+    dash.getCell(`G${row}`).value = nombre;
+    dash.getCell(`H${row}`).value = data.mins;
+    dash.getCell(`I${row}`).value = data.count;
+    dash.getCell(`J${row}`).value = Math.round(data.mins / data.count);
   });
 
 
@@ -299,10 +352,10 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
       cell.font = { size: 10 };
 
       // Observaciones a la izquierda
-      if (colNumber === 7) cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
+      if (colNumber === 9) cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
       
       // Alertas
-      if (colNumber >= 8) {
+      if (colNumber >= 10) {
         const val = String(cell.value || '');
         if (val.startsWith('Sí')) cell.font = { size: 10, bold: true, color: { argb: 'FFCC0000' } };
       }
@@ -312,6 +365,39 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   const lastCol = String.fromCharCode(64 + COLUMN_DEFS.length);
   ws.autoFilter = `A1:${lastCol}1`;
 
+  // === SUMATORIAS INTELIGENTES AL FINAL DE LA BASE DE DATOS ===
+  const totalRowStart = rows.length + 3;
+  
+  const addTotalRow = (rowNum: number, label: string, mins: number, isBold: boolean = false) => {
+    ws.mergeCells(`A${rowNum}:G${rowNum}`);
+    const lblCell = ws.getCell(`A${rowNum}`);
+    lblCell.value = label;
+    lblCell.alignment = { horizontal: 'right', vertical: 'middle' };
+    lblCell.font = { bold: isBold, size: isBold ? 11 : 10 };
+    
+    const valCell = ws.getCell(`H${rowNum}`);
+    valCell.value = `${mins} mins`;
+    valCell.font = { bold: isBold, size: isBold ? 11 : 10 };
+    valCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    // Si es negrita (Totales generales), agregar un fondo o borde
+    if (isBold) {
+      lblCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+      valCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+      lblCell.border = { top: { style: 'thin' }, bottom: { style: 'double' } };
+      valCell.border = { top: { style: 'thin' }, bottom: { style: 'double' } };
+    }
+  };
+
+  addTotalRow(totalRowStart, 'TOTAL VISITAS COMERCIALES:', minAgencias);
+  addTotalRow(totalRowStart + 1, 'TOTAL TRABAJOS ADMINISTRATIVOS:', minAdmin);
+  addTotalRow(totalRowStart + 2, 'TOTAL REUNIONES / CAPACITACIONES:', minReuniones);
+  addTotalRow(totalRowStart + 3, 'TOTAL ALMUERZO / PERSONAL:', minAlmuerzo);
+  addTotalRow(totalRowStart + 4, 'TOTAL ACTIVIDADES EXTRAS:', minOtras);
+  addTotalRow(totalRowStart + 5, 'GRAN TOTAL DE TIEMPO REGISTRADO:', totalMins, true);
+
+
+  // Convertir a blob nativamente
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
