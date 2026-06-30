@@ -24,6 +24,10 @@ interface Visita {
   temas?: string[] | null
   temas_texto_libre?: string | null
   observaciones?: string | null
+  usuario?: any
+  agencias?: any
+  alerta_fraude_checkin?: boolean
+  distancia_checkin_metros?: number
 }
 
 interface MiDiaInteligenteClientProps {
@@ -337,8 +341,8 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
     // Inyectar el nombre del comercial en los datos si faltara (como fallback)
     const dataToExport = visitasFiltradas.map(v => {
       const mapped = { ...v }
-      if (!mapped.usuario) {
-         mapped.usuario = { nombre: comercialName }
+      if (!(mapped as any).usuario) {
+         (mapped as any).usuario = { nombre: comercialName }
       }
       return buildExcelRow(mapped)
     })
