@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Building2, LayoutDashboard, Users, ShieldAlert, LogOut, Map as MapIcon, Activity, Trophy } from "lucide-react"
+import { Building2, LayoutDashboard, Users, ShieldAlert, LogOut, Map as MapIcon, Activity, Trophy, Database } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
@@ -13,6 +13,7 @@ const links = [
   { href: '/admin/visitas', icon: Activity, label: 'Registro de Visitas' },
   { href: '/admin/agencias', icon: Building2, label: 'Agencias Globales' },
   { href: '/admin/ranking', icon: Trophy, label: 'Ranking' },
+  { href: '/admin/reportes', icon: Database, label: 'Data & Reportes' },
   { href: '/admin/alertas', icon: ShieldAlert, label: 'Alertas de Fraude', isDanger: true },
 ]
 
