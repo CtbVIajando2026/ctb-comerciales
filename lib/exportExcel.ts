@@ -151,8 +151,8 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   // Anchos de columna ampliados para CRM Visual
   dash.getColumn('A').width = 4;
   dash.getColumn('B').width = 30;
-  dash.getColumn('C').width = 15;
-  dash.getColumn('D').width = 15;
+  dash.getColumn('C').width = 18;
+  dash.getColumn('D').width = 16;
   dash.getColumn('E').width = 35;
   dash.getColumn('F').width = 4;
   dash.getColumn('G').width = 25;
