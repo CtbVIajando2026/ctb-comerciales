@@ -28,6 +28,13 @@ const COLUMN_DEFS: { key: keyof ExcelRow; header: string; width: number }[] = [
   { key: 'alerta de tiempo inactivo', header: 'Alerta Inactividad', width: 22 },
 ];
 
+function normalizeText(text: string): string {
+  if (!text) return '';
+  return text.trim().split(' ').filter(Boolean).map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  ).join(' ');
+}
+
 export function buildExcelRow(v: any): ExcelRow {
   let mins = 0;
   if (v.hora_checkin && v.hora_checkout) {
@@ -70,9 +77,9 @@ export function buildExcelRow(v: any): ExcelRow {
   }
   observaciones = observaciones.replace(/\n|\r/g, ' ').trim();
 
-  const nombre = v.es_actividad
+  const nombre = normalizeText(v.es_actividad
     ? v.titulo_actividad || 'Actividad'
-    : v.agenciaNombre || v.agencias?.nombre || 'Agencia';
+    : v.agenciaNombre || v.agencias?.nombre || 'Agencia');
 
   const fecha = new Date(v.hora_checkin || v.created_at).toLocaleString('es-EC', {
     year: 'numeric',
@@ -100,8 +107,9 @@ export function buildExcelRow(v: any): ExcelRow {
     }
   }
 
-  const comercial = v.usuarios?.nombre || v.usuario?.nombre || v.usuarioNombre || v.comercialNombre || 'Desconocido';
-  const ciudad = v.agencias?.ciudad || v.usuarios?.zona || v.usuario?.zona || v.ciudad || v.zona || 'Desconocido';
+  const comercial = normalizeText(v.usuarios?.nombre || v.usuario?.nombre || v.usuarioNombre || v.comercialNombre || 'Desconocido');
+  const rawCiudad = v.agencias?.ciudad || v.usuarios?.zona || v.usuario?.zona || v.ciudad || v.zona || 'Desconocido';
+  const ciudad = normalizeText(rawCiudad);
 
   return {
     fecha: fecha,
