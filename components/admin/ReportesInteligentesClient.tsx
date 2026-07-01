@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Filter, Download, FileSpreadsheet, Calendar, Users, MapPin, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { obtenerDatosParaFiltrosReportes, generarDataReporte } from "@/app/(admin)/adminActions"
-import * as XLSX from "xlsx"
+import { buildExcelRow, exportToExcel } from "@/lib/exportExcel"
 
 export function ReportesInteligentesClient() {
   const [periodo, setPeriodo] = useState("rango_fechas")
@@ -102,86 +102,15 @@ export function ReportesInteligentesClient() {
         return
       }
 
-      generarExcel(dataCruda)
+      const rowsForExcel = dataCruda.map(v => buildExcelRow(v))
+      const fileName = `Reporte_Inteligente_${new Date().getTime()}`
+      await exportToExcel(rowsForExcel, fileName)
     } catch (error) {
       console.error(error)
       alert("Ocurrió un error al generar el reporte.")
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const generarExcel = (data: any[]) => {
-    // 1. DATA MAESTRA
-    const dataMaestra = data.map(v => ({
-      "ID Visita": v.id,
-      "Fecha Creación": new Date(v.created_at).toLocaleString('es-EC'),
-      "Estado": v.estado?.toUpperCase() || 'DESCONOCIDO',
-      "Tipo": v.es_actividad ? 'Actividad Libre' : 'Visita Agencia',
-      "Título/Nombre": v.es_actividad ? v.titulo_actividad : (v.agencias?.nombre || 'Sin Agencia'),
-      "Ciudad Agencia": v.agencias?.ciudad || 'N/A',
-      "Comercial": v.usuarios?.nombre || 'Desconocido',
-      "Zona Comercial": v.usuarios?.zona || 'Sin Zona',
-      "Hora Check-in": v.hora_checkin ? new Date(v.hora_checkin).toLocaleTimeString('es-EC') : 'No registrado',
-      "Hora Check-out": v.hora_checkout ? new Date(v.hora_checkout).toLocaleTimeString('es-EC') : 'No registrado',
-      "Alerta Fraude": (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? 'SI' : 'NO'
-    }))
-
-    // 2. DASHBOARD (Resumen)
-    const totalVisitas = data.length
-    const completadas = data.filter(v => v.estado === 'completada').length
-    const abiertas = data.filter(v => v.estado === 'abierta').length
-    const canceladas = data.filter(v => v.estado === 'cancelada').length
-    
-    // Contar por comercial
-    const porComercial = data.reduce((acc: any, v) => {
-      const nom = v.usuarios?.nombre || 'Desconocido'
-      acc[nom] = (acc[nom] || 0) + 1
-      return acc
-    }, {})
-    
-    const resumenComerciales = Object.keys(porComercial).map(k => ({
-      "Comercial": k,
-      "Total Registros": porComercial[k]
-    }))
-
-    const dashboardGenerales = [
-      { "Métrica": "Total Registros", "Valor": totalVisitas },
-      { "Métrica": "Completadas", "Valor": completadas },
-      { "Métrica": "Abiertas (En curso)", "Valor": abiertas },
-      { "Métrica": "Canceladas", "Valor": canceladas },
-    ]
-
-    // Construir Workbook
-    const wb = XLSX.utils.book_new()
-    
-    // Sheet 1: Dashboard
-    const wsDashboard = XLSX.utils.json_to_sheet(dashboardGenerales)
-    XLSX.utils.sheet_add_json(wsDashboard, [{"Métrica": "", "Valor": ""}], {skipHeader: true, origin: -1})
-    XLSX.utils.sheet_add_json(wsDashboard, [{"Métrica": "RANKING POR COMERCIAL", "Valor": ""}], {skipHeader: true, origin: -1})
-    XLSX.utils.sheet_add_json(wsDashboard, resumenComerciales, {origin: -1})
-    
-    XLSX.utils.book_append_sheet(wb, wsDashboard, "Dashboard")
-
-    // Sheet 2: Data Maestra
-    const wsData = XLSX.utils.json_to_sheet(dataMaestra)
-    
-    // Autofiltro para Data Maestra
-    wsData['!autofilter'] = { ref: XLSX.utils.encode_range(XLSX.utils.decode_range(wsData['!ref'] as string)) }
-    
-    // Ancho de columnas aproximado
-    const colWidths = [
-      { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 15 }, 
-      { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 25 }, 
-      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 40 }
-    ]
-    wsData['!cols'] = colWidths
-
-    XLSX.utils.book_append_sheet(wb, wsData, "Data Maestra")
-
-    // Descargar
-    const fileName = `Reporte_Inteligente_${new Date().getTime()}.xlsx`
-    XLSX.writeFile(wb, fileName)
   }
 
   return (
