@@ -204,7 +204,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   const horasTotales = (totalMins / 60).toFixed(1);
   const productividad = totalMins > 0 ? ((minAgencias / totalMins) * 100).toFixed(1) : '0.0';
 
-  const totalAlertas = rows.filter(r => r['alerta de lejania'].startsWith('Sí') || r['alerta de tiempo inactivo'].startsWith('Sí')).length;
+  const countInactividad = rows.filter(r => String(r['alerta de tiempo inactivo'] || '').startsWith('Sí')).length;
+  const countLejania = rows.filter(r => String(r['alerta de lejania'] || '').startsWith('Sí')).length;
+  const totalAgenciasUnicas = Array.from(new Set(rows.filter(r => r.Tipo === 'Visita Agencia').map(r => r['Nombre Agencia']))).length;
 
   const getListLabel = (count: number, names: string[]) => {
     if (count === 0) return '0';
@@ -238,10 +240,20 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   dash.getCell('D6').font = { bold: true, color: { argb: 'FF555555' } };
   dash.getCell('E6').value = getListLabel(ciudadesNombres.length, ciudadesNombres);
 
-  dash.getCell('G6').value = 'Alertas Detectadas:';
+  dash.getCell('G6').value = 'Alertas Inactividad:';
   dash.getCell('G6').font = { bold: true, color: { argb: 'FFCC0000' } };
-  dash.getCell('H6').value = totalAlertas;
+  dash.getCell('H6').value = countInactividad;
   dash.getCell('H6').font = { bold: true, color: { argb: 'FFCC0000' }, size: 14 };
+
+  dash.getCell('B7').value = 'Total Agencias:';
+  dash.getCell('B7').font = { bold: true, color: { argb: 'FF555555' } };
+  dash.getCell('C7').value = totalAgenciasUnicas;
+  dash.getCell('C7').font = { bold: true, size: 14 };
+
+  dash.getCell('G7').value = 'Alertas GPS (Dist):';
+  dash.getCell('G7').font = { bold: true, color: { argb: 'FFCC0000' } };
+  dash.getCell('H7').value = countLejania;
+  dash.getCell('H7').font = { bold: true, color: { argb: 'FFCC0000' }, size: 14 };
 
   // --- BLOQUE 2: DISTRIBUCIÓN DEL TIEMPO ---
   dash.mergeCells('B8:E8');
@@ -447,8 +459,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     }
   };
 
-  const countInactividad = rows.filter(r => String(r['alerta de tiempo inactivo'] || '').startsWith('Sí')).length;
-  const countLejania = rows.filter(r => String(r['alerta de lejania'] || '').startsWith('Sí')).length;
+
 
   addTotalRow(totalRowStart, `TOTAL VISITAS COMERCIALES (${countAgencias} visitas):`, formatMinsStr(minAgencias));
   addTotalRow(totalRowStart + 1, `TOTAL TRABAJOS ADMINISTRATIVOS (${countAdmin} act.):`, formatMinsStr(minAdmin));
