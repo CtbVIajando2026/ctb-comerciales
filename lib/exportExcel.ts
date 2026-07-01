@@ -314,9 +314,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     dash.getCell(`E${row}`).value = Math.round(data.mins / data.count);
   });
 
-  // --- BLOQUE 4: TOP AGENCIAS (Columna Derecha) ---
+  // --- BLOQUE 4: REPORTE DE AGENCIAS (Columna Derecha) ---
   dash.mergeCells('G8:J8');
-  dash.getCell('G8').value = 'TOP 5 AGENCIAS MÁS VISITADAS';
+  dash.getCell('G8').value = 'REPORTE DE AGENCIAS VISITADAS';
   dash.getCell('G8').font = { bold: true, color: { argb: 'FFFFFFFF' } };
   dash.getCell('G8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC0000' } };
   dash.getCell('G8').alignment = { vertical: 'middle', horizontal: 'center' };
@@ -337,7 +337,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
     agenciasMap[nombre].count += 1;
   });
 
-  const topAgencias = Object.entries(agenciasMap).sort((a, b) => b[1].mins - a[1].mins).slice(0, 5);
+  const topAgencias = Object.entries(agenciasMap).sort((a, b) => b[1].mins - a[1].mins);
   topAgencias.forEach(([nombre, data], index) => {
     const row = 10 + index;
     dash.getCell(`G${row}`).value = nombre;
