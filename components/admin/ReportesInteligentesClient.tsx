@@ -120,13 +120,11 @@ export function ReportesInteligentesClient() {
       "Tipo": v.es_actividad ? 'Actividad Libre' : 'Visita Agencia',
       "Título/Nombre": v.es_actividad ? v.titulo_actividad : (v.agencias?.nombre || 'Sin Agencia'),
       "Ciudad Agencia": v.agencias?.ciudad || 'N/A',
-      "Clasificación": v.agencias?.clasificacion || 'N/A',
       "Comercial": v.usuarios?.nombre || 'Desconocido',
       "Zona Comercial": v.usuarios?.zona || 'Sin Zona',
       "Hora Check-in": v.hora_checkin ? new Date(v.hora_checkin).toLocaleTimeString('es-EC') : 'No registrado',
       "Hora Check-out": v.hora_checkout ? new Date(v.hora_checkout).toLocaleTimeString('es-EC') : 'No registrado',
-      "Alerta Fraude": (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? 'SI' : 'NO',
-      "Comentarios": v.comentarios || ''
+      "Alerta Fraude": (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? 'SI' : 'NO'
     }))
 
     // 2. DASHBOARD (Resumen)

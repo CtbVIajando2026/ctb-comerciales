@@ -390,13 +390,12 @@ export async function generarDataReporte(filtros: {
       comercial_id, 
       es_actividad, 
       titulo_actividad, 
-      comentarios,
       alerta_fraude_checkin, 
       alerta_fraude_checkout,
       hora_checkin,
       hora_checkout,
       usuarios!inner(nombre, zona),
-      agencias(nombre, ciudad, clasificacion)
+      agencias(nombre, ciudad)
     `)
     .order('created_at', { ascending: false })
 
