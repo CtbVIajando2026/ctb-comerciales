@@ -347,3 +347,84 @@ export async function eliminarAgenciaAdmin(id: string) {
   revalidatePath('/admin/agencias')
   return { success: true }
 }
+
+export async function obtenerDatosParaFiltrosReportes() {
+  const supabase = await createAdminClient()
+  
+  // 1. Obtener Sedes (ciudades únicas de agencias o zonas únicas)
+  // Utilizaremos las zonas de los usuarios comerciales y/o ciudades
+  const { data: sedes } = await supabase
+    .from('usuarios_perfil')
+    .select('ciudad_zona')
+    .not('ciudad_zona', 'is', null)
+
+  const sedesUnicas = Array.from(new Set(sedes?.map(s => s.ciudad_zona) || []))
+
+  // 2. Obtener Asesores
+  const { data: asesores } = await supabase
+    .from('usuarios_perfil')
+    .select('id, nombre_completo, ciudad_zona')
+    .eq('rol', 'comercial')
+    .order('nombre_completo')
+
+  return {
+    sedes: sedesUnicas.filter(Boolean).sort(),
+    asesores: asesores || []
+  }
+}
+
+export async function generarDataReporte(filtros: { 
+  fechaInicio?: string, 
+  fechaFin?: string, 
+  sede?: string, 
+  asesorId?: string 
+}) {
+  const supabase = await createAdminClient()
+  
+  let query = supabase
+    .from('visitas')
+    .select(`
+      id, 
+      created_at, 
+      estado, 
+      comercial_id, 
+      es_actividad, 
+      titulo_actividad, 
+      comentarios,
+      alerta_fraude_checkin, 
+      alerta_fraude_checkout,
+      hora_checkin,
+      hora_checkout,
+      usuarios!inner(nombre, zona),
+      agencias(nombre, ciudad, clasificacion)
+    `)
+    .order('created_at', { ascending: false })
+
+  if (filtros.fechaInicio) {
+    const start = new Date(`${filtros.fechaInicio}T00:00:00-05:00`).toISOString()
+    query = query.gte('created_at', start)
+  }
+  
+  if (filtros.fechaFin) {
+    const end = new Date(`${filtros.fechaFin}T23:59:59.999-05:00`).toISOString()
+    query = query.lte('created_at', end)
+  }
+
+  if (filtros.asesorId && filtros.asesorId !== 'TODOS') {
+    query = query.eq('comercial_id', filtros.asesorId)
+  }
+  
+  // Filtrar por sede si aplica (usando inner join con usuarios)
+  if (filtros.sede && filtros.sede !== 'TODAS LAS SEDES') {
+    query = query.eq('usuarios.zona', filtros.sede)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error("Error obteniendo datos para reporte:", error)
+    throw new Error(error.message)
+  }
+
+  return data || []
+}

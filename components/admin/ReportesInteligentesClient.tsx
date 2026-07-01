@@ -1,12 +1,191 @@
 "use client"
 
-import { useState } from "react"
-import { Filter, Download, FileSpreadsheet, Calendar, Users, MapPin } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Filter, Download, FileSpreadsheet, Calendar, Users, MapPin, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { obtenerDatosParaFiltrosReportes, generarDataReporte } from "@/app/(admin)/adminActions"
+import * as XLSX from "xlsx"
 
 export function ReportesInteligentesClient() {
   const [periodo, setPeriodo] = useState("rango_fechas")
   
+  // Opciones cargadas desde BD
+  const [sedesOpciones, setSedesOpciones] = useState<string[]>([])
+  const [asesoresOpciones, setAsesoresOpciones] = useState<any[]>([])
+  
+  // Estado de los filtros
+  const [fechaInicio, setFechaInicio] = useState("")
+  const [fechaFin, setFechaFin] = useState("")
+  const [sede, setSede] = useState("TODAS LAS SEDES")
+  const [asesorId, setAsesorId] = useState("TODOS")
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [isCargandoFiltros, setIsCargandoFiltros] = useState(true)
+
+  useEffect(() => {
+    // Inicializar fechas con hoy (Ecuador/Local)
+    const hoy = new Date()
+    const formatter = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    const hoyStr = formatter.format(hoy)
+    setFechaInicio(hoyStr)
+    setFechaFin(hoyStr)
+
+    // Cargar listas
+    obtenerDatosParaFiltrosReportes().then((data) => {
+      setSedesOpciones(data.sedes)
+      setAsesoresOpciones(data.asesores)
+      setIsCargandoFiltros(false)
+    }).catch(e => {
+      console.error(e)
+      setIsCargandoFiltros(false)
+    })
+  }, [])
+
+  const getRangoPorPeriodo = (periodoStr: string) => {
+    const hoy = new Date()
+    const formatter = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    
+    if (periodoStr === 'hoy') {
+      return { inicio: formatter.format(hoy), fin: formatter.format(hoy) }
+    }
+    
+    if (periodoStr === 'esta_semana') {
+      const inicioSemana = new Date(hoy)
+      inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay() + 1) // Lunes
+      return { inicio: formatter.format(inicioSemana), fin: formatter.format(hoy) }
+    }
+    
+    if (periodoStr === 'este_mes') {
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+      return { inicio: formatter.format(inicioMes), fin: formatter.format(hoy) }
+    }
+    
+    if (periodoStr === 'este_ano') {
+      const inicioAno = new Date(hoy.getFullYear(), 0, 1)
+      return { inicio: formatter.format(inicioAno), fin: formatter.format(hoy) }
+    }
+    
+    return { inicio: undefined, fin: undefined }
+  }
+
+  const handleExportar = async () => {
+    try {
+      setIsLoading(true)
+      
+      let inicio = fechaInicio
+      let fin = fechaFin
+      
+      if (periodo !== "rango_fechas") {
+         const rangos = getRangoPorPeriodo(periodo)
+         if (rangos.inicio && rangos.fin) {
+           inicio = rangos.inicio
+           fin = rangos.fin
+         } else {
+           // historico
+           inicio = ''
+           fin = ''
+         }
+      }
+
+      const filtros = {
+        fechaInicio: inicio || undefined,
+        fechaFin: fin || undefined,
+        sede,
+        asesorId
+      }
+
+      const dataCruda = await generarDataReporte(filtros)
+
+      if (!dataCruda || dataCruda.length === 0) {
+        alert("No hay datos para exportar con estos filtros.")
+        setIsLoading(false)
+        return
+      }
+
+      generarExcel(dataCruda)
+    } catch (error) {
+      console.error(error)
+      alert("Ocurrió un error al generar el reporte.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const generarExcel = (data: any[]) => {
+    // 1. DATA MAESTRA
+    const dataMaestra = data.map(v => ({
+      "ID Visita": v.id,
+      "Fecha Creación": new Date(v.created_at).toLocaleString('es-EC'),
+      "Estado": v.estado?.toUpperCase() || 'DESCONOCIDO',
+      "Tipo": v.es_actividad ? 'Actividad Libre' : 'Visita Agencia',
+      "Título/Nombre": v.es_actividad ? v.titulo_actividad : (v.agencias?.nombre || 'Sin Agencia'),
+      "Ciudad Agencia": v.agencias?.ciudad || 'N/A',
+      "Clasificación": v.agencias?.clasificacion || 'N/A',
+      "Comercial": v.usuarios?.nombre || 'Desconocido',
+      "Zona Comercial": v.usuarios?.zona || 'Sin Zona',
+      "Hora Check-in": v.hora_checkin ? new Date(v.hora_checkin).toLocaleTimeString('es-EC') : 'No registrado',
+      "Hora Check-out": v.hora_checkout ? new Date(v.hora_checkout).toLocaleTimeString('es-EC') : 'No registrado',
+      "Alerta Fraude": (v.alerta_fraude_checkin || v.alerta_fraude_checkout) ? 'SI' : 'NO',
+      "Comentarios": v.comentarios || ''
+    }))
+
+    // 2. DASHBOARD (Resumen)
+    const totalVisitas = data.length
+    const completadas = data.filter(v => v.estado === 'completada').length
+    const abiertas = data.filter(v => v.estado === 'abierta').length
+    const canceladas = data.filter(v => v.estado === 'cancelada').length
+    
+    // Contar por comercial
+    const porComercial = data.reduce((acc: any, v) => {
+      const nom = v.usuarios?.nombre || 'Desconocido'
+      acc[nom] = (acc[nom] || 0) + 1
+      return acc
+    }, {})
+    
+    const resumenComerciales = Object.keys(porComercial).map(k => ({
+      "Comercial": k,
+      "Total Registros": porComercial[k]
+    }))
+
+    const dashboardGenerales = [
+      { "Métrica": "Total Registros", "Valor": totalVisitas },
+      { "Métrica": "Completadas", "Valor": completadas },
+      { "Métrica": "Abiertas (En curso)", "Valor": abiertas },
+      { "Métrica": "Canceladas", "Valor": canceladas },
+    ]
+
+    // Construir Workbook
+    const wb = XLSX.utils.book_new()
+    
+    // Sheet 1: Dashboard
+    const wsDashboard = XLSX.utils.json_to_sheet(dashboardGenerales)
+    XLSX.utils.sheet_add_json(wsDashboard, [{"Métrica": "", "Valor": ""}], {skipHeader: true, origin: -1})
+    XLSX.utils.sheet_add_json(wsDashboard, [{"Métrica": "RANKING POR COMERCIAL", "Valor": ""}], {skipHeader: true, origin: -1})
+    XLSX.utils.sheet_add_json(wsDashboard, resumenComerciales, {origin: -1})
+    
+    XLSX.utils.book_append_sheet(wb, wsDashboard, "Dashboard")
+
+    // Sheet 2: Data Maestra
+    const wsData = XLSX.utils.json_to_sheet(dataMaestra)
+    
+    // Autofiltro para Data Maestra
+    wsData['!autofilter'] = { ref: XLSX.utils.encode_range(XLSX.utils.decode_range(wsData['!ref'] as string)) }
+    
+    // Ancho de columnas aproximado
+    const colWidths = [
+      { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 15 }, 
+      { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 25 }, 
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 40 }
+    ]
+    wsData['!cols'] = colWidths
+
+    XLSX.utils.book_append_sheet(wb, wsData, "Data Maestra")
+
+    // Descargar
+    const fileName = `Reporte_Inteligente_${new Date().getTime()}.xlsx`
+    XLSX.writeFile(wb, fileName)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header Card */}
@@ -64,11 +243,21 @@ export function ReportesInteligentesClient() {
             {periodo === "rango_fechas" && (
               <div className="flex items-center gap-2 mt-2">
                 <div className="relative flex-1">
-                  <input type="date" defaultValue="2026-06-01" className="w-full px-3 py-2.5 rounded-lg bg-muted/30 border border-border text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <input 
+                    type="date" 
+                    value={fechaInicio}
+                    onChange={(e) => setFechaInicio(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-lg bg-muted/30 border border-border text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20" 
+                  />
                 </div>
                 <span className="text-muted-foreground text-xs font-bold">-</span>
                 <div className="relative flex-1">
-                  <input type="date" defaultValue="2026-06-30" className="w-full px-3 py-2.5 rounded-lg bg-muted/30 border border-border text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <input 
+                    type="date" 
+                    value={fechaFin}
+                    onChange={(e) => setFechaFin(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-lg bg-muted/30 border border-border text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20" 
+                  />
                 </div>
               </div>
             )}
@@ -83,9 +272,16 @@ export function ReportesInteligentesClient() {
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <Filter className="w-4 h-4 text-primary" />
               </div>
-              <select className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/30 border border-border text-sm font-semibold text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20">
-                <option>TODAS LAS SEDES</option>
-                {/* Options would be loaded here */}
+              <select 
+                value={sede}
+                onChange={(e) => setSede(e.target.value)}
+                disabled={isCargandoFiltros}
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/30 border border-border text-sm font-semibold text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              >
+                <option value="TODAS LAS SEDES">TODAS LAS SEDES</option>
+                {sedesOpciones.map(s => (
+                  <option key={s} value={s}>{s.toUpperCase()}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -99,9 +295,16 @@ export function ReportesInteligentesClient() {
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <Users className="w-4 h-4 text-primary" />
               </div>
-              <select className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/30 border border-border text-sm font-semibold text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20">
-                <option>TODO EL EQUIPO</option>
-                {/* Options would be loaded here */}
+              <select 
+                value={asesorId}
+                onChange={(e) => setAsesorId(e.target.value)}
+                disabled={isCargandoFiltros}
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/30 border border-border text-sm font-semibold text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              >
+                <option value="TODOS">TODO EL EQUIPO</option>
+                {asesoresOpciones.map(a => (
+                  <option key={a.id} value={a.id}>{a.nombre_completo}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -112,9 +315,14 @@ export function ReportesInteligentesClient() {
             Se descargarán dos pestañas: Resumen (Dashboard) y Tabla Completa de Datos B2B con auto-filtros y fórmulas de sumatoria inteligente aplicadas.
           </p>
           
-          <Button size="lg" className="w-full md:w-auto rounded-xl bg-[#0f172a] hover:bg-black text-white font-bold tracking-wide shadow-xl flex items-center gap-2 py-6 px-8 transition-transform active:scale-95">
-            <Download className="w-5 h-5" />
-            EXPORTAR XLSX INTELIGENTE
+          <Button 
+            size="lg" 
+            onClick={handleExportar}
+            disabled={isLoading || isCargandoFiltros}
+            className="w-full md:w-auto rounded-xl bg-[#0f172a] hover:bg-black text-white font-bold tracking-wide shadow-xl flex items-center gap-2 py-6 px-8 transition-transform active:scale-95 disabled:opacity-70 disabled:pointer-events-none"
+          >
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+            {isLoading ? "GENERANDO..." : "EXPORTAR XLSX INTELIGENTE"}
           </Button>
         </div>
       </div>
