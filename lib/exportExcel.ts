@@ -35,6 +35,13 @@ function normalizeText(text: string): string {
   ).join(' ');
 }
 
+function formatToHHMM(totalMins: number): string {
+  if (!totalMins || isNaN(totalMins)) return '0:00';
+  const h = Math.floor(totalMins / 60);
+  const m = Math.floor(totalMins % 60);
+  return `${h}:${m.toString().padStart(2, '0')}`;
+}
+
 export function buildExcelRow(v: any): ExcelRow {
   let mins = 0;
   if (v.hora_checkin && v.hora_checkout) {
@@ -94,18 +101,9 @@ export function buildExcelRow(v: any): ExcelRow {
     alertaLejania = `Sí (${Math.round(v.distancia_checkin_metros || 0)} m)`;
   }
 
-  const alertaInactividad = mins > 60 ? `Sí (${mins} min)` : 'No';
+  const alertaInactividad = mins > 60 ? `Sí (${formatToHHMM(mins)})` : 'No';
 
-  let duracionStr = '0m';
-  if (mins > 0) {
-    if (mins >= 60) {
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      duracionStr = `${h}:${m.toString().padStart(2, '0')}m`;
-    } else {
-      duracionStr = `${mins}m`;
-    }
-  }
+  const duracionStr = formatToHHMM(mins);
 
   const comercial = normalizeText(v.usuarios?.nombre || v.usuario?.nombre || v.usuarioNombre || v.comercialNombre || 'Desconocido');
   const rawCiudad = v.agencias?.ciudad || v.usuarios?.zona || v.usuario?.zona || v.ciudad || v.zona || 'Desconocido';
@@ -129,10 +127,10 @@ export function buildExcelRow(v: any): ExcelRow {
 function parseDuracion(d: string): number {
   if (!d) return 0;
   if (d.includes(':')) {
-    const parts = d.replace('m', '').split(':');
+    const parts = d.replace(/[a-zA-Z]/g, '').split(':');
     return parseInt(parts[0] || '0') * 60 + parseInt(parts[1] || '0');
   } else {
-    return parseInt(d.replace('m', '') || '0');
+    return parseInt(d.replace(/[a-zA-Z]/g, '') || '0');
   }
 }
 
@@ -257,12 +255,12 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
 
   // --- BLOQUE 2: DISTRIBUCIÓN DEL TIEMPO ---
   dash.mergeCells('B8:E8');
-  dash.getCell('B8').value = 'DISTRIBUCIÓN DEL TIEMPO (MINUTOS)';
+  dash.getCell('B8').value = 'DISTRIBUCIÓN DEL TIEMPO';
   dash.getCell('B8').font = { bold: true, color: { argb: 'FFFFFFFF' } };
   dash.getCell('B8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC0000' } };
   dash.getCell('B8').alignment = { vertical: 'middle', horizontal: 'center' };
 
-  ['Categoría', 'Minutos', '% del Tiempo', 'Gráfico Visual'].forEach((h, i) => {
+  ['Categoría', 'Duración (hh:mm)', '% del Tiempo', 'Gráfico Visual'].forEach((h, i) => {
     const col = ['B', 'C', 'D', 'E'][i];
     const cell = dash.getCell(`${col}9`);
     cell.value = h;
@@ -281,7 +279,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   categoriasData.forEach((cat, index) => {
     const row = 10 + index;
     dash.getCell(`B${row}`).value = cat.name;
-    dash.getCell(`C${row}`).value = cat.mins;
+    dash.getCell(`C${row}`).value = formatToHHMM(cat.mins);
     const pct = totalMins > 0 ? (cat.mins / totalMins) * 100 : 0;
     dash.getCell(`D${row}`).value = pct / 100;
     dash.getCell(`D${row}`).numFmt = '0.0%';
@@ -309,7 +307,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   dash.getCell('B16').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00838F' } }; // Teal oscuro
   dash.getCell('B16').alignment = { vertical: 'middle', horizontal: 'center' };
 
-  ['Ciudad', 'Minutos', 'N° Visitas', 'Promedio (min)'].forEach((h, i) => {
+  ['Ciudad', 'Duración', 'N° Visitas', 'Promedio'].forEach((h, i) => {
     const col = ['B', 'C', 'D', 'E'][i];
     const cell = dash.getCell(`${col}17`);
     cell.value = h;
@@ -329,9 +327,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   topCiudades.forEach(([cName, data], index) => {
     const row = 18 + index;
     dash.getCell(`B${row}`).value = cName;
-    dash.getCell(`C${row}`).value = data.mins;
+    dash.getCell(`C${row}`).value = formatToHHMM(data.mins);
     dash.getCell(`D${row}`).value = data.count;
-    dash.getCell(`E${row}`).value = Math.round(data.mins / data.count);
+    dash.getCell(`E${row}`).value = formatToHHMM(Math.round(data.mins / data.count));
   });
 
   // --- BLOQUE 4: REPORTE DE AGENCIAS (Columna Derecha) ---
@@ -341,7 +339,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   dash.getCell('G8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC0000' } };
   dash.getCell('G8').alignment = { vertical: 'middle', horizontal: 'center' };
 
-  ['Agencia', 'Minutos', 'N° Visitas', 'Promedio (min)'].forEach((h, i) => {
+  ['Agencia', 'Duración', 'N° Visitas', 'Promedio'].forEach((h, i) => {
     const col = ['G', 'H', 'I', 'J'][i];
     const cell = dash.getCell(`${col}9`);
     cell.value = h;
@@ -361,9 +359,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   topAgencias.forEach(([nombre, data], index) => {
     const row = 10 + index;
     dash.getCell(`G${row}`).value = nombre;
-    dash.getCell(`H${row}`).value = data.mins;
+    dash.getCell(`H${row}`).value = formatToHHMM(data.mins);
     dash.getCell(`I${row}`).value = data.count;
-    dash.getCell(`J${row}`).value = Math.round(data.mins / data.count);
+    dash.getCell(`J${row}`).value = formatToHHMM(Math.round(data.mins / data.count));
   });
 
 
@@ -425,10 +423,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   const totalRowStart = rows.length + 3;
   
   const formatMinsStr = (mins: number) => {
-    if (mins < 60) return `${mins} mins`;
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${h} hrs ${m} mins`;
+    return formatToHHMM(mins);
   };
 
   const countAgencias = rows.filter(r => r.Categoría === 'Gestión Comercial (Agencias)').length;
