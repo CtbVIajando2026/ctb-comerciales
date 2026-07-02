@@ -10,33 +10,44 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
   const [searchTerm, setSearchTerm] = useState('')
   const [filtroRol, setFiltroRol] = useState<string>('all')
   const [timeFilter, setTimeFilter] = useState<string>(() => {
-    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit' })
-    return formatter.format(new Date()) // Por defecto el mes actual en Ecuador: YYYY-MM
+    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric' })
+    const parts = formatter.formatToParts(new Date())
+    const y = parts.find(p => p.type === 'year')?.value || '2026'
+    const m = (parts.find(p => p.type === 'month')?.value || '07').padStart(2, '0')
+    return `${y}-${m}` // Por defecto el mes actual en Ecuador: YYYY-MM
   })
 
   const processedData = useMemo(() => {
     const now = new Date()
-    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
-    const ecDateStr = formatter.format(now)
-    const ecMonthStr = ecDateStr.substring(0, 7)
+    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric', day: 'numeric' })
+    
+    const getParts = (d: Date) => {
+      const parts = formatter.formatToParts(d)
+      const y = parts.find(p => p.type === 'year')?.value || ''
+      const m = (parts.find(p => p.type === 'month')?.value || '').padStart(2, '0')
+      const dNum = (parts.find(p => p.type === 'day')?.value || '').padStart(2, '0')
+      return { year: y, month: m, day: dNum, yyyyMm: `${y}-${m}`, yyyyMmDd: `${y}-${m}-${dNum}` }
+    }
+
+    const ecNow = getParts(now)
 
     return initialData.map(user => {
       const historial = user.visitas_historial || []
       const filteredHistorial = historial.filter((v: any) => {
         const fechaVisita = new Date(v.created_at)
-        const vDateStr = formatter.format(fechaVisita) // "YYYY-MM-DD" local EC
+        const vParts = getParts(fechaVisita)
 
         if (timeFilter === 'hoy') {
-          return vDateStr === ecDateStr
+          return vParts.yyyyMmDd === ecNow.yyyyMmDd
         } else if (timeFilter === 'semana') {
           const msInWeek = 7 * 24 * 60 * 60 * 1000
           return now.getTime() - fechaVisita.getTime() < msInWeek
         } else if (timeFilter.length === 7) {
           // Filtro por mes YYYY-MM
-          return vDateStr.substring(0, 7) === timeFilter
+          return vParts.yyyyMm === timeFilter
         } else if (timeFilter.length === 4) {
           // Filtro por año YYYY
-          return vDateStr.substring(0, 4) === timeFilter
+          return vParts.year === timeFilter
         }
         return true
       })
@@ -113,8 +124,16 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
             <option value="hoy">Hoy</option>
             <option value="semana">Últimos 7 días</option>
             <optgroup label="Por Mes">
-              {Array.from({ length: parseInt(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', month: 'numeric' }).format(new Date())) }).map((_, i) => {
-                const year = parseInt(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' }).format(new Date()));
+              {Array.from({ 
+                length: parseInt(
+                  new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', month: 'numeric' })
+                    .formatToParts(new Date()).find(p => p.type === 'month')?.value || '12'
+                ) 
+              }).map((_, i) => {
+                const year = parseInt(
+                  new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric' })
+                    .formatToParts(new Date()).find(p => p.type === 'year')?.value || '2026'
+                );
                 const month = i + 1;
                 const val = `${year}-${month.toString().padStart(2, '0')}`;
                 const mesNom = new Date(year, i, 1).toLocaleString('es-ES', { month: 'long' });
@@ -122,8 +141,8 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
               }).reverse()}
             </optgroup>
             <optgroup label="Por Año">
-              <option value={new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' }).format(new Date())}>
-                Todo el {new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' }).format(new Date())}
+              <option value={new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric' }).formatToParts(new Date()).find(p => p.type === 'year')?.value || '2026'}>
+                Todo el {new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric' }).formatToParts(new Date()).find(p => p.type === 'year')?.value || '2026'}
               </option>
             </optgroup>
           </select>
