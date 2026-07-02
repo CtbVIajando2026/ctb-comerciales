@@ -242,8 +242,10 @@ export async function obtenerMetricasEnVivo(fechaStr?: string) {
 export async function obtenerDatosHistoricosAdmin() {
   const supabase = await createAdminClient()
   
-  const hace30Dias = new Date()
-  hace30Dias.setDate(hace30Dias.getDate() - 30)
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' })
+  const ecYearStr = formatter.format(now) // "YYYY"
+  const inicioAnoEcuador = new Date(`${ecYearStr}-01-01T00:00:00-05:00`).toISOString()
   
   // 1. Obtener Visitas con Relaciones
   const { data: visitas, error } = await supabase
@@ -260,7 +262,7 @@ export async function obtenerDatosHistoricosAdmin() {
       usuarios!inner(nombre, zona),
       agencias(nombre)
     `)
-    .gte('created_at', hace30Dias.toISOString())
+    .gte('created_at', inicioAnoEcuador)
     .order('created_at', { ascending: false })
     
   if (error || !visitas) {

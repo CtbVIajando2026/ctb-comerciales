@@ -1,13 +1,20 @@
 "use client"
 
 import { useMemo, useEffect, useState } from 'react'
-import { Trophy, MapPin, Award, Star, Briefcase, Filter } from 'lucide-react'
+import { Trophy, MapPin, Award, Star, Briefcase, Filter, CalendarDays } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export function RankingClient({ datos }: { datos: any }) {
   const { visitas, comerciales } = datos
   const [mounted, setMounted] = useState(false)
   const [filtroZona, setFiltroZona] = useState<string>('Global')
+  const [timeFilter, setTimeFilter] = useState<string>(() => {
+    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric' })
+    const parts = formatter.formatToParts(new Date())
+    const y = parts.find(p => p.type === 'year')?.value || '2026'
+    const m = (parts.find(p => p.type === 'month')?.value || '07').padStart(2, '0')
+    return `${y}-${m}` // Por defecto el mes actual en Ecuador: YYYY-MM
+  })
 
   useEffect(() => {
     // Retraso para que la animación se vea después de cargar la página
@@ -39,8 +46,38 @@ export function RankingClient({ datos }: { datos: any }) {
       }
     })
 
+    const now = new Date()
+    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric', day: 'numeric' })
+    const getParts = (d: Date) => {
+      const parts = formatter.formatToParts(d)
+      const y = parts.find(p => p.type === 'year')?.value || ''
+      const m = (parts.find(p => p.type === 'month')?.value || '').padStart(2, '0')
+      const dNum = (parts.find(p => p.type === 'day')?.value || '').padStart(2, '0')
+      return { year: y, month: m, day: dNum, yyyyMm: `${y}-${m}`, yyyyMmDd: `${y}-${m}-${dNum}` }
+    }
+    const ecNow = getParts(now)
+
     visitas.forEach((v: any) => {
       if (v.estado === 'completada') {
+        const fechaVisita = new Date(v.created_at)
+        const vParts = getParts(fechaVisita)
+
+        let passesTimeFilter = false
+        if (timeFilter === 'hoy') {
+          passesTimeFilter = vParts.yyyyMmDd === ecNow.yyyyMmDd
+        } else if (timeFilter === 'semana') {
+          const msInWeek = 7 * 24 * 60 * 60 * 1000
+          passesTimeFilter = now.getTime() - fechaVisita.getTime() < msInWeek
+        } else if (timeFilter.length === 7) {
+          passesTimeFilter = vParts.yyyyMm === timeFilter
+        } else if (timeFilter.length === 4) {
+          passesTimeFilter = vParts.year === timeFilter
+        } else {
+          passesTimeFilter = true
+        }
+
+        if (!passesTimeFilter) return
+
         const comercialZona = v.usuarios?.zona || 'Global'
         if (filtroZona !== 'Global' && comercialZona !== filtroZona) return
 
@@ -84,23 +121,65 @@ export function RankingClient({ datos }: { datos: any }) {
           Ranking de Efectividad
         </h1>
         <p className="text-muted-foreground text-sm font-medium tracking-wide">
-          Desempeño comercial de los últimos 30 días
+          {timeFilter === 'hoy' ? 'Desempeño comercial de Hoy' : 
+           timeFilter === 'semana' ? 'Desempeño comercial de los últimos 7 días' : 
+           timeFilter.length === 7 ? 'Desempeño comercial del mes seleccionado' :
+           timeFilter.length === 4 ? 'Desempeño comercial del año seleccionado' :
+           'Desempeño comercial'}
         </p>
 
-        {/* SELECTOR DE FILTRO */}
-        <div className="mt-6 flex items-center space-x-2 bg-card border border-border p-1 rounded-xl shadow-sm">
-          <Filter className="w-4 h-4 text-muted-foreground ml-3" />
-          <Select value={filtroZona} onValueChange={(val) => setFiltroZona(val ?? 'Global')}>
-            <SelectTrigger className="w-[180px] sm:w-[220px] h-10 border-0 bg-transparent focus:ring-0 focus:ring-offset-0 font-bold text-foreground">
-              <SelectValue placeholder="Filtrar por Zona" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="Global" className="font-bold">🌎 Todo el País</SelectItem>
-              {zonas.map(z => (
-                <SelectItem key={z} value={z}>📍 {z}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* SELECTORES DE FILTRO */}
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+          
+          <div className="flex items-center space-x-2 bg-card border border-border p-1 rounded-xl shadow-sm">
+            <Filter className="w-4 h-4 text-muted-foreground ml-3" />
+            <Select value={filtroZona} onValueChange={(val) => setFiltroZona(val ?? 'Global')}>
+              <SelectTrigger className="w-[180px] sm:w-[220px] h-10 border-0 bg-transparent focus:ring-0 focus:ring-offset-0 font-bold text-foreground">
+                <SelectValue placeholder="Filtrar por Zona" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="Global" className="font-bold">🌎 Todo el País</SelectItem>
+                {zonas.map(z => (
+                  <SelectItem key={z} value={z}>📍 {z}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center space-x-2 bg-card border border-border p-1 rounded-xl shadow-sm">
+            <CalendarDays className="w-4 h-4 text-muted-foreground ml-3" />
+            <select 
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="w-[180px] sm:w-[220px] h-10 px-3 bg-transparent border-0 font-bold text-foreground outline-none cursor-pointer"
+            >
+              <option value="hoy">Hoy</option>
+              <option value="semana">Últimos 7 días</option>
+              <optgroup label="Por Mes">
+                {Array.from({ 
+                  length: parseInt(
+                    new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', month: 'numeric' })
+                      .formatToParts(new Date()).find(p => p.type === 'month')?.value || '12'
+                  ) 
+                }).map((_, i) => {
+                  const year = parseInt(
+                    new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric' })
+                      .formatToParts(new Date()).find(p => p.type === 'year')?.value || '2026'
+                  );
+                  const month = i + 1;
+                  const val = `${year}-${month.toString().padStart(2, '0')}`;
+                  const mesNom = new Date(year, i, 1).toLocaleString('es-ES', { month: 'long' });
+                  return <option key={val} value={val}>{mesNom} {year}</option>
+                }).reverse()}
+              </optgroup>
+              <optgroup label="Por Año">
+                <option value={new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric' }).formatToParts(new Date()).find(p => p.type === 'year')?.value || '2026'}>
+                  Todo el {new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric' }).formatToParts(new Date()).find(p => p.type === 'year')?.value || '2026'}
+                </option>
+              </optgroup>
+            </select>
+          </div>
+
         </div>
       </div>
 
