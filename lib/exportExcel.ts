@@ -894,14 +894,15 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
     };
 
     const resTot = Object.keys(agrupado).length + 3;
-    addResumenTotal(resTot, 'TOTAL VISITAS:', `${globalNumVisitas} visitas`);
-    addResumenTotal(resTot + 1, 'TOTAL TIEMPO EN VISITAS:', formatToHHMM(globalTVisitas), 'FF2E7D32');
-    addResumenTotal(resTot + 2, 'TOTAL ACTIVIDADES VARIAS:', `${globalNumAct} actividades`);
-    addResumenTotal(resTot + 3, 'TOTAL TIEMPO EN ACTIVIDADES VARIAS:', formatToHHMM(globalTAct), 'FF2E7D32');
-    addResumenTotal(resTot + 4, 'ALMUERZOS REGISTRADOS:', `${globalAlmuerzosOk} días`);
-    addResumenTotal(resTot + 5, 'TOTAL ALERTAS INACTIVIDAD:', `${globalAlertasInact} alertas`, 'FFCC0000');
-    addResumenTotal(resTot + 6, 'TOTAL HORAS INACTIVIDAD:', formatToHHMM(globalTInact), 'FFCC0000');
-    addResumenTotal(resTot + 7, 'TOTAL ALERTAS FUERA DE SITIO (Check Lejano):', `${globalAlertasSitio} alertas`, 'FFCC0000');
+    addResumenTotal(resTot, 'DÍAS TRABAJADOS (Jornadas Evaluadas):', `${Object.keys(agrupado).length} días`);
+    addResumenTotal(resTot + 1, 'TOTAL VISITAS:', `${globalNumVisitas} visitas`);
+    addResumenTotal(resTot + 2, 'TOTAL TIEMPO EN VISITAS:', formatToHHMM(globalTVisitas), 'FF2E7D32');
+    addResumenTotal(resTot + 3, 'TOTAL ACTIVIDADES VARIAS:', `${globalNumAct} actividades`);
+    addResumenTotal(resTot + 4, 'TOTAL TIEMPO EN ACTIVIDADES VARIAS:', formatToHHMM(globalTAct), 'FF2E7D32');
+    addResumenTotal(resTot + 5, 'ALMUERZOS REGISTRADOS:', `${globalAlmuerzosOk} días`);
+    addResumenTotal(resTot + 6, 'TOTAL ALERTAS INACTIVIDAD:', `${globalAlertasInact} alertas`, 'FFCC0000');
+    addResumenTotal(resTot + 7, 'TOTAL HORAS INACTIVIDAD:', formatToHHMM(globalTInact), 'FFCC0000');
+    addResumenTotal(resTot + 8, 'TOTAL ALERTAS FUERA DE SITIO (Check Lejano):', `${globalAlertasSitio} alertas`, 'FFCC0000');
   }
 
   // Convertir a blob nativamente
