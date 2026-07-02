@@ -517,12 +517,12 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
     auditoriaWs.columns = [
       { header: 'Fecha', key: 'fecha', width: 15 },
       { header: 'Comercial', key: 'comercial', width: 25 },
+      { header: 'Resumen de Jornada (Lectura Humana)', key: 'evaluacion', width: 85 },
       { header: '1er Check-in', key: 'primer', width: 15 },
       { header: 'Último Check-out', key: 'ultimo', width: 18 },
-      { header: 'Tiempo Trabajado (hrs)', key: 'activo', width: 22 },
-      { header: 'Inactividad (hrs)', key: 'muertas', width: 20 },
+      { header: 'Tiempo Trabajado', key: 'activo', width: 18 },
+      { header: 'Inactividad (hrs)', key: 'muertas', width: 18 },
       { header: '¿Almuerzo?', key: 'almuerzo', width: 15 },
-      { header: 'Evaluación del Sistema', key: 'evaluacion', width: 50 },
     ];
 
     const hRow = auditoriaWs.getRow(1);
@@ -583,13 +583,33 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
 
       // --- EVALUACIÓN AUTOMÁTICA DIDÁCTICA ---
       let evaluacion = '';
+      
+      if (primer !== 'N/A' && ultimo !== 'N/A') {
+        evaluacion += `• Jornada de ${primer} a ${ultimo}.\n`;
+      } else if (primer !== 'N/A') {
+        evaluacion += `• Inició jornada a las ${primer} pero no cerró la última visita.\n`;
+      } else {
+        evaluacion += `• No hay un inicio de jornada claro.\n`;
+      }
+
+      evaluacion += `• Registró ${formatToHHMM(totalMinsActivos)} hrs de trabajo en la app. `;
+
+      if (minMuertos > 60) {
+        evaluacion += `⚠️ Dejó un rastro de ${formatToHHMM(minMuertos)} hrs MUERTAS (inactividad entre registros).\n`;
+      } else if (minMuertos > 0) {
+        evaluacion += `Tuvo ${formatToHHMM(minMuertos)} hrs de inactividad aceptable.\n`;
+      } else {
+        evaluacion += `No dejó tiempos muertos (Óptimo).\n`;
+      }
+
+      let alertas = [];
       if (primer !== 'N/A') {
         const horaPrimer = parseInt(primer.split(':')[0]);
         const isPM = primer.toLowerCase().includes('p');
         const h24Primer = (horaPrimer === 12 ? (isPM ? 12 : 0) : horaPrimer + (isPM ? 12 : 0));
         const minPrimer = parseInt(primer.split(':')[1]);
         if (h24Primer > 9 || (h24Primer === 9 && minPrimer > 30)) {
-          evaluacion += `🚩 Inició tarde (${primer}). `;
+          alertas.push(`Inició jornada tarde`);
         }
       }
 
@@ -599,14 +619,17 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
         const h24Ultimo = (horaUltimo === 12 ? (isPMUltimo ? 12 : 0) : horaUltimo + (isPMUltimo ? 12 : 0));
         const minUltimo = parseInt(ultimo.split(':')[1]);
         if (h24Ultimo < 17 || (h24Ultimo === 17 && minUltimo < 30)) {
-          evaluacion += `🚩 Terminó temprano (${ultimo}). `;
+          alertas.push(`Terminó jornada temprano`);
         }
       }
 
-      if (minMuertos > 60) evaluacion += `🚩 Alta inactividad (${formatToHHMM(minMuertos)} hrs). `;
-      if (registroAlmuerzo === 'No') evaluacion += `🚩 Omitió almuerzo. `;
-      
-      if (evaluacion === '') evaluacion = '✅ Jornada Óptima (9 a 6)';
+      if (registroAlmuerzo === 'No') alertas.push(`No registró Almuerzo`);
+
+      if (alertas.length > 0) {
+        evaluacion += `• Observaciones: ${alertas.join(' / ')}.`;
+      } else {
+        evaluacion += `• Observaciones: Cumplió horario regular (9am a 6pm) y almorzó.`;
+      }
 
       const muertasStr = minMuertos > 60 ? `⚠️ ${formatToHHMM(minMuertos)}` : formatToHHMM(minMuertos);
       const almuerzoStr = registroAlmuerzo === 'No' ? '❌ No' : registroAlmuerzo;
@@ -614,12 +637,18 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
       const row = auditoriaWs.addRow({
         fecha: fechaISO,
         comercial: comercialNombre,
+        evaluacion: evaluacion.trim(),
         primer,
         ultimo,
         activo: formatToHHMM(totalMinsActivos),
         muertas: muertasStr,
-        almuerzo: almuerzoStr,
-        evaluacion: evaluacion.trim()
+        almuerzo: almuerzoStr
+      });
+      
+      // Autoajustar altura para el texto multilineal
+      row.height = 70;
+      row.eachCell((cell) => {
+        cell.alignment = { vertical: 'middle', wrapText: true };
       });
 
       // Pintar rojo si hay horas muertas considerables (ej > 1h)
@@ -629,10 +658,11 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
       if (registroAlmuerzo === 'No') {
         row.getCell('almuerzo').font = { color: { argb: 'FFCC0000' }, bold: true };
       }
-      if (evaluacion.includes('🚩')) {
-        row.getCell('evaluacion').font = { color: { argb: 'FFCC0000' }, bold: true };
+      
+      if (alertas.length > 0 || minMuertos > 60) {
+        row.getCell('evaluacion').font = { color: { argb: 'FFCC0000' } };
       } else {
-        row.getCell('evaluacion').font = { color: { argb: 'FF2E7D32' }, bold: true };
+        row.getCell('evaluacion').font = { color: { argb: 'FF2E7D32' } };
       }
     });
   }
