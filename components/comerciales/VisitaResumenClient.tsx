@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, MapPin, Clock, Calendar, CheckCircle2, FileText, Target } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Calendar, CheckCircle2, FileText, Target, Route } from "lucide-react"
+import { calcularDistanciaMetros } from "@/lib/geolocation"
 
 export function VisitaResumenClient({ visita }: { visita: any }) {
   const formatTime = (timeStr: string | null) => {
@@ -50,6 +51,12 @@ export function VisitaResumenClient({ visita }: { visita: any }) {
             <MapPin className="w-4 h-4 mr-2" />
             <span>Check-in GPS registrado</span>
           </div>
+          {visita.es_actividad && visita.titulo_actividad === 'Transporte / Movilización' && visita.gps_lat && visita.gps_lng && visita.gps_lat_checkout && visita.gps_lng_checkout && (
+            <div className="flex items-center text-sm text-blue-600 font-bold bg-blue-500/10 w-fit px-3 py-1.5 rounded-lg mt-3">
+              <Route className="w-4 h-4 mr-2" />
+              <span>Distancia recorrida: {(calcularDistanciaMetros(visita.gps_lat, visita.gps_lng, visita.gps_lat_checkout, visita.gps_lng_checkout) / 1000).toFixed(2)} km</span>
+            </div>
+          )}
         </section>
 
         {/* Motivo de Visita */}

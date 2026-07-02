@@ -5,6 +5,7 @@ import { VisitaCard } from "@/components/comerciales/VisitaCard"
 import { ActiveVisitBlock } from "@/components/comerciales/ActiveVisitBlock"
 import { Plus, Clock, Briefcase } from "lucide-react"
 import { obtenerMeticasDashboard } from "@/app/(comerciales)/actions"
+import { calcularDistanciaMetros } from "@/lib/geolocation"
 import { NuevaActividadButton } from "@/components/comerciales/NuevaActividadButton"
 import { LiveLocationHeader } from "@/components/comerciales/LiveLocationHeader"
 import { obtenerNotificaciones, Notificacion } from "@/app/(comerciales)/actions_notificaciones"
@@ -227,7 +228,9 @@ export default async function DashboardPage() {
                       badgeGPS: v.alerta_ubicacion ? { label: v.alerta_ubicacion, tipo: 'lejano' } : undefined,
                       esActividad: v.es_actividad,
                       observaciones: v.es_actividad 
-                        ? v.observaciones 
+                        ? (v.titulo_actividad === 'Transporte / Movilización' && v.gps_lat && v.gps_lng && v.gps_lat_checkout && v.gps_lng_checkout
+                            ? `Distancia recorrida: ${(calcularDistanciaMetros(v.gps_lat, v.gps_lng, v.gps_lat_checkout, v.gps_lng_checkout) / 1000).toFixed(2)} km. ${v.observaciones || ''}`
+                            : v.observaciones)
                         : (v.temas && v.temas.length > 0 ? `${v.temas.join(', ')}${v.temas_texto_libre ? `: ${v.temas_texto_libre}` : ''}` : v.observaciones)
                     }} 
                   />

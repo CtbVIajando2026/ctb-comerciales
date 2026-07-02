@@ -16,6 +16,8 @@ export default async function VisitaActivaPage({ params }: { params: Promise<{ i
     .from('visitas')
     .select(`
       *,
+      gps_lat_checkout,
+      gps_lng_checkout,
       agencia:agencias(nombre)
     `)
     .eq('id', id)

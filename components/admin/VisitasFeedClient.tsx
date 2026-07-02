@@ -7,6 +7,7 @@ import { differenceInMinutes } from 'date-fns'
 import { eliminarVisitaAdmin } from "@/app/(admin)/adminActions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { calcularDistanciaMetros } from "@/lib/geolocation"
 
 const normalizarCiudad = (c: string | undefined | null) => {
   if (!c) return 'Quito'
@@ -271,6 +272,12 @@ export function VisitasFeedClient({
                             {differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))} min
                           </div>
                         )
+                      )}
+                      {v.es_actividad && v.titulo_actividad === 'Transporte / Movilización' && v.gps_lat && v.gps_lng && v.gps_lat_checkout && v.gps_lng_checkout && (
+                        <div className="text-xs font-bold bg-blue-500/10 text-blue-600 px-2 py-1 rounded-lg flex items-center justify-end mt-1">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          {(calcularDistanciaMetros(v.gps_lat, v.gps_lng, v.gps_lat_checkout, v.gps_lng_checkout) / 1000).toFixed(2)} km recorridos
+                        </div>
                       )}
                       {(v.agencias?.ciudad || v.usuarios?.zona) && (
                         <div className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-end mt-1">
