@@ -28,6 +28,11 @@ interface Visita {
   agencias?: any
   alerta_fraude_checkin?: boolean
   distancia_checkin_metros?: number
+  gps_lat_checkout?: number | null
+  gps_lng_checkout?: number | null
+  alerta_fraude_checkout?: boolean
+  distancia_checkout_metros?: number
+  registro_regalos?: any[]
 }
 
 interface MiDiaInteligenteClientProps {
@@ -111,7 +116,12 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
             agencia:agencias(nombre, ciudad),
             usuario:usuarios(nombre, zona),
             alerta_fraude_checkin,
-            distancia_checkin_metros
+            distancia_checkin_metros,
+            gps_lat_checkout,
+            gps_lng_checkout,
+            alerta_fraude_checkout,
+            distancia_checkout_metros,
+            registro_regalos(tipo, cantidad, descripcion, costo)
           `)
           .eq('comercial_id', user.id)
           .in('estado', ['en_curso', 'completada'])
@@ -146,7 +156,12 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
               agencias: v.agencia, // Pasar agencia completa para ciudad
               usuario: v.usuario,  // Pasar usuario completo para zona y nombre
               alerta_fraude_checkin: v.alerta_fraude_checkin,
-              distancia_checkin_metros: v.distancia_checkin_metros
+              distancia_checkin_metros: v.distancia_checkin_metros,
+              gps_lat_checkout: v.gps_lat_checkout,
+              gps_lng_checkout: v.gps_lng_checkout,
+              alerta_fraude_checkout: v.alerta_fraude_checkout,
+              distancia_checkout_metros: v.distancia_checkout_metros,
+              registro_regalos: v.registro_regalos
             }
           })
           setVisitasDB(mapeadas)

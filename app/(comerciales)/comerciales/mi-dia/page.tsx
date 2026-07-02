@@ -36,7 +36,12 @@ export default async function MiDiaMetricsPage() {
       temas,
       temas_texto_libre,
       observaciones,
-      agencia:agencias(nombre)
+      agencia:agencias(nombre),
+      gps_lat_checkout,
+      gps_lng_checkout,
+      alerta_fraude_checkout,
+      distancia_checkout_metros,
+      registro_regalos(tipo, cantidad, descripcion, costo)
     `)
     .eq('comercial_id', user.id)
     .in('estado', ['en_curso', 'completada'])
@@ -55,7 +60,12 @@ export default async function MiDiaMetricsPage() {
     temas: v.temas,
     temas_texto_libre: v.temas_texto_libre,
     observaciones: v.observaciones,
-    agenciaNombre: (v.agencia as any)?.nombre
+    agenciaNombre: (v.agencia as any)?.nombre,
+    gps_lat_checkout: v.gps_lat_checkout,
+    gps_lng_checkout: v.gps_lng_checkout,
+    alerta_fraude_checkout: v.alerta_fraude_checkout,
+    distancia_checkout_metros: v.distancia_checkout_metros,
+    registro_regalos: v.registro_regalos
   }))
 
   return (
