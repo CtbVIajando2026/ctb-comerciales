@@ -201,7 +201,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
   const handleExportGlobal = async () => {
     try {
       const exportData = visitasGlobalesFiltradas.map((v:any) => buildExcelRow(v))
-      await exportToExcel(exportData, 'Visitas_Globales')
+      await exportToExcel(exportData, 'Visitas_Globales', visitasGlobalesFiltradas)
       toast.success("¡Descarga completada! (v3.0)", {
         description: "El reporte de Excel se ha guardado en tu dispositivo."
       })
@@ -214,7 +214,7 @@ export function DashboardInteractivo({ data }: { data: any }) {
   const handleExportComercial = async () => {
     try {
       const exportData = visitasDelComercial.map((v:any) => buildExcelRow(v))
-      await exportToExcel(exportData, `Visitas_${comercialData?.nombre_completo || 'Comercial'}`)
+      await exportToExcel(exportData, `Visitas_${comercialData?.nombre_completo || 'Comercial'}`, visitasDelComercial)
       toast.success("¡Descarga completada! (v3.0)", {
         description: "El reporte de Excel se ha guardado en tu dispositivo."
       })

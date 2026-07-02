@@ -155,7 +155,7 @@ export function DashboardComercialIndividual({ usuario, visitas }: DashboardCome
   const handlePrint = () => window.print()
   const handleExport = () => {
     const exportData = visitasFiltradas.map((v:any) => buildExcelRow(v))
-    exportToExcel(exportData, `Visitas_${usuario.nombre_completo}_${periodo}_${refDateStr}`)
+    exportToExcel(exportData, `Visitas_${usuario.nombre_completo}_${periodo}_${refDateStr}`, visitasFiltradas)
   }
 
   const changePeriod = (p: Periodo) => {

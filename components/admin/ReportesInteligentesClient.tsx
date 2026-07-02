@@ -104,7 +104,7 @@ export function ReportesInteligentesClient() {
 
       const rowsForExcel = dataCruda.map(v => buildExcelRow(v))
       const fileName = `Reporte_Inteligente_${new Date().getTime()}`
-      await exportToExcel(rowsForExcel, fileName)
+      await exportToExcel(rowsForExcel, fileName, dataCruda)
     } catch (error) {
       console.error(error)
       alert("Ocurrió un error al generar el reporte.")
