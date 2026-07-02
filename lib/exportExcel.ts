@@ -89,6 +89,15 @@ export function buildExcelRow(v: any): ExcelRow {
         ? v.temas.join(', ') + (v.temas_texto_libre ? `: ${v.temas_texto_libre}` : '')
         : v.observaciones || '';
     observaciones = temas;
+    
+    // Si hay regalos, añadirlos a las observaciones
+    if (v.registro_regalos && v.registro_regalos.length > 0) {
+      const regalosStr = v.registro_regalos.map((r: any) => {
+        if (r.tipo === 'souvenir') return `${r.cantidad}x ${r.descripcion}`;
+        return `1x ${r.descripcion} ($${r.costo})`;
+      }).join(', ');
+      observaciones += (observaciones ? ' | ' : '') + `🎁 Regalos: ${regalosStr}`;
+    }
   }
   observaciones = observaciones.replace(/\n|\r/g, ' ').trim();
 

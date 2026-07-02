@@ -397,6 +397,7 @@ export async function generarDataReporte(filtros: {
       observaciones,
       temas,
       temas_texto_libre,
+      registro_regalos(tipo, descripcion, cantidad, costo),
       usuarios!inner(nombre, zona),
       agencias(nombre, ciudad)
     `)

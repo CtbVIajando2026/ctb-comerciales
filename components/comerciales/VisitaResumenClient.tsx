@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, MapPin, Clock, Calendar, CheckCircle2, FileText, Target, Route } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Calendar, CheckCircle2, FileText, Target, Route, Gift } from "lucide-react"
 import { calcularDistanciaMetros } from "@/lib/geolocation"
 
 export function VisitaResumenClient({ visita }: { visita: any }) {
@@ -87,6 +87,24 @@ export function VisitaResumenClient({ visita }: { visita: any }) {
               {visita.es_actividad ? "Resultados / Observaciones" : "Observaciones"}
             </h3>
             <p className="text-sm whitespace-pre-wrap">{visita.observaciones}</p>
+          </section>
+        )}
+
+        {/* Regalos / Gastos */}
+        {visita.registro_regalos && visita.registro_regalos.length > 0 && (
+          <section className="bg-card p-5 rounded-2xl shadow-sm border border-border space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center">
+              <Gift className="w-4 h-4 mr-2" />
+              Regalos y Gastos
+            </h3>
+            <div className="space-y-2">
+              {visita.registro_regalos.map((r: any, idx: number) => (
+                <div key={idx} className="flex items-center text-sm font-bold text-pink-700 bg-pink-500/10 px-3 py-2 rounded-lg w-full">
+                  <Gift className="w-4 h-4 mr-2 shrink-0" />
+                  {r.tipo === 'souvenir' ? `${r.cantidad}x ${r.descripcion}` : `1x ${r.descripcion} ($${r.costo})`}
+                </div>
+              ))}
+            </div>
           </section>
         )}
 

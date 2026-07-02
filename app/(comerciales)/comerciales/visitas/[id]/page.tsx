@@ -18,6 +18,7 @@ export default async function VisitaActivaPage({ params }: { params: Promise<{ i
       *,
       gps_lat_checkout,
       gps_lng_checkout,
+      registro_regalos(tipo, descripcion, cantidad, costo),
       agencia:agencias(nombre)
     `)
     .eq('id', id)

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { ExportarExcelButton } from "./ExportarExcelButton"
-import { Building2, Clock, MapPin, User, Search, Filter, ShieldAlert, Timer, Trash2 } from "lucide-react"
+import { Building2, Clock, MapPin, User, Search, Filter, ShieldAlert, Timer, Trash2, Gift } from "lucide-react"
 import { differenceInMinutes } from 'date-fns'
 import { eliminarVisitaAdmin } from "@/app/(admin)/adminActions"
 import { useRouter } from "next/navigation"
@@ -292,6 +292,17 @@ export function VisitasFeedClient({
                       <p className="text-sm text-foreground bg-background border border-border p-3 rounded-xl mt-2">
                         "{v.observaciones}"
                       </p>
+                    )}
+                    
+                    {v.registro_regalos && v.registro_regalos.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {v.registro_regalos.map((r: any, idx: number) => (
+                          <div key={idx} className="flex items-center text-[10px] font-bold text-pink-700 bg-pink-500/10 px-2 py-1 rounded-lg w-fit uppercase">
+                            <Gift className="w-3.5 h-3.5 mr-1.5" />
+                            {r.tipo === 'souvenir' ? `${r.cantidad}x ${r.descripcion}` : `1x ${r.descripcion} ($${r.costo})`}
+                          </div>
+                        ))}
+                      </div>
                     )}
                     
                     {esFraude && (
