@@ -40,12 +40,21 @@ export function CheckOutForm({ onSubmit, esActividad = false }: CheckOutFormProp
     if (proximoPaso === 'otro') finalProximoPaso = proximoPasoOtro
     if (proximoPaso === 'none') finalProximoPaso = ''
     
+    let formattedDate = null;
+    if (!esActividad && proximoPaso !== 'none' && proximoPasoFecha) {
+       const localD = new Date(proximoPasoFecha);
+       const y = localD.getFullYear();
+       const m = String(localD.getMonth() + 1).padStart(2, '0');
+       const d = String(localD.getDate()).padStart(2, '0');
+       formattedDate = `${y}-${m}-${d}`;
+    }
+
     onSubmit({
       temas: esActividad ? ['Actividad Interna'] : [motivo],
       otroTema: esActividad ? '' : motivoDetalle,
       observaciones,
       proximoPaso: esActividad || proximoPaso === 'none' ? null : finalProximoPaso,
-      proximoPasoFecha: esActividad || proximoPaso === 'none' ? null : (proximoPasoFecha ? new Date(proximoPasoFecha).toISOString() : null),
+      proximoPasoFecha: formattedDate,
       entregas: esActividad ? [] : entregas
     })
   }
@@ -173,14 +182,19 @@ export function CheckOutForm({ onSubmit, esActividad = false }: CheckOutFormProp
                     <div className="flex space-x-3">
                       {entrega.tipo === 'souvenir' ? (
                         <div className="w-full">
-                          <Input 
-                            type="number" 
-                            min="1" 
-                            value={entrega.cantidad} 
-                            onChange={(e) => updateEntrega(index, 'cantidad', parseInt(e.target.value) || 1)}
-                            className="h-10"
-                            placeholder="Cantidad"
-                          />
+                          <Select 
+                            value={entrega.cantidad.toString()} 
+                            onValueChange={(v) => updateEntrega(index, 'cantidad', parseInt(v) || 1)}
+                          >
+                            <SelectTrigger className="h-10">
+                              <SelectValue placeholder="Cantidad" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20].map(n => (
+                                <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       ) : (
                         <div className="w-full">

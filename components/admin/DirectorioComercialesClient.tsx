@@ -9,7 +9,10 @@ import { Button } from '@/components/ui/button'
 export function DirectorioComercialesClient({ initialData, isComercialView = false }: { initialData: any[], isComercialView?: boolean }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filtroRol, setFiltroRol] = useState<string>('all')
-  const [timeFilter, setTimeFilter] = useState<string>('30dias')
+  const [timeFilter, setTimeFilter] = useState<string>(() => {
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit' })
+    return formatter.format(new Date()) // Por defecto el mes actual en Ecuador: YYYY-MM
+  })
 
   const processedData = useMemo(() => {
     const now = new Date()
@@ -21,15 +24,21 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
       const historial = user.visitas_historial || []
       const filteredHistorial = historial.filter((v: any) => {
         const fechaVisita = new Date(v.created_at)
+        const vDateStr = formatter.format(fechaVisita) // "YYYY-MM-DD" local EC
+
         if (timeFilter === 'hoy') {
-          return formatter.format(fechaVisita) === ecDateStr
+          return vDateStr === ecDateStr
         } else if (timeFilter === 'semana') {
           const msInWeek = 7 * 24 * 60 * 60 * 1000
           return now.getTime() - fechaVisita.getTime() < msInWeek
-        } else if (timeFilter === 'mes') {
-          return formatter.format(fechaVisita).substring(0, 7) === ecMonthStr
+        } else if (timeFilter.length === 7) {
+          // Filtro por mes YYYY-MM
+          return vDateStr.substring(0, 7) === timeFilter
+        } else if (timeFilter.length === 4) {
+          // Filtro por año YYYY
+          return vDateStr.substring(0, 4) === timeFilter
         }
-        return true // 30dias
+        return true
       })
 
       const visitasReales = filteredHistorial.filter((v:any) => !v.es_actividad).length
@@ -103,8 +112,20 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
           >
             <option value="hoy">Hoy</option>
             <option value="semana">Últimos 7 días</option>
-            <option value="mes">Este Mes</option>
-            <option value="30dias">Últimos 30 días</option>
+            <optgroup label="Por Mes">
+              {Array.from({ length: parseInt(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', month: 'numeric' }).format(new Date())) }).map((_, i) => {
+                const year = parseInt(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' }).format(new Date()));
+                const month = i + 1;
+                const val = `${year}-${month.toString().padStart(2, '0')}`;
+                const mesNom = new Date(year, i, 1).toLocaleString('es-ES', { month: 'long' });
+                return <option key={val} value={val}>{mesNom} {year}</option>
+              }).reverse()}
+            </optgroup>
+            <optgroup label="Por Año">
+              <option value={new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' }).format(new Date())}>
+                Todo el {new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' }).format(new Date())}
+              </option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -240,7 +261,7 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
                   {user.rol === 'comercial' ? (
                     <div className="bg-muted/30 rounded-2xl p-3 border border-border/50 grid grid-cols-2 gap-2 mb-4">
                       <div className={user.meta_diaria > 0 ? "" : "col-span-2 text-center"}>
-                        <p className={`text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center ${user.meta_diaria > 0 ? '' : 'justify-center'}`}><CalendarDays className="w-3 h-3 mr-1"/> {timeFilter === 'hoy' ? 'Visitas Hoy' : timeFilter === 'semana' ? 'Visitas Sem.' : timeFilter === 'mes' ? 'Visitas Mes' : 'Visitas (30d)'}</p>
+                        <p className={`text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center ${user.meta_diaria > 0 ? '' : 'justify-center'}`}><CalendarDays className="w-3 h-3 mr-1"/> {timeFilter === 'hoy' ? 'Visitas Hoy' : timeFilter === 'semana' ? 'Visitas Sem.' : timeFilter.length === 7 ? 'Visitas Mes' : timeFilter.length === 4 ? 'Visitas Año' : 'Visitas'}</p>
                         <p className="font-black text-lg leading-none">{user.visitas_mes}</p>
                       </div>
                       {user.meta_diaria > 0 && (

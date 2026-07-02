@@ -302,15 +302,17 @@ export async function obtenerDirectorioEquipo() {
     .select('comercial_id, visitas_diarias')
     .eq('activa', true)
 
-  // 3. Obtener visitas completadas de los últimos 30 días
-  const hace30Dias = new Date()
-  hace30Dias.setDate(hace30Dias.getDate() - 30)
+  // 3. Obtener visitas completadas del año actual (para permitir filtrado por meses)
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' })
+  const ecYearStr = formatter.format(now) // "YYYY"
+  const inicioAnoEcuador = new Date(`${ecYearStr}-01-01T00:00:00-05:00`).toISOString()
 
   const { data: visitas } = await supabase
     .from('visitas')
     .select('comercial_id, es_actividad, created_at')
     .eq('estado', 'completada')
-    .gte('created_at', hace30Dias.toISOString())
+    .gte('created_at', inicioAnoEcuador)
 
   return comerciales.map(c => {
     const metaObj = metas?.find(m => m.comercial_id === c.id)

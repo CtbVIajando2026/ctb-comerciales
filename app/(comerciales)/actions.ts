@@ -303,6 +303,37 @@ export async function actualizarObservaciones(visitaId: string, observaciones: s
   return data
 }
 
+export async function agregarRegaloAVisita(visitaId: string, tipo: string, descripcion: string, cantidad: number, costo?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("No autenticado")
+
+  const { data: v } = await supabase.from('visitas').select('agencia_id').eq('id', visitaId).single()
+  if (!v) throw new Error("Visita no encontrada")
+
+  const { data, error } = await supabase
+    .from('registro_regalos')
+    .insert({
+      comercial_id: user.id,
+      agencia_id: v.agencia_id,
+      visita_id: visitaId,
+      tipo,
+      descripcion,
+      cantidad: cantidad || 1,
+      costo: costo ? parseFloat(costo) : null
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error agregando regalo:", error)
+    throw new Error(error.message)
+  }
+
+  revalidatePath(`/comerciales/visitas/${visitaId}`)
+  return data
+}
+
 export async function iniciarActividad(
   titulo: string, 
   solicitante: string, 
@@ -510,31 +541,28 @@ export async function obtenerDirectorioEquipoComercial() {
     .select('comercial_id, visitas_diarias')
     .eq('activa', true)
 
-  // 3. Obtener visitas completadas del mes actual
+  // 3. Obtener visitas completadas del año actual
   const now = new Date()
-  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit' })
-  const ecMonthStr = formatter.format(now) // "YYYY-MM"
-  const inicioMesEcuador = new Date(`${ecMonthStr}-01T00:00:00-05:00`).toISOString()
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' })
+  const ecYearStr = formatter.format(now) // "YYYY"
+  const inicioAnoEcuador = new Date(`${ecYearStr}-01-01T00:00:00-05:00`).toISOString()
 
   const { data: visitas } = await supabase
     .from('visitas')
-    .select('comercial_id, es_actividad')
+    .select('comercial_id, es_actividad, created_at')
     .eq('estado', 'completada')
-    .gte('created_at', inicioMesEcuador)
+    .gte('created_at', inicioAnoEcuador)
 
   return comerciales.map(c => {
     const metaObj = metas?.find(m => m.comercial_id === c.id)
     const meta = metaObj?.visitas_diarias !== undefined ? metaObj.visitas_diarias : 0 // 0 = Libre
     
     const misVisitas = visitas?.filter(v => v.comercial_id === c.id) || []
-    const visitasReales = misVisitas.filter(v => !v.es_actividad).length
-    const actividades = misVisitas.filter(v => v.es_actividad).length
 
     return {
       ...c,
       meta_diaria: meta,
-      visitas_mes: visitasReales,
-      actividades_mes: actividades
+      visitas_historial: misVisitas
     }
   })
 }
