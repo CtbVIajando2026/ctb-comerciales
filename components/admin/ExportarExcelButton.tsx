@@ -20,7 +20,7 @@ export function ExportarExcelButton({ datos }: { datos: any }) {
     const rows = visitas.map((v: any) => buildExcelRow(v))
 
     try {
-      await exportToExcel(rows, `Reporte_Visitas_${new Date().toISOString().split('T')[0]}`)
+      await exportToExcel(rows, `Reporte_Visitas_${new Date().toISOString().split('T')[0]}`, visitas)
       toast.success("¡Descarga completada! (v3.0)", { description: "El reporte de Excel ha sido generado exitosamente." })
     } catch (err: any) {
       console.error(err);

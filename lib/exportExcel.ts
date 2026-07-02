@@ -164,7 +164,7 @@ function parseDuracion(d: string): number {
   }
 }
 
-export async function exportToExcel(rows: ExcelRow[], filename: string) {
+export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisitas?: any[]) {
   if (rows.length === 0) return;
 
   const workbook = new ExcelJS.Workbook();
@@ -503,6 +503,103 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   const totalGastos = rows.reduce((acc, r) => acc + (Number(r['Gastos ($)']) || 0), 0);
   addTotalRow(totalRowStart + 9, `TOTAL INVERSIÓN EN GASTOS Y REGALOS:`, `$${totalGastos.toFixed(2)}`, true, 'FF2E7D32');
 
+
+  // Convertir a blob nativamente
+  // =========================================================================
+  // HOJA 3: AUDITORÍA DE JORNADAS (HORAS MUERTAS)
+  // =========================================================================
+  if (rawVisitas && rawVisitas.length > 0) {
+    const { calcularHorasMuertas } = require('./timeTracking');
+    
+    const auditoriaWs = workbook.addWorksheet('Auditoría de Jornadas', {
+      views: [{ state: 'frozen', ySplit: 1 }]
+    });
+
+    auditoriaWs.columns = [
+      { header: 'Fecha', key: 'fecha', width: 15 },
+      { header: 'Comercial', key: 'comercial', width: 25 },
+      { header: '1er Check-in', key: 'primer', width: 15 },
+      { header: 'Último Check-out', key: 'ultimo', width: 18 },
+      { header: 'T. Activo (hrs)', key: 'activo', width: 15 },
+      { header: 'Horas Muertas (hrs)', key: 'muertas', width: 22 },
+      { header: '¿Registró Almuerzo?', key: 'almuerzo', width: 20 },
+    ];
+
+    const hRow = auditoriaWs.getRow(1);
+    hRow.height = 22;
+    hRow.eachCell((cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } };
+      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 11 };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+
+    // Agrupar visitas por Fecha (YYYY-MM-DD) y por Comercial ID (o Nombre)
+    const agrupado: Record<string, any[]> = {};
+    rawVisitas.forEach(v => {
+      if (!v.hora_checkin) return;
+      const d = new Date(v.hora_checkin);
+      // Usar fecha local
+      const fechaISO = d.toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' });
+      const comercialNombre = (v.usuarios?.nombre || v.usuario?.nombre || v.usuarioNombre || v.comercialNombre || 'Desconocido').trim();
+      const key = `${fechaISO}:::${comercialNombre}`;
+      if (!agrupado[key]) agrupado[key] = [];
+      agrupado[key].push(v);
+    });
+
+    Object.entries(agrupado).sort((a, b) => b[0].localeCompare(a[0])).forEach(([key, visitasDelDia]) => {
+      const [fechaISO, comercialNombre] = key.split(':::');
+      
+      const dDate = new Date(`${fechaISO}T12:00:00-05:00`);
+      const diaSem = dDate.getDay();
+      // Ignorar fines de semana para la auditoría (si no queremos penalizarlos por no trabajar en domingo)
+      // O podemos dejarlos, pero el calculo da 0 horas muertas
+      
+      const minMuertos = calcularHorasMuertas(visitasDelDia, fechaISO, 15);
+      
+      // Encontrar primer y ultimo
+      const completadas = visitasDelDia.filter(v => v.hora_checkin && v.hora_checkout).sort((a, b) => new Date(a.hora_checkin).getTime() - new Date(b.hora_checkin).getTime());
+      
+      let primer = 'N/A';
+      let ultimo = 'N/A';
+      let totalMinsActivos = 0;
+      let registroAlmuerzo = 'No';
+
+      if (completadas.length > 0) {
+        primer = new Date(completadas[0].hora_checkin).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+        ultimo = new Date(completadas[completadas.length - 1].hora_checkout!).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      visitasDelDia.forEach(v => {
+        if (v.hora_checkin && v.hora_checkout) {
+          const m = (new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000;
+          if (m > 0) totalMinsActivos += m;
+        }
+        const act = (v.titulo_actividad || '').toLowerCase();
+        const obs = (v.observaciones || '').toLowerCase();
+        if (act.includes('almuerzo') || act.includes('personal') || obs.includes('almuerzo')) {
+          registroAlmuerzo = 'Sí';
+        }
+      });
+
+      const row = auditoriaWs.addRow({
+        fecha: fechaISO,
+        comercial: comercialNombre,
+        primer,
+        ultimo,
+        activo: formatToHHMM(totalMinsActivos),
+        muertas: formatToHHMM(minMuertos),
+        almuerzo: registroAlmuerzo
+      });
+
+      // Pintar rojo si hay horas muertas considerables (ej > 1h)
+      if (minMuertos > 60) {
+        row.getCell('muertas').font = { color: { argb: 'FFCC0000' }, bold: true };
+      }
+      if (registroAlmuerzo === 'No') {
+        row.getCell('almuerzo').font = { color: { argb: 'FFCC0000' }, bold: true };
+      }
+    });
+  }
 
   // Convertir a blob nativamente
   const buffer = await workbook.xlsx.writeBuffer();

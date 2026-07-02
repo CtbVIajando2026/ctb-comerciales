@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { MapaWrapper } from "./MapaWrapper"
 import { exportToExcel, buildExcelRow } from "@/lib/exportExcel"
+import { calcularHorasMuertas } from "@/lib/timeTracking"
 
 // Eliminamos exportToCSV local porque usamos lib/exportExcel
 
@@ -323,6 +324,30 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
     }
   }, [visitasFiltradas])
 
+  const totalHorasMuertas = useMemo(() => {
+    let sum = 0
+    const start = new Date(fechaInicio + 'T12:00:00-05:00')
+    const end = new Date(fechaFin + 'T12:00:00-05:00')
+    
+    const agrupado: Record<string, Visita[]> = {}
+    visitasFiltradas.forEach(v => {
+      if(!v.hora_checkin) return
+      const d = new Date(v.hora_checkin)
+      const iso = d.toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' })
+      if(!agrupado[iso]) agrupado[iso] = []
+      agrupado[iso].push(v)
+    })
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const iso = d.toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' })
+      const visitasDia = agrupado[iso] || []
+      // Ignorar multitiempo si el dia no es laborable y no tiene visitas
+      // pero calcularHorasMuertas ya ignora fines de semana.
+      sum += calcularHorasMuertas(visitasDia as any, iso, 15)
+    }
+    return sum
+  }, [fechaInicio, fechaFin, visitasFiltradas])
+
   // Paginación
   const totalPaginas = Math.ceil(visitasFiltradas.length / itemsPorPagina) || 1
   const paginados = visitasFiltradas.slice((pagina - 1) * itemsPorPagina, pagina * itemsPorPagina)
@@ -363,7 +388,7 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
     })
     
     // Añadimos indicador de que es el reporte "Mi Día"
-    exportToExcel(dataToExport, `Reporte_MiDia_${comercialName.replace(/\s+/g, '_')}_${new Date().getTime()}`)
+    exportToExcel(dataToExport, `Reporte_MiDia_${comercialName.replace(/\s+/g, '_')}_${new Date().getTime()}`, visitasFiltradas)
   }
 
   return (
@@ -478,7 +503,7 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
 
       {/* Tarjetas de Métricas (Arriba) */}
       <section className="space-y-3 print:break-inside-avoid">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <div className="bg-card p-4 rounded-2xl border border-border shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
               <Building2 className="w-5 h-5 text-primary" />
@@ -493,6 +518,14 @@ export function MiDiaInteligenteClient({ visitas: visitasIniciales }: MiDiaIntel
               <span className="text-3xl font-black text-foreground">{actividades.length}</span>
             </div>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Actividades Internas</p>
+          </div>
+
+          <div className={`p-4 rounded-2xl border shadow-sm flex flex-col justify-between col-span-2 md:col-span-1 ${totalHorasMuertas > 0 ? 'bg-destructive/10 border-destructive/30' : 'bg-success/10 border-success/30'}`}>
+            <div className="flex items-center justify-between mb-2">
+              <Clock className={`w-5 h-5 ${totalHorasMuertas > 0 ? 'text-destructive' : 'text-success'}`} />
+              <span className={`text-3xl font-black ${totalHorasMuertas > 0 ? 'text-destructive' : 'text-success'}`}>{formatMinutos(totalHorasMuertas)}</span>
+            </div>
+            <p className={`text-xs font-bold uppercase tracking-wider ${totalHorasMuertas > 0 ? 'text-destructive' : 'text-success'}`}>Horas Muertas / Inactividad</p>
           </div>
         </div>
 
