@@ -99,10 +99,12 @@ export function RankingClient({ datos }: { datos: any }) {
       }
     })
 
+    // Retornamos todos los comerciales ordenados, pero para el podio solo usaremos los > 0
     return Object.values(mapa).sort((a, b) => b.visitas - a.visitas)
-  }, [visitas, comerciales, filtroZona])
+  }, [visitas, comerciales, filtroZona, timeFilter])
 
-  const top3 = ranking.slice(0, 3)
+  // Solo mostrar en el podio a quienes tienen al menos 1 visita
+  const top3 = ranking.filter(c => c.visitas > 0).slice(0, 3)
   const maxVisitasTop3 = Math.max(...top3.map(c => c.visitas), 1)
 
   // Maximos para calcular anchos relativos
@@ -184,10 +186,11 @@ export function RankingClient({ datos }: { datos: any }) {
       </div>
 
       {/* TOP 3 BARRAS VERTICALES ANIMADAS */}
-      <div className="flex justify-center items-end h-[350px] gap-4 md:gap-8 max-w-3xl mx-auto px-4 mt-12 mb-16">
-        
-        {/* 2do Lugar */}
-        {top3[1] && (
+      {top3.length > 0 ? (
+        <div className="flex justify-center items-end h-[350px] gap-4 md:gap-8 max-w-3xl mx-auto px-4 mt-12 mb-16">
+          
+          {/* 2do Lugar */}
+          {top3[1] && (
           <div className="flex flex-col items-center flex-1 max-w-[120px] group">
             <div className="relative mb-4 text-center">
               <img src={top3[1].avatar} className="w-14 h-14 md:w-16 md:h-16 rounded-full object-cover border-[3px] border-card shadow-lg z-10 relative" />
@@ -236,7 +239,15 @@ export function RankingClient({ datos }: { datos: any }) {
             <h3 className="font-bold text-xs text-foreground mt-3 line-clamp-1 text-center w-full">{top3[2].nombre}</h3>
           </div>
         )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center h-[200px] mt-12 mb-16 bg-card/50 rounded-3xl border border-dashed border-border mx-4">
+          <Trophy className="w-12 h-12 text-muted-foreground/30 mb-4" />
+          <p className="text-muted-foreground font-bold text-sm text-center px-4">
+            Aún no hay visitas registradas para este periodo.
+          </p>
+        </div>
+      )}
 
       {/* LISTA COMPLETA CON BARRAS HORIZONTALES */}
       <div className="max-w-4xl mx-auto px-4 md:px-0 mt-8">
