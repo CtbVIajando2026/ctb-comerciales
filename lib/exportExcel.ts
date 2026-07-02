@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import { calcularDistanciaMetros } from './geolocation';
+import { calcularHorasMuertas } from './timeTracking';
 
 export interface ExcelRow {
   fecha: string;
@@ -509,8 +510,6 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
   // HOJA 3: AUDITORÍA DE JORNADAS (HORAS MUERTAS)
   // =========================================================================
   if (rawVisitas && rawVisitas.length > 0) {
-    const { calcularHorasMuertas } = require('./timeTracking');
-    
     const auditoriaWs = workbook.addWorksheet('Auditoría de Jornadas', {
       views: [{ state: 'frozen', ySplit: 1 }]
     });
