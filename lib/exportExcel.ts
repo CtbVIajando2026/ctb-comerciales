@@ -519,9 +519,10 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
       { header: 'Comercial', key: 'comercial', width: 25 },
       { header: '1er Check-in', key: 'primer', width: 15 },
       { header: 'Último Check-out', key: 'ultimo', width: 18 },
-      { header: 'T. Activo (hrs)', key: 'activo', width: 15 },
-      { header: 'Horas Muertas (hrs)', key: 'muertas', width: 22 },
-      { header: '¿Registró Almuerzo?', key: 'almuerzo', width: 20 },
+      { header: 'Tiempo Trabajado (hrs)', key: 'activo', width: 22 },
+      { header: 'Inactividad (hrs)', key: 'muertas', width: 20 },
+      { header: '¿Almuerzo?', key: 'almuerzo', width: 15 },
+      { header: 'Evaluación del Sistema', key: 'evaluacion', width: 50 },
     ];
 
     const hRow = auditoriaWs.getRow(1);
@@ -576,9 +577,39 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
         const act = (v.titulo_actividad || '').toLowerCase();
         const obs = (v.observaciones || '').toLowerCase();
         if (act.includes('almuerzo') || act.includes('personal') || obs.includes('almuerzo')) {
-          registroAlmuerzo = 'Sí';
+          registroAlmuerzo = '✅ Sí';
         }
       });
+
+      // --- EVALUACIÓN AUTOMÁTICA DIDÁCTICA ---
+      let evaluacion = '';
+      if (primer !== 'N/A') {
+        const horaPrimer = parseInt(primer.split(':')[0]);
+        const isPM = primer.toLowerCase().includes('p');
+        const h24Primer = (horaPrimer === 12 ? (isPM ? 12 : 0) : horaPrimer + (isPM ? 12 : 0));
+        const minPrimer = parseInt(primer.split(':')[1]);
+        if (h24Primer > 9 || (h24Primer === 9 && minPrimer > 30)) {
+          evaluacion += `🚩 Inició tarde (${primer}). `;
+        }
+      }
+
+      if (ultimo !== 'N/A') {
+        const horaUltimo = parseInt(ultimo.split(':')[0]);
+        const isPMUltimo = ultimo.toLowerCase().includes('p');
+        const h24Ultimo = (horaUltimo === 12 ? (isPMUltimo ? 12 : 0) : horaUltimo + (isPMUltimo ? 12 : 0));
+        const minUltimo = parseInt(ultimo.split(':')[1]);
+        if (h24Ultimo < 17 || (h24Ultimo === 17 && minUltimo < 30)) {
+          evaluacion += `🚩 Terminó temprano (${ultimo}). `;
+        }
+      }
+
+      if (minMuertos > 60) evaluacion += `🚩 Alta inactividad (${formatToHHMM(minMuertos)} hrs). `;
+      if (registroAlmuerzo === 'No') evaluacion += `🚩 Omitió almuerzo. `;
+      
+      if (evaluacion === '') evaluacion = '✅ Jornada Óptima (9 a 6)';
+
+      const muertasStr = minMuertos > 60 ? `⚠️ ${formatToHHMM(minMuertos)}` : formatToHHMM(minMuertos);
+      const almuerzoStr = registroAlmuerzo === 'No' ? '❌ No' : registroAlmuerzo;
 
       const row = auditoriaWs.addRow({
         fecha: fechaISO,
@@ -586,8 +617,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
         primer,
         ultimo,
         activo: formatToHHMM(totalMinsActivos),
-        muertas: formatToHHMM(minMuertos),
-        almuerzo: registroAlmuerzo
+        muertas: muertasStr,
+        almuerzo: almuerzoStr,
+        evaluacion: evaluacion.trim()
       });
 
       // Pintar rojo si hay horas muertas considerables (ej > 1h)
@@ -596,6 +628,11 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
       }
       if (registroAlmuerzo === 'No') {
         row.getCell('almuerzo').font = { color: { argb: 'FFCC0000' }, bold: true };
+      }
+      if (evaluacion.includes('🚩')) {
+        row.getCell('evaluacion').font = { color: { argb: 'FFCC0000' }, bold: true };
+      } else {
+        row.getCell('evaluacion').font = { color: { argb: 'FF2E7D32' }, bold: true };
       }
     });
   }
