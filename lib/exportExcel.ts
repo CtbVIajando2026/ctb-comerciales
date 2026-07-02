@@ -548,11 +548,16 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
 
     let totalJornadas = 0;
     let globalTotalMinsActivos = 0;
+    let globalTotalMinsAlmuerzo = 0;
     let globalTotalMinsMuertos = 0;
     let globalAtrasos = 0;
     let globalSalidasPronto = 0;
+    let globalAlmuerzosOmitidos = 0;
 
     Object.entries(agrupado).sort((a, b) => b[0].localeCompare(a[0])).forEach(([key, visitasDelDia]) => {
+      // (Rest of the loop remains unchanged except we need to add globalTotalMinsAlmuerzo logic)
+      // I will do this in the next replacement chunk where the loop ends.
+
       const [fechaISO, comercialNombre] = key.split(':::');
       
       const dDate = new Date(`${fechaISO}T12:00:00-05:00`);
@@ -568,6 +573,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
       let primer = 'N/A';
       let ultimo = 'N/A';
       let totalMinsActivos = 0;
+      let totalMinsAlmuerzo = 0;
       let registroAlmuerzo = 'No';
 
       if (completadas.length > 0) {
@@ -576,13 +582,22 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
       }
 
       visitasDelDia.forEach(v => {
-        if (v.hora_checkin && v.hora_checkout) {
-          const m = (new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000;
-          if (m > 0) totalMinsActivos += m;
-        }
         const act = (v.titulo_actividad || '').toLowerCase();
         const obs = (v.observaciones || '').toLowerCase();
-        if (act.includes('almuerzo') || act.includes('personal') || obs.includes('almuerzo')) {
+        const isAlmuerzo = act.includes('almuerzo') || act.includes('personal') || obs.includes('almuerzo');
+
+        if (v.hora_checkin && v.hora_checkout) {
+          const m = (new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000;
+          if (m > 0) {
+            if (isAlmuerzo) {
+              totalMinsAlmuerzo += m;
+            } else {
+              totalMinsActivos += m;
+            }
+          }
+        }
+        
+        if (isAlmuerzo) {
           registroAlmuerzo = '✅ Sí';
         }
       });
@@ -601,11 +616,15 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
       evaluacion += `• Registró ${formatToHHMM(totalMinsActivos)} hrs de trabajo en la app. `;
 
       if (minMuertos > 60) {
-        evaluacion += `⚠️ Dejó un rastro de ${formatToHHMM(minMuertos)} hrs MUERTAS (inactividad entre registros).\n`;
+        evaluacion += `⚠️ Dejó un rastro de ${formatToHHMM(minMuertos)} hrs MUERTAS (inactividad injustificada entre registros).\n`;
       } else if (minMuertos > 0) {
         evaluacion += `Tuvo ${formatToHHMM(minMuertos)} hrs de inactividad aceptable.\n`;
       } else {
         evaluacion += `No dejó tiempos muertos (Óptimo).\n`;
+      }
+
+      if (registroAlmuerzo === '✅ Sí') {
+         evaluacion += `• Justificó ${formatToHHMM(totalMinsAlmuerzo)} hrs de almuerzo/personal.\n`;
       }
 
       let isAtraso = false;
@@ -636,9 +655,11 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
 
       totalJornadas++;
       globalTotalMinsActivos += totalMinsActivos;
+      globalTotalMinsAlmuerzo += totalMinsAlmuerzo;
       globalTotalMinsMuertos += minMuertos;
       if (isAtraso) globalAtrasos++;
       if (isSalidaPronto) globalSalidasPronto++;
+      if (registroAlmuerzo === 'No') globalAlmuerzosOmitidos++;
 
       if (registroAlmuerzo === 'No') alertas.push(`No registró Almuerzo`);
 
@@ -706,15 +727,17 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
       }
     };
 
-    // Calcular horas esperadas (9 horas = 540 minutos por cada jornada)
-    const expectedMins = totalJornadas * 540;
+    // Calcular horas esperadas (8 horas = 480 minutos laborables por cada jornada)
+    const expectedMins = totalJornadas * 480;
 
     addTotalRow2(totalRowStart2, `TOTAL JORNADAS EVALUADAS:`, `${totalJornadas}`, true);
-    addTotalRow2(totalRowStart2 + 1, `HORAS EXPECTATIVAS DE TRABAJO EN TOTAL (9 hrs por jornada):`, formatToHHMM(expectedMins), true);
-    addTotalRow2(totalRowStart2 + 2, `TOTAL HORAS TRABAJADAS (Suma de tiempo activo en app):`, formatToHHMM(globalTotalMinsActivos), true, 'FF2E7D32');
-    addTotalRow2(totalRowStart2 + 3, `TOTAL HORAS DE INACTIVIDAD (Suma de horas muertas):`, formatToHHMM(globalTotalMinsMuertos), true, 'FFCC0000');
-    addTotalRow2(totalRowStart2 + 4, `TOTAL DE ATRASOS (Check-in tardío):`, `${globalAtrasos} veces`, true, 'FFCC0000');
-    addTotalRow2(totalRowStart2 + 5, `TOTAL DE SALIDAS TEMPRANAS (Check-out pronto):`, `${globalSalidasPronto} veces`, true, 'FFCC0000');
+    addTotalRow2(totalRowStart2 + 1, `HORAS LABORABLES ESPERADAS (8 hrs/día justificadas):`, formatToHHMM(expectedMins), true);
+    addTotalRow2(totalRowStart2 + 2, `TIEMPO EFECTIVO DE TRABAJO (Solo Visitas/Gestión):`, formatToHHMM(globalTotalMinsActivos), true, 'FF2E7D32');
+    addTotalRow2(totalRowStart2 + 3, `TIEMPO JUSTIFICADO EN ALMUERZO (Registrado):`, formatToHHMM(globalTotalMinsAlmuerzo), true, 'FF2E7D32');
+    addTotalRow2(totalRowStart2 + 4, `TOTAL ALMUERZOS OMITIDOS (No registrados):`, `${globalAlmuerzosOmitidos} veces`, true, 'FFCC0000');
+    addTotalRow2(totalRowStart2 + 5, `TOTAL HORAS DE INACTIVIDAD (Tiempos muertos INJUSTIFICADOS):`, formatToHHMM(globalTotalMinsMuertos), true, 'FFCC0000');
+    addTotalRow2(totalRowStart2 + 6, `TOTAL DE ATRASOS (Check-in tardío):`, `${globalAtrasos} veces`, true, 'FFCC0000');
+    addTotalRow2(totalRowStart2 + 7, `TOTAL DE SALIDAS TEMPRANAS (Check-out pronto):`, `${globalSalidasPronto} veces`, true, 'FFCC0000');
   }
 
   // Convertir a blob nativamente
