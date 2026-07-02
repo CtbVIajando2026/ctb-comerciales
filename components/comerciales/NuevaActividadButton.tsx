@@ -35,8 +35,13 @@ export function NuevaActividadButton() {
       const coords = await geo.obtenerCoordenadasActuales()
       lat = coords.lat
       lng = coords.lng
-    } catch (e) {
-      // Para tareas internas, si no hay GPS no bloqueamos, pero lo intentamos
+    } catch (e: any) {
+      if (tituloFinal === "Transporte / Movilización") {
+        toast.error("GPS Obligatorio", { description: "Debes encender tu GPS para iniciar un trayecto de Transporte." })
+        setIniciando(false)
+        return
+      }
+      // Para otras tareas internas, si no hay GPS no bloqueamos
       console.warn("GPS no disponible para actividad interna")
     }
 
@@ -96,6 +101,7 @@ export function NuevaActividadButton() {
               <option value="Capacitación">Capacitación</option>
               <option value="Trabajo Administrativo">Trabajo Administrativo</option>
               <option value="Personal / Almuerzo">Personal / Almuerzo</option>
+              <option value="Transporte / Movilización">Transporte / Movilización</option>
               <option value="Otra">Otra (Especificar)</option>
             </select>
 

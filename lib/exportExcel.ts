@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { calcularDistanciaMetros } from './geolocation';
 
 export interface ExcelRow {
   fecha: string;
@@ -64,6 +65,8 @@ export function buildExcelRow(v: any): ExcelRow {
       categoria = 'Reunión / Capacitación';
     } else if (act.includes('almuerzo') || act.includes('personal')) {
       categoria = 'Almuerzo / Personal';
+    } else if (act.includes('transporte') || act.includes('movilizaci')) {
+      categoria = 'Transporte / Movilización';
     } else {
       categoria = 'Actividad Interna (Otras)';
     }
@@ -75,6 +78,11 @@ export function buildExcelRow(v: any): ExcelRow {
   let observaciones = '';
   if (v.es_actividad) {
     observaciones = v.observaciones || '';
+    if (v.titulo_actividad === 'Transporte / Movilización' && v.gps_lat && v.gps_lng && v.gps_lat_checkout && v.gps_lng_checkout) {
+      const distMetros = calcularDistanciaMetros(v.gps_lat, v.gps_lng, v.gps_lat_checkout, v.gps_lng_checkout);
+      const distKm = (distMetros / 1000).toFixed(2);
+      observaciones = `Distancia recorrida: ${distKm} km. ` + observaciones;
+    }
   } else {
     const temas =
       v.temas && v.temas.length > 0
@@ -271,6 +279,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   const categoriasData = [
     { name: 'Gestión Comercial (Agencias)', mins: minAgencias },
     { name: 'Trabajo Administrativo', mins: minAdmin },
+    { name: 'Transporte / Movilización', mins: rows.filter(r => r.Categoría === 'Transporte / Movilización').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0) },
     { name: 'Reunión / Capacitación', mins: minReuniones },
     { name: 'Almuerzo / Personal', mins: minAlmuerzo },
     { name: 'Otras Actividades', mins: minOtras }
@@ -428,6 +437,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
 
   const countAgencias = rows.filter(r => r.Categoría === 'Gestión Comercial (Agencias)').length;
   const countAdmin = rows.filter(r => r.Categoría === 'Trabajo Administrativo').length;
+  const countTransporte = rows.filter(r => r.Categoría === 'Transporte / Movilización').length;
   const countReuniones = rows.filter(r => r.Categoría === 'Reunión / Capacitación').length;
   const countAlmuerzo = rows.filter(r => r.Categoría === 'Almuerzo / Personal').length;
   const countOtras = rows.filter(r => r.Categoría === 'Actividad Interna (Otras)').length;
@@ -460,11 +470,12 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   addTotalRow(totalRowStart + 1, `TOTAL TRABAJOS ADMINISTRATIVOS (${countAdmin} act.):`, formatMinsStr(minAdmin));
   addTotalRow(totalRowStart + 2, `TOTAL REUNIONES / CAPACITACIONES (${countReuniones} act.):`, formatMinsStr(minReuniones));
   addTotalRow(totalRowStart + 3, `TOTAL ALMUERZO / PERSONAL (${countAlmuerzo} act.):`, formatMinsStr(minAlmuerzo));
-  addTotalRow(totalRowStart + 4, `TOTAL ACTIVIDADES EXTRAS (${countOtras} act.):`, formatMinsStr(minOtras));
-  addTotalRow(totalRowStart + 5, `GRAN TOTAL DE TIEMPO REGISTRADO (${countAgencias + countActividades} registros):`, formatMinsStr(totalMins), true);
+  addTotalRow(totalRowStart + 4, `TOTAL TRANSPORTE / MOVILIZACIÓN (${countTransporte} act.):`, formatMinsStr(rows.filter(r => r.Categoría === 'Transporte / Movilización').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0)));
+  addTotalRow(totalRowStart + 5, `TOTAL ACTIVIDADES EXTRAS (${countOtras} act.):`, formatMinsStr(minOtras));
+  addTotalRow(totalRowStart + 6, `GRAN TOTAL DE TIEMPO REGISTRADO (${countAgencias + countActividades + countTransporte} registros):`, formatMinsStr(totalMins), true);
   
-  addTotalRow(totalRowStart + 6, `TOTAL ALERTAS DE INACTIVIDAD (VISITAS > 1 HORA):`, `${countInactividad} novedades`, true, 'FFCC0000');
-  addTotalRow(totalRowStart + 7, `TOTAL ALERTAS POR DISTANCIA (FUERA DE AGENCIA):`, `${countLejania} novedades`, true, 'FFCC0000');
+  addTotalRow(totalRowStart + 7, `TOTAL ALERTAS DE INACTIVIDAD (VISITAS > 1 HORA):`, `${countInactividad} novedades`, true, 'FFCC0000');
+  addTotalRow(totalRowStart + 8, `TOTAL ALERTAS POR DISTANCIA (FUERA DE AGENCIA):`, `${countLejania} novedades`, true, 'FFCC0000');
 
 
   // Convertir a blob nativamente
