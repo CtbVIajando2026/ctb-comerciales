@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useTransition, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Search, MapPin, Phone, Target, Edit2, ShieldAlert, Award, CalendarDays, Filter, Trophy } from 'lucide-react'
+import { Plus, Search, MapPin, Phone, Target, Edit2, ShieldAlert, Award, CalendarDays, Filter, Trophy, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { obtenerRankingAgregado } from '@/app/(admin)/rankingActions'
 
 export function DirectorioComercialesClient({ initialData, isComercialView = false }: { initialData: any[], isComercialView?: boolean }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -17,48 +18,35 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
     return `${y}-${m}` // Por defecto el mes actual en Ecuador: YYYY-MM
   })
 
-  const processedData = useMemo(() => {
-    const now = new Date()
-    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric', day: 'numeric' })
+  const [isPending, startTransition] = useTransition()
+  // Store the fetched aggregate data
+  const [agregadosServidor, setAgregadosServidor] = useState<any[]>(initialData) // Initially it holds the data passed from the server
+
+  // Fetch new data when timeFilter changes
+  useEffect(() => {
+    // Avoid double fetching on mount because initialData already matches the default timeFilter
+    const defaultYm = `${new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric' }).formatToParts(new Date()).find(p => p.type === 'year')?.value || '2026'}-${(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', month: 'numeric' }).formatToParts(new Date()).find(p => p.type === 'month')?.value || '07').padStart(2, '0')}`
     
-    const getParts = (d: Date) => {
-      const parts = formatter.formatToParts(d)
-      const y = parts.find(p => p.type === 'year')?.value || ''
-      const m = (parts.find(p => p.type === 'month')?.value || '').padStart(2, '0')
-      const dNum = (parts.find(p => p.type === 'day')?.value || '').padStart(2, '0')
-      return { year: y, month: m, day: dNum, yyyyMm: `${y}-${m}`, yyyyMmDd: `${y}-${m}-${dNum}` }
-    }
+    // We can just fetch it anyway to ensure consistency if the user changes it immediately
+    startTransition(async () => {
+      const data = await obtenerRankingAgregado(timeFilter, 'Global')
+      setAgregadosServidor(data)
+    })
+  }, [timeFilter])
 
-    const ecNow = getParts(now)
-
+  const processedData = useMemo(() => {
     return initialData.map(user => {
-      const historial = user.visitas_historial || []
-      const filteredHistorial = historial.filter((v: any) => {
-        const fechaVisita = new Date(v.created_at)
-        const vParts = getParts(fechaVisita)
+      // Find the aggregated stats for this user
+      const stats = agregadosServidor.find(s => (s.comercial_id === user.id) || (s.id === user.id))
+      // If it came from initialData, it already has visitas_mes. If it came from the server action, it has visitas.
+      const visitasReales = stats?.visitas !== undefined ? stats.visitas : (stats?.visitas_mes || 0)
 
-        if (timeFilter === 'hoy') {
-          return vParts.yyyyMmDd === ecNow.yyyyMmDd
-        } else if (timeFilter === 'semana') {
-          const msInWeek = 7 * 24 * 60 * 60 * 1000
-          return now.getTime() - fechaVisita.getTime() < msInWeek
-        } else if (timeFilter.length === 7) {
-          // Filtro por mes YYYY-MM
-          return vParts.yyyyMm === timeFilter
-        } else if (timeFilter.length === 4) {
-          // Filtro por año YYYY
-          return vParts.year === timeFilter
-        }
-        return true
-      })
-
-      const visitasReales = filteredHistorial.filter((v:any) => !v.es_actividad).length
       return {
         ...user,
         visitas_mes: visitasReales
       }
     })
-  }, [initialData, timeFilter])
+  }, [initialData, agregadosServidor])
 
   const filteredData = useMemo(() => {
     const data = processedData.filter(user => {
@@ -146,6 +134,7 @@ export function DirectorioComercialesClient({ initialData, isComercialView = fal
               </option>
             </optgroup>
           </select>
+          {isPending && <Loader2 className="w-4 h-4 ml-2 animate-spin text-muted-foreground" />}
         </div>
       </div>
 

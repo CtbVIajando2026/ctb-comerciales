@@ -287,6 +287,8 @@ export async function obtenerDatosHistoricosAdmin() {
   }
 }
 
+import { obtenerRankingAgregado } from '@/app/(admin)/rankingActions'
+
 export async function obtenerDirectorioEquipo() {
   const supabase = await createAdminClient()
   
@@ -304,28 +306,25 @@ export async function obtenerDirectorioEquipo() {
     .select('comercial_id, visitas_diarias')
     .eq('activa', true)
 
-  // 3. Obtener visitas completadas del año actual (para permitir filtrado por meses)
-  const now = new Date()
-  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric' })
-  const ecYearStr = formatter.format(now) // "YYYY"
-  const inicioAnoEcuador = new Date(`${ecYearStr}-01-01T00:00:00-05:00`).toISOString()
-
-  const { data: visitas } = await supabase
-    .from('visitas')
-    .select('comercial_id, es_actividad, created_at')
-    .eq('estado', 'completada')
-    .gte('created_at', inicioAnoEcuador)
+  // 3. Obtener visitas agregadas del mes actual por defecto
+  const formatterMonth = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric' })
+  const parts = formatterMonth.formatToParts(new Date())
+  const y = parts.find(p => p.type === 'year')?.value || '2026'
+  const m = (parts.find(p => p.type === 'month')?.value || '07').padStart(2, '0')
+  const defaultTimeFilter = `${y}-${m}`
+  
+  const visitasAgregadas = await obtenerRankingAgregado(defaultTimeFilter, 'Global')
 
   return comerciales.map(c => {
     const metaObj = metas?.find(m => m.comercial_id === c.id)
     const meta = metaObj?.visitas_diarias !== undefined ? metaObj.visitas_diarias : 0 // 0 = Libre
     
-    const misVisitas = visitas?.filter(v => v.comercial_id === c.id) || []
+    const misStats = visitasAgregadas.find(v => v.comercial_id === c.id)
 
     return {
       ...c,
       meta_diaria: meta,
-      visitas_historial: misVisitas
+      visitas_mes: misStats?.visitas || 0
     }
   })
 }

@@ -1,12 +1,16 @@
 "use client"
 
-import { useMemo, useEffect, useState } from 'react'
-import { Trophy, MapPin, Award, Star, Briefcase, Filter, CalendarDays } from 'lucide-react'
+import { useMemo, useEffect, useState, useTransition } from 'react'
+import { Trophy, MapPin, Award, Star, Briefcase, Filter, CalendarDays, Loader2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { obtenerRankingAgregado } from '@/app/(admin)/rankingActions'
 
 export function RankingClient({ datos }: { datos: any }) {
-  const { visitas, comerciales } = datos
+  const { comerciales } = datos
   const [mounted, setMounted] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const [rankingAgregado, setRankingAgregado] = useState<any[]>([])
+
   const [filtroZona, setFiltroZona] = useState<string>('Global')
   const [timeFilter, setTimeFilter] = useState<string>(() => {
     const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric' })
@@ -15,6 +19,14 @@ export function RankingClient({ datos }: { datos: any }) {
     const m = (parts.find(p => p.type === 'month')?.value || '07').padStart(2, '0')
     return `${y}-${m}` // Por defecto el mes actual en Ecuador: YYYY-MM
   })
+
+  // Cargar datos reales desde servidor al cambiar filtros
+  useEffect(() => {
+    startTransition(async () => {
+      const data = await obtenerRankingAgregado(timeFilter, filtroZona)
+      setRankingAgregado(data)
+    })
+  }, [timeFilter, filtroZona])
 
   useEffect(() => {
     // Retraso para que la animación se vea después de cargar la página
@@ -33,6 +45,7 @@ export function RankingClient({ datos }: { datos: any }) {
   const ranking = useMemo(() => {
     const mapa: Record<string, { nombre: string, zona: string, visitas: number, actividades: number, avatar: string }> = {}
     
+    // 1. Inicializar todos los comerciales validos
     comerciales.forEach((c: any) => {
       const zona = c.ciudad_zona || 'Global'
       if (filtroZona !== 'Global' && zona !== filtroZona) return
@@ -46,62 +59,17 @@ export function RankingClient({ datos }: { datos: any }) {
       }
     })
 
-    const now = new Date()
-    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric', day: 'numeric' })
-    const getParts = (d: Date) => {
-      const parts = formatter.formatToParts(d)
-      const y = parts.find(p => p.type === 'year')?.value || ''
-      const m = (parts.find(p => p.type === 'month')?.value || '').padStart(2, '0')
-      const dNum = (parts.find(p => p.type === 'day')?.value || '').padStart(2, '0')
-      return { year: y, month: m, day: dNum, yyyyMm: `${y}-${m}`, yyyyMmDd: `${y}-${m}-${dNum}` }
-    }
-    const ecNow = getParts(now)
-
-    visitas.forEach((v: any) => {
-      if (v.estado === 'completada') {
-        const fechaVisita = new Date(v.created_at)
-        const vParts = getParts(fechaVisita)
-
-        let passesTimeFilter = false
-        if (timeFilter === 'hoy') {
-          passesTimeFilter = vParts.yyyyMmDd === ecNow.yyyyMmDd
-        } else if (timeFilter === 'semana') {
-          const msInWeek = 7 * 24 * 60 * 60 * 1000
-          passesTimeFilter = now.getTime() - fechaVisita.getTime() < msInWeek
-        } else if (timeFilter.length === 7) {
-          passesTimeFilter = vParts.yyyyMm === timeFilter
-        } else if (timeFilter.length === 4) {
-          passesTimeFilter = vParts.year === timeFilter
-        } else {
-          passesTimeFilter = true
-        }
-
-        if (!passesTimeFilter) return
-
-        const comercialZona = v.usuarios?.zona || 'Global'
-        if (filtroZona !== 'Global' && comercialZona !== filtroZona) return
-
-        if (!mapa[v.comercial_id]) {
-          const nombre = v.usuarios?.nombre || 'Usuario Registrado'
-          mapa[v.comercial_id] = {
-            nombre,
-            zona: comercialZona,
-            visitas: 0,
-            actividades: 0,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=random`
-          }
-        }
-        if (v.es_actividad) {
-          mapa[v.comercial_id].actividades += 1
-        } else {
-          mapa[v.comercial_id].visitas += 1
-        }
+    // 2. Aplicar los datos recibidos del servidor
+    rankingAgregado.forEach(r => {
+      if (mapa[r.comercial_id]) {
+        mapa[r.comercial_id].visitas = r.visitas
+        mapa[r.comercial_id].actividades = r.actividades
       }
     })
 
     // Retornamos todos los comerciales ordenados, pero para el podio solo usaremos los > 0
     return Object.values(mapa).sort((a, b) => b.visitas - a.visitas)
-  }, [visitas, comerciales, filtroZona, timeFilter])
+  }, [comerciales, filtroZona, rankingAgregado])
 
   // Solo mostrar en el podio a quienes tienen al menos 1 visita
   const top3 = ranking.filter(c => c.visitas > 0).slice(0, 3)
@@ -122,12 +90,13 @@ export function RankingClient({ datos }: { datos: any }) {
         <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground">
           Ranking de Efectividad
         </h1>
-        <p className="text-muted-foreground text-sm font-medium tracking-wide">
+        <p className="text-muted-foreground text-sm font-medium tracking-wide flex items-center justify-center gap-2">
           {timeFilter === 'hoy' ? 'Desempeño comercial de Hoy' : 
            timeFilter === 'semana' ? 'Desempeño comercial de los últimos 7 días' : 
            timeFilter.length === 7 ? 'Desempeño comercial del mes seleccionado' :
            timeFilter.length === 4 ? 'Desempeño comercial del año seleccionado' :
            'Desempeño comercial'}
+           {isPending && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
         </p>
 
         {/* SELECTORES DE FILTRO */}
