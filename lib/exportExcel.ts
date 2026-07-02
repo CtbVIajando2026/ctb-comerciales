@@ -13,6 +13,8 @@ export interface ExcelRow {
   Observaciones: string;
   'alerta de lejania': string;
   'alerta de tiempo inactivo': string;
+  'Regalos Entregados': string;
+  'Gastos ($)': number;
 }
 
 const COLUMN_DEFS: { key: keyof ExcelRow; header: string; width: number }[] = [
@@ -27,6 +29,8 @@ const COLUMN_DEFS: { key: keyof ExcelRow; header: string; width: number }[] = [
   { key: 'Observaciones',             header: 'Observaciones',             width: 50 },
   { key: 'alerta de lejania',         header: 'Alerta Lejanía',         width: 22 },
   { key: 'alerta de tiempo inactivo', header: 'Alerta Inactividad', width: 22 },
+  { key: 'Regalos Entregados',        header: 'Regalos Entregados', width: 35 },
+  { key: 'Gastos ($)',                header: 'Gastos ($)',         width: 15 },
 ];
 
 function normalizeText(text: string): string {
@@ -76,6 +80,10 @@ export function buildExcelRow(v: any): ExcelRow {
 
   // Observaciones
   let observaciones = '';
+  // Regalos dedicados
+  let regalosEntregados = '';
+  let gastosRealizados = 0;
+
   if (v.es_actividad) {
     observaciones = v.observaciones || '';
     if (v.titulo_actividad === 'Transporte / Movilización' && v.gps_lat && v.gps_lng && v.gps_lat_checkout && v.gps_lng_checkout) {
@@ -90,13 +98,16 @@ export function buildExcelRow(v: any): ExcelRow {
         : v.observaciones || '';
     observaciones = temas;
     
-    // Si hay regalos, añadirlos a las observaciones
+    // Extraer regalos
     if (v.registro_regalos && v.registro_regalos.length > 0) {
-      const regalosStr = v.registro_regalos.map((r: any) => {
+      const regalosArr = v.registro_regalos.map((r: any) => {
         if (r.tipo === 'souvenir') return `${r.cantidad}x ${r.descripcion}`;
+        
+        gastosRealizados += (r.costo ? parseFloat(r.costo) : 0);
         return `1x ${r.descripcion} ($${r.costo})`;
-      }).join(', ');
-      observaciones += (observaciones ? ' | ' : '') + `🎁 Regalos: ${regalosStr}`;
+      });
+      regalosEntregados = regalosArr.join(', ');
+      observaciones += (observaciones ? ' | ' : '') + `🎁 Regalos: ${regalosEntregados}`;
     }
   }
   observaciones = observaciones.replace(/\n|\r/g, ' ').trim();
@@ -138,6 +149,8 @@ export function buildExcelRow(v: any): ExcelRow {
     Observaciones: observaciones,
     'alerta de lejania': alertaLejania,
     'alerta de tiempo inactivo': alertaInactividad,
+    'Regalos Entregados': regalosEntregados,
+    'Gastos ($)': gastosRealizados,
   };
 }
 
@@ -485,6 +498,10 @@ export async function exportToExcel(rows: ExcelRow[], filename: string) {
   
   addTotalRow(totalRowStart + 7, `TOTAL ALERTAS DE INACTIVIDAD (VISITAS > 1 HORA):`, `${countInactividad} novedades`, true, 'FFCC0000');
   addTotalRow(totalRowStart + 8, `TOTAL ALERTAS POR DISTANCIA (FUERA DE AGENCIA):`, `${countLejania} novedades`, true, 'FFCC0000');
+
+  // Add sum of expenses
+  const totalGastos = rows.reduce((acc, r) => acc + (Number(r['Gastos ($)']) || 0), 0);
+  addTotalRow(totalRowStart + 9, `TOTAL INVERSIÓN EN GASTOS Y REGALOS:`, `$${totalGastos.toFixed(2)}`, true, 'FF2E7D32');
 
 
   // Convertir a blob nativamente
