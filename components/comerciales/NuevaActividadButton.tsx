@@ -23,7 +23,7 @@ export function NuevaActividadButton() {
     // El titulo final es el del input si eligió Otra, sino es el del select
     const tituloFinal = tipoActividad === "Otra" ? titulo : tipoActividad
 
-    if (!tituloFinal.trim() || !solicitante.trim()) return
+    if (!tituloFinal.trim()) return
 
     setIniciando(true)
     
@@ -118,18 +118,17 @@ export function NuevaActividadButton() {
             <div className="relative">
               <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
               <Input
-                placeholder="¿Quién te lo solicitó? *"
+                placeholder="¿Quién te lo solicitó? (Opcional)"
                 className="pl-10 h-12"
                 value={solicitante}
                 onChange={(e) => setSolicitante(e.target.value)}
-                required
               />
             </div>
             
             <Button 
               type="submit" 
               className="w-full h-12 text-base font-medium mt-2" 
-              disabled={!(tipoActividad === "Otra" ? titulo.trim() : tipoActividad) || !solicitante.trim() || iniciando}
+              disabled={!(tipoActividad === "Otra" ? titulo.trim() : tipoActividad) || iniciando}
             >
               {iniciando ? "Iniciando..." : "Empezar cronómetro"}
               {!iniciando && <ArrowRight className="w-4 h-4 ml-2" />}
