@@ -1,10 +1,33 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, MapPin, Clock, Calendar, CheckCircle2, FileText, Target, Route, Gift } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Calendar, CheckCircle2, FileText, Target, Route, Gift, Pencil, Check, X } from "lucide-react"
 import { calcularDistanciaMetros } from "@/lib/geolocation"
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import { actualizarObservaciones } from "@/app/(comerciales)/actions"
+import { useRouter } from "next/navigation"
 
 export function VisitaResumenClient({ visita }: { visita: any }) {
+  const router = useRouter()
+  const [isEditing, setIsEditing] = useState(false)
+  const [editVal, setEditVal] = useState(visita.observaciones || "")
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true)
+      await actualizarObservaciones(visita.id, editVal)
+      toast.success("Observaciones actualizadas")
+      setIsEditing(false)
+      router.refresh()
+    } catch (e: any) {
+      toast.error("Error", { description: e.message || "No se pudo actualizar." })
+    } finally {
+      setIsSaving(false)
+    }
+  }
   const formatTime = (timeStr: string | null) => {
     if (!timeStr) return ''
     const d = new Date(timeStr)
@@ -80,15 +103,57 @@ export function VisitaResumenClient({ visita }: { visita: any }) {
         )}
 
         {/* Observaciones / Resultados */}
-        {visita.observaciones && (
-          <section className="bg-card p-5 rounded-2xl shadow-sm border border-border space-y-3">
+        <section className="bg-card p-5 rounded-2xl shadow-sm border border-border space-y-3">
+          <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center">
               <FileText className="w-4 h-4 mr-2" />
               {visita.es_actividad ? "Resultados / Observaciones" : "Observaciones"}
             </h3>
-            <p className="text-sm whitespace-pre-wrap">{visita.observaciones}</p>
-          </section>
-        )}
+            {!isEditing && (
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-md transition-colors flex items-center"
+              >
+                <Pencil className="w-3 h-3 mr-1" /> Editar
+              </button>
+            )}
+          </div>
+          
+          {isEditing ? (
+            <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
+              <textarea 
+                value={editVal}
+                onChange={e => setEditVal(e.target.value)}
+                className="w-full min-h-[100px] text-sm resize-none bg-background border border-primary/30 rounded-xl p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                placeholder="Escribe tus observaciones aquí..."
+              />
+              <div className="flex items-center gap-2 justify-end">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setIsEditing(false)
+                    setEditVal(visita.observaciones || "")
+                  }}
+                  disabled={isSaving}
+                  className="rounded-xl h-8"
+                >
+                  <X className="w-4 h-4 mr-1" /> Cancelar
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="rounded-xl h-8"
+                >
+                  <Check className="w-4 h-4 mr-1" /> {isSaving ? "Guardando..." : "Guardar"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap">{visita.observaciones || <span className="text-muted-foreground italic">Sin observaciones registradas.</span>}</p>
+          )}
+        </section>
 
         {/* Regalos / Gastos */}
         {visita.registro_regalos && visita.registro_regalos.length > 0 && (

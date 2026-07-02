@@ -280,6 +280,29 @@ export async function cerrarVisita(visitaId: string, data: {
   return { ...visita, meta_alcanzada }
 }
 
+export async function actualizarObservaciones(visitaId: string, observaciones: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("No autenticado")
+
+  const { data, error } = await supabase
+    .from('visitas')
+    .update({ observaciones })
+    .eq('id', visitaId)
+    .eq('comercial_id', user.id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error actualizando observaciones:", error)
+    throw new Error(error.message)
+  }
+
+  revalidatePath('/comerciales/dashboard')
+  revalidatePath(`/comerciales/visitas/${visitaId}`)
+  return data
+}
+
 export async function iniciarActividad(
   titulo: string, 
   solicitante: string, 
