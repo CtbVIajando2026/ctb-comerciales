@@ -546,6 +546,12 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
       agrupado[key].push(v);
     });
 
+    let totalJornadas = 0;
+    let globalTotalMinsActivos = 0;
+    let globalTotalMinsMuertos = 0;
+    let globalAtrasos = 0;
+    let globalSalidasPronto = 0;
+
     Object.entries(agrupado).sort((a, b) => b[0].localeCompare(a[0])).forEach(([key, visitasDelDia]) => {
       const [fechaISO, comercialNombre] = key.split(':::');
       
@@ -602,6 +608,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
         evaluacion += `No dejó tiempos muertos (Óptimo).\n`;
       }
 
+      let isAtraso = false;
+      let isSalidaPronto = false;
+
       let alertas = [];
       if (primer !== 'N/A') {
         const horaPrimer = parseInt(primer.split(':')[0]);
@@ -610,6 +619,7 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
         const minPrimer = parseInt(primer.split(':')[1]);
         if (h24Primer > 9 || (h24Primer === 9 && minPrimer > 30)) {
           alertas.push(`Inició jornada tarde`);
+          isAtraso = true;
         }
       }
 
@@ -620,8 +630,15 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
         const minUltimo = parseInt(ultimo.split(':')[1]);
         if (h24Ultimo < 17 || (h24Ultimo === 17 && minUltimo < 30)) {
           alertas.push(`Terminó jornada temprano`);
+          isSalidaPronto = true;
         }
       }
+
+      totalJornadas++;
+      globalTotalMinsActivos += totalMinsActivos;
+      globalTotalMinsMuertos += minMuertos;
+      if (isAtraso) globalAtrasos++;
+      if (isSalidaPronto) globalSalidasPronto++;
 
       if (registroAlmuerzo === 'No') alertas.push(`No registró Almuerzo`);
 
@@ -665,6 +682,39 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
         row.getCell('evaluacion').font = { color: { argb: 'FF2E7D32' } };
       }
     });
+
+    // --- AGREGAR SUMATORIAS Y RESUMEN GENERAL AL FINAL ---
+    const totalRowStart2 = Object.keys(agrupado).length + 3;
+
+    const addTotalRow2 = (rowNum: number, label: string, value: string, isBold: boolean = false, fontColor?: string) => {
+      auditoriaWs.mergeCells(`A${rowNum}:G${rowNum}`);
+      const lblCell = auditoriaWs.getCell(`A${rowNum}`);
+      lblCell.value = label;
+      lblCell.alignment = { horizontal: 'right', vertical: 'middle' };
+      lblCell.font = { bold: isBold, size: isBold ? 11 : 10, color: fontColor ? { argb: fontColor } : undefined };
+      
+      const valCell = auditoriaWs.getCell(`H${rowNum}`);
+      valCell.value = value;
+      valCell.font = { bold: isBold, size: isBold ? 12 : 11, color: fontColor ? { argb: fontColor } : undefined };
+      valCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      if (isBold) {
+        lblCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+        valCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+        lblCell.border = { top: { style: 'thin' }, bottom: { style: 'double' } };
+        valCell.border = { top: { style: 'thin' }, bottom: { style: 'double' } };
+      }
+    };
+
+    // Calcular horas esperadas (9 horas = 540 minutos por cada jornada)
+    const expectedMins = totalJornadas * 540;
+
+    addTotalRow2(totalRowStart2, `TOTAL JORNADAS EVALUADAS:`, `${totalJornadas}`, true);
+    addTotalRow2(totalRowStart2 + 1, `HORAS EXPECTATIVAS DE TRABAJO EN TOTAL (9 hrs por jornada):`, formatToHHMM(expectedMins), true);
+    addTotalRow2(totalRowStart2 + 2, `TOTAL HORAS TRABAJADAS (Suma de tiempo activo en app):`, formatToHHMM(globalTotalMinsActivos), true, 'FF2E7D32');
+    addTotalRow2(totalRowStart2 + 3, `TOTAL HORAS DE INACTIVIDAD (Suma de horas muertas):`, formatToHHMM(globalTotalMinsMuertos), true, 'FFCC0000');
+    addTotalRow2(totalRowStart2 + 4, `TOTAL DE ATRASOS (Check-in tardío):`, `${globalAtrasos} veces`, true, 'FFCC0000');
+    addTotalRow2(totalRowStart2 + 5, `TOTAL DE SALIDAS TEMPRANAS (Check-out pronto):`, `${globalSalidasPronto} veces`, true, 'FFCC0000');
   }
 
   // Convertir a blob nativamente
