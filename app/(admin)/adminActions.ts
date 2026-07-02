@@ -394,6 +394,9 @@ export async function generarDataReporte(filtros: {
       alerta_fraude_checkout,
       hora_checkin,
       hora_checkout,
+      observaciones,
+      temas,
+      temas_texto_libre,
       usuarios!inner(nombre, zona),
       agencias(nombre, ciudad)
     `)
