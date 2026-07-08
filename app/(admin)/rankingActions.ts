@@ -82,15 +82,17 @@ export async function obtenerRankingAgregado(timeFilter: string, filtroZona: str
 
   // Fetch Gamification Stats
   const { data: gamificacion } = await supabase.from('comercial_gamificacion').select('*')
-
-  return Object.entries(mapa).map(([comercial_id, stats]) => {
-    const gData = gamificacion?.find(g => g.comercial_id === comercial_id)
+  
+  // Return stats for EVERY comercial that has gamificacion (basically everyone)
+  // merging the visit counts from `mapa`
+  return (gamificacion || []).map(g => {
+    const stats = mapa[g.comercial_id] || { visitas: 0, actividades: 0 }
     return {
-      comercial_id,
+      comercial_id: g.comercial_id,
       ...stats,
-      puntos_mes_actual: gData?.puntos_mes_actual || 0,
-      xp_total: gData?.xp_total || 0,
-      racha_dias: gData?.racha_dias || 0
+      puntos_mes_actual: g.puntos_mes_actual || 0,
+      xp_total: g.xp_total || 0,
+      racha_dias: g.racha_dias || 0
     }
   })
 }
