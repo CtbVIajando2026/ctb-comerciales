@@ -28,9 +28,12 @@ export function DictationButton({ onTranscription, className = "" }: DictationBu
       }
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        const mimeType = mediaRecorder.mimeType || 'audio/webm'
+        const fileExtension = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('mpeg') ? 'mpeg' : mimeType.includes('ogg') ? 'ogg' : 'webm'
+        
+        const audioBlob = new Blob(chunksRef.current, { type: mimeType })
         stream.getTracks().forEach(track => track.stop())
-        await processAudio(audioBlob)
+        await processAudio(audioBlob, fileExtension)
       }
 
       mediaRecorder.start()
@@ -48,11 +51,11 @@ export function DictationButton({ onTranscription, className = "" }: DictationBu
     }
   }
 
-  const processAudio = async (audioBlob: Blob) => {
+  const processAudio = async (audioBlob: Blob, fileExtension: string) => {
     setIsLoading(true)
     try {
       const formData = new FormData()
-      formData.append('file', audioBlob, 'audio.webm')
+      formData.append('file', audioBlob, `audio.${fileExtension}`)
 
       const response = await fetch('/api/transcribe', {
         method: 'POST',
