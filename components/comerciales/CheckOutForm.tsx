@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BeautifulDateTimePicker } from "./BeautifulDateTimePicker"
 import { Plus, Trash2 } from "lucide-react"
+import { DictationButton } from "./DictationButton"
 
 interface CheckOutFormProps {
   onSubmit: (data: any) => void
@@ -219,9 +220,12 @@ export function CheckOutForm({ onSubmit, esActividad = false }: CheckOutFormProp
       )}
 
       <section className="space-y-3 border-t border-border pt-6">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          {esActividad ? "RESULTADOS / OBSERVACIONES *" : "OBSERVACIONES (OPCIONAL)"}
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            {esActividad ? "RESULTADOS / OBSERVACIONES *" : "OBSERVACIONES (OPCIONAL)"}
+          </h3>
+          <DictationButton onTranscription={(text) => setObservaciones(prev => prev ? `${prev} ${text}` : text)} />
+        </div>
         <textarea 
           className="w-full flex min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           placeholder={esActividad ? "¿Qué hiciste o a dónde fuiste? *" : "¿Qué pasó? ¿Qué dijeron?"}
