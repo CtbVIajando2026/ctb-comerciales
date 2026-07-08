@@ -290,6 +290,21 @@ export async function cerrarVisita(visitaId: string, data: {
     puntosGanados += 50;
   }
 
+  // Bono de Viaje a Otra Ciudad
+  try {
+    const { data: userData } = await supabase.from('usuarios_perfil').select('ciudad_zona').eq('id', user.id).maybeSingle()
+    const { data: vData } = await supabase.from('visitas').select('agencias(ciudad)').eq('id', visitaId).maybeSingle()
+    
+    const ciudadComercial = userData?.ciudad_zona?.trim().toLowerCase()
+    const ciudadAgencia = vData?.agencias?.ciudad?.trim().toLowerCase()
+
+    if (ciudadComercial && ciudadAgencia && ciudadComercial !== ciudadAgencia) {
+      puntosGanados += 150;
+    }
+  } catch(e) {
+    console.error("Error comprobando viaje:", e)
+  }
+
   // Bono de meta diaria
   if (meta_alcanzada) {
     puntosGanados += 200;
