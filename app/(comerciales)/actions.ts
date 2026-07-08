@@ -305,17 +305,19 @@ export async function cerrarVisita(visitaId: string, data: {
     
     if (gData) {
       let nuevaRacha = gData.racha_dias || 0
+      let nuevaUltimaFecha = gData.ultima_visita_fecha
       
-      // Si la meta fue alcanzada HOY, aumentamos racha (asegurando no duplicarla en un mismo día)
+      // Si la meta fue alcanzada HOY, y la racha no se ha incrementado hoy:
       if (meta_alcanzada && gData.ultima_visita_fecha !== ecDateStr) {
          nuevaRacha += 1
+         nuevaUltimaFecha = ecDateStr
       }
       
       await supabase.from('comercial_gamificacion').update({
         puntos_mes_actual: (gData.puntos_mes_actual || 0) + puntosGanados,
         xp_total: (gData.xp_total || 0) + puntosGanados,
         racha_dias: nuevaRacha,
-        ultima_visita_fecha: ecDateStr
+        ultima_visita_fecha: nuevaUltimaFecha
       }).eq('comercial_id', user.id)
     }
   } catch (err) {
