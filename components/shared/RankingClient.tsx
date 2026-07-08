@@ -151,7 +151,7 @@ export function RankingClient({ datos }: { datos: any }) {
 
       {/* PODIO ELITE (GLASSMORPHISM) */}
       {top3.length > 0 ? (
-        <div className="flex justify-center items-end h-[400px] gap-3 md:gap-6 max-w-4xl mx-auto px-2 mt-16 mb-20 relative">
+        <div className="flex justify-center items-end h-[500px] md:h-[550px] gap-3 md:gap-6 max-w-4xl mx-auto px-2 mt-32 mb-20 relative">
           
           {/* Brillo de fondo sutil */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none"></div>
