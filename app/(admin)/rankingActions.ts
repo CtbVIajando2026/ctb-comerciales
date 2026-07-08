@@ -80,8 +80,17 @@ export async function obtenerRankingAgregado(timeFilter: string, filtroZona: str
     }
   })
 
-  return Object.entries(mapa).map(([comercial_id, stats]) => ({
-    comercial_id,
-    ...stats
-  }))
+  // Fetch Gamification Stats
+  const { data: gamificacion } = await supabase.from('comercial_gamificacion').select('*')
+
+  return Object.entries(mapa).map(([comercial_id, stats]) => {
+    const gData = gamificacion?.find(g => g.comercial_id === comercial_id)
+    return {
+      comercial_id,
+      ...stats,
+      puntos_mes_actual: gData?.puntos_mes_actual || 0,
+      xp_total: gData?.xp_total || 0,
+      racha_dias: gData?.racha_dias || 0
+    }
+  })
 }

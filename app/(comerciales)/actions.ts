@@ -260,7 +260,7 @@ export async function cerrarVisita(visitaId: string, data: {
     .eq('comercial_id', user.id)
     .eq('activa', true)
     .single()
-  const metaDiaria = meta?.visitas_diarias !== undefined ? meta.visitas_diarias : 5 // Meta fallback de 5
+  const metaDiaria = meta?.visitas_diarias !== undefined ? meta.visitas_diarias : 8 // Meta fallback de 8
 
   const now = new Date()
   const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
@@ -276,8 +276,54 @@ export async function cerrarVisita(visitaId: string, data: {
 
   const meta_alcanzada = count === metaDiaria
 
+  // --- NUEVA LÓGICA DE GAMIFICACIÓN ---
+  let puntosGanados = 100; // Base
+  
+  if (alertaFraudeCheckout) {
+    puntosGanados -= 50; // Penalización por fraude GPS
+  }
+
+  // Bono de calidad (observaciones y proximo paso dictados, sin fraude)
+  const tieneObservaciones = data.observaciones && data.observaciones.trim().length > 10;
+  const tieneProximoPaso = data.proximo_paso && data.proximo_paso !== 'none';
+  if (tieneObservaciones && tieneProximoPaso && !alertaFraudeCheckout) {
+    puntosGanados += 50;
+  }
+
+  // Bono de meta diaria
+  if (meta_alcanzada) {
+    puntosGanados += 200;
+  }
+
+  // Actualizar tabla comercial_gamificacion
+  try {
+    // 1. Asegurar que existe el registro (ignora si ya existe por el constraint)
+    const { error: insErr } = await supabase.from('comercial_gamificacion').insert({ comercial_id: user.id })
+    
+    // 2. Traer registro actual
+    const { data: gData } = await supabase.from('comercial_gamificacion').select('*').eq('comercial_id', user.id).single()
+    
+    if (gData) {
+      let nuevaRacha = gData.racha_dias || 0
+      
+      // Si la meta fue alcanzada HOY, aumentamos racha (asegurando no duplicarla en un mismo día)
+      if (meta_alcanzada && gData.ultima_visita_fecha !== ecDateStr) {
+         nuevaRacha += 1
+      }
+      
+      await supabase.from('comercial_gamificacion').update({
+        puntos_mes_actual: (gData.puntos_mes_actual || 0) + puntosGanados,
+        xp_total: (gData.xp_total || 0) + puntosGanados,
+        racha_dias: nuevaRacha,
+        ultima_visita_fecha: ecDateStr
+      }).eq('comercial_id', user.id)
+    }
+  } catch (err) {
+    console.error("Error actualizando gamificacion:", err)
+  }
+
   revalidatePath('/comerciales/dashboard')
-  return { ...visita, meta_alcanzada }
+  return { ...visita, meta_alcanzada, puntosGanados }
 }
 
 export async function actualizarObservaciones(visitaId: string, observaciones: string) {
