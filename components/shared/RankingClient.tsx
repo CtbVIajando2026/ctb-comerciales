@@ -176,7 +176,7 @@ export function RankingClient({ datos }: { datos: any }) {
               <div className="absolute bottom-0 w-full h-1 bg-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.8)]"></div>
               
               <span className="relative z-10 font-black text-2xl md:text-3xl text-white drop-shadow-md">{top3[1].puntos || top3[1].visitas}</span>
-              <span className="relative z-10 text-[10px] font-bold text-blue-300 uppercase tracking-widest mt-1">Puntos</span>
+              <span className="relative z-10 text-[10px] font-bold text-blue-300 uppercase tracking-widest mt-1 text-center leading-none">Puntos</span>
             </div>
             <div className="mt-4 px-1 w-full flex flex-col items-center">
               <h3 className="font-bold text-sm text-foreground text-center leading-tight break-words line-clamp-2">{top3[1].nombre}</h3>
@@ -207,7 +207,7 @@ export function RankingClient({ datos }: { datos: any }) {
               <div className="absolute bottom-0 w-full h-1.5 bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,1)]"></div>
               
               <span className="relative z-10 font-black text-3xl md:text-5xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">{top3[0].puntos || top3[0].visitas}</span>
-              <span className="relative z-10 text-xs font-black text-amber-400 uppercase tracking-widest mt-1">Puntos Totales</span>
+              <span className="relative z-10 text-[10px] sm:text-xs font-black text-amber-400 uppercase tracking-widest mt-1 text-center leading-tight">Puntos<br/>Totales</span>
             </div>
             <div className="mt-4 px-1 w-full flex flex-col items-center">
               <h3 className="font-black text-base md:text-lg text-foreground text-center leading-tight break-words line-clamp-2">{top3[0].nombre}</h3>
@@ -235,7 +235,7 @@ export function RankingClient({ datos }: { datos: any }) {
               <div className="absolute bottom-0 w-full h-1 bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.8)]"></div>
               
               <span className="relative z-10 font-black text-2xl md:text-3xl text-white drop-shadow-md">{top3[2].puntos || top3[2].visitas}</span>
-              <span className="relative z-10 text-[10px] font-bold text-orange-300 uppercase tracking-widest mt-1">Puntos</span>
+              <span className="relative z-10 text-[10px] font-bold text-orange-300 uppercase tracking-widest mt-1 text-center leading-none">Puntos</span>
             </div>
             <div className="mt-4 px-1 w-full flex flex-col items-center">
               <h3 className="font-bold text-sm text-foreground text-center leading-tight break-words line-clamp-2">{top3[2].nombre}</h3>

@@ -16,25 +16,18 @@ export async function obtenerRankingAgregado(timeFilter: string, filtroZona: str
   let gteStr = ""
   let lteStr = ""
 
-  if (timeFilter === 'hoy') {
-    gteStr = `${ecNowDateStr}T00:00:00-05:00`
-    lteStr = `${ecNowDateStr}T23:59:59-05:00`
-  } else if (timeFilter === 'semana') {
-    const hace7Dias = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const p7 = formatter.formatToParts(hace7Dias)
-    const y7 = p7.find(p => p.type === 'year')?.value || '2026'
-    const m7 = p7.find(p => p.type === 'month')?.value || '01'
-    const d7 = p7.find(p => p.type === 'day')?.value || '01'
-    gteStr = `${y7}-${m7}-${d7}T00:00:00-05:00`
-    lteStr = `${ecNowDateStr}T23:59:59-05:00`
-  } else if (timeFilter.length === 7) { // YYYY-MM
+  if (timeFilter.length === 7) { // YYYY-MM
     const [year, month] = timeFilter.split('-')
     gteStr = `${year}-${month}-01T00:00:00-05:00`
-    const nextMonth = new Date(parseInt(year), parseInt(month), 1)
-    const pNext = formatter.formatToParts(nextMonth)
-    const yN = pNext.find(p => p.type === 'year')?.value || '2026'
-    const mN = pNext.find(p => p.type === 'month')?.value || '01'
-    lteStr = `${yN}-${mN}-01T00:00:00-05:00` 
+    
+    // Calcular siguiente mes manualmente para evitar bugs de timezone UTC
+    let nextY = parseInt(year)
+    let nextM = parseInt(month) + 1
+    if (nextM > 12) {
+      nextM = 1
+      nextY++
+    }
+    lteStr = `${nextY}-${nextM.toString().padStart(2, '0')}-01T00:00:00-05:00`
   } else if (timeFilter.length === 4) { // YYYY
     gteStr = `${timeFilter}-01-01T00:00:00-05:00`
     const nextYear = parseInt(timeFilter) + 1
