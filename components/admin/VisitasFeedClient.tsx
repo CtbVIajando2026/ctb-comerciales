@@ -30,6 +30,7 @@ export function VisitasFeedClient({
   const [fechaEspecifica, setFechaEspecifica] = useState("")
   const [filtroCiudad, setFiltroCiudad] = useState("Todas")
   const [filtroComercial, setFiltroComercial] = useState("Todos")
+  const [filtroActividad, setFiltroActividad] = useState("Todas")
   const [showFiltros, setShowFiltros] = useState(false)
   const [soloAlertas, setSoloAlertas] = useState(false)
   const [now, setNow] = useState(new Date())
@@ -52,6 +53,12 @@ export function VisitasFeedClient({
     ...todosComerciales.map(c => c.nombre?.trim())
   ].filter(Boolean))).sort()
 
+  const actividadesUnicas = Array.from(new Set(
+    visitasIniciales
+      .map(v => v.titulo_actividad?.trim())
+      .filter(Boolean)
+  )).sort()
+
   const filtradas = visitasIniciales.filter(v => {
     const agenciaNombre = v.agencias?.nombre || v.titulo_actividad || ""
     const comercialNombre = v.usuarios?.nombre?.trim() || ""
@@ -68,6 +75,9 @@ export function VisitasFeedClient({
 
     // Comercial
     const matchComercial = filtroComercial === "Todos" || comercialNombre === filtroComercial.trim()
+
+    // Actividad
+    const matchActividad = filtroActividad === "Todas" || (v.titulo_actividad && v.titulo_actividad.trim() === filtroActividad.trim())
 
     // Alertas
     const matchAlertas = !soloAlertas || v.alerta_fraude_checkin || v.alerta_fraude_checkout
@@ -90,8 +100,22 @@ export function VisitasFeedClient({
       matchTiempo = fechaFormato === fechaEspecifica
     }
 
-    return matchSearch && matchCiudad && matchComercial && matchTiempo && matchAlertas
+    return matchSearch && matchCiudad && matchComercial && matchActividad && matchTiempo && matchAlertas
   })
+
+  // Calcular total de tiempo de los filtrados
+  let totalMinutos = 0
+  filtradas.forEach(v => {
+    if (v.estado === 'abierta' && v.hora_checkin) {
+      totalMinutos += differenceInMinutes(now, new Date(v.hora_checkin))
+    } else if (v.hora_checkin && v.hora_checkout) {
+      const mins = differenceInMinutes(new Date(v.hora_checkout), new Date(v.hora_checkin))
+      if (mins > 0) totalMinutos += mins
+    }
+  })
+  const horasTexto = totalMinutos > 60 
+    ? `${Math.floor(totalMinutos / 60)}h ${totalMinutos % 60}m` 
+    : `${totalMinutos} min`
 
   return (
     <div className="space-y-6">
@@ -131,7 +155,7 @@ export function VisitasFeedClient({
       </div>
 
       {showFiltros && (
-        <div className="bg-card p-4 rounded-2xl border border-border grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-2">
+        <div className="bg-card p-4 rounded-2xl border border-border grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Fecha</label>
             <div className="space-y-2">
@@ -178,12 +202,31 @@ export function VisitasFeedClient({
               {comercialesUnicos.map(c => <option key={c} value={c as string}>{c as string}</option>)}
             </select>
           </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Actividad</label>
+            <select 
+              className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+              value={filtroActividad}
+              onChange={(e) => setFiltroActividad(e.target.value)}
+            >
+              <option value="Todas">Todas las actividades</option>
+              {actividadesUnicas.map(a => <option key={a} value={a as string}>{a as string}</option>)}
+            </select>
+          </div>
         </div>
       )}
 
       <div className="bg-card border border-border rounded-3xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
-          <h2 className="font-bold text-foreground">Resultados ({filtradas.length})</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="font-bold text-foreground">Resultados ({filtradas.length})</h2>
+            {totalMinutos > 0 && (
+              <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-1 rounded-lg flex items-center">
+                <Timer className="w-3.5 h-3.5 mr-1" />
+                Tiempo Total: {horasTexto}
+              </span>
+            )}
+          </div>
         </div>
         
         <div className="divide-y divide-border">
