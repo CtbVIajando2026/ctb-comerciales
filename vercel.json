@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/alerta-inactividad",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/alerta-cumplimiento",
+      "schedule": "5 23 * * 1-5"
     }
   ]
 }

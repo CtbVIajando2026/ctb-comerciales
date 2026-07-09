@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { MetaBar } from "@/components/comerciales/MetaBar"
 import { VisitaCard } from "@/components/comerciales/VisitaCard"
 import { ActiveVisitBlock } from "@/components/comerciales/ActiveVisitBlock"
-import { Plus, Clock, Briefcase } from "lucide-react"
+import { Plus, Clock, Briefcase, ShieldAlert } from "lucide-react"
 import { obtenerMeticasDashboard } from "@/app/(comerciales)/actions"
 import { calcularDistanciaMetros } from "@/lib/geolocation"
 import { NuevaActividadButton } from "@/components/comerciales/NuevaActividadButton"
@@ -124,6 +124,28 @@ export default async function DashboardPage() {
     }
   }
 
+  // --- CÁLCULO DE CUMPLIMIENTO ALMUERZO/MOVILIZACION ---
+  let maxDistanciaHoy = 0
+  const puntosGPS = itemsCompletados.filter((v: any) => v.gps_lat && v.gps_lng)
+  for (let i = 0; i < puntosGPS.length; i++) {
+    for (let j = i + 1; j < puntosGPS.length; j++) {
+      const dist = calcularDistanciaMetros(puntosGPS[i].gps_lat, puntosGPS[i].gps_lng, puntosGPS[j].gps_lat, puntosGPS[j].gps_lng)
+      if (dist > maxDistanciaHoy) maxDistanciaHoy = dist
+    }
+  }
+
+  const movilizado = maxDistanciaHoy > 2000
+  const tieneTransporte = itemsCompletados.some((v: any) => v.es_actividad && v.titulo_actividad === 'Transporte / Movilización')
+  const tieneAlmuerzo = itemsCompletados.some((v: any) => v.es_actividad && v.titulo_actividad === 'Personal / Almuerzo')
+  
+  const horasJornadaAct = itemsCronologicos.length > 0 
+    ? (ultimoCheckoutTime - new Date(itemsCronologicos[0].hora_checkin).getTime()) / (1000 * 60 * 60)
+    : 0
+
+  const faltaTransporteDash = movilizado && !tieneTransporte
+  const faltaAlmuerzoDash = movilizado && horasJornadaAct > 5 && !tieneAlmuerzo
+  const mostrarAlertaCumplimiento = (ecDate.getHours() >= 17) && (faltaTransporteDash || faltaAlmuerzoDash)
+
   const timelineOrdenado = [...timelineItems].reverse()
 
   return (
@@ -143,6 +165,23 @@ export default async function DashboardPage() {
               <p className="text-sm font-bold leading-tight">Alerta de Inactividad</p>
               <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-1">
                 Llevas más de <span className="font-bold">{inactividadActualMin >= 60 ? `${Math.floor(inactividadActualMin / 60)}h ${inactividadActualMin % 60}m` : `${inactividadActualMin} min`}</span> sin registrar visitas o actividades. Recuerda reportar tu labor en curso.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Alerta de Cumplimiento de Fin de Día */}
+        {mostrarAlertaCumplimiento && (
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-4 duration-300">
+            <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center shrink-0 text-destructive">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold leading-tight">Acción Requerida: Informe Diario</p>
+              <p className="text-xs text-destructive/90 mt-1">
+                Hemos detectado que te has movilizado durante tu jornada, pero no has registrado 
+                {faltaTransporteDash && faltaAlmuerzoDash ? ' tu Movilización ni tu Almuerzo' : faltaTransporteDash ? ' tu tiempo de Movilización' : ' tu hora de Almuerzo'}.
+                Recuerda que esto es obligatorio y justifica tus horas laborables en el informe mensual.
               </p>
             </div>
           </div>
