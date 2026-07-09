@@ -53,11 +53,14 @@ export function VisitasFeedClient({
     ...todosComerciales.map(c => c.nombre?.trim())
   ].filter(Boolean))).sort()
 
-  const actividadesUnicas = Array.from(new Set(
-    visitasIniciales
-      .map(v => v.titulo_actividad?.trim())
-      .filter(Boolean)
-  )).sort()
+  const ACTIVIDADES_ESTANDAR = [
+    "Cotizaciones",
+    "Reunión de Oficina",
+    "Capacitación",
+    "Trabajo Administrativo",
+    "Personal / Almuerzo",
+    "Transporte / Movilización"
+  ]
 
   const filtradas = visitasIniciales.filter(v => {
     const agenciaNombre = v.agencias?.nombre || v.titulo_actividad || ""
@@ -77,7 +80,14 @@ export function VisitasFeedClient({
     const matchComercial = filtroComercial === "Todos" || comercialNombre === filtroComercial.trim()
 
     // Actividad
-    const matchActividad = filtroActividad === "Todas" || (v.titulo_actividad && v.titulo_actividad.trim() === filtroActividad.trim())
+    let matchActividad = true
+    if (filtroActividad === "Visita a Agencia") {
+      matchActividad = !v.es_actividad
+    } else if (filtroActividad === "Otras") {
+      matchActividad = v.es_actividad && v.titulo_actividad && !ACTIVIDADES_ESTANDAR.includes(v.titulo_actividad.trim())
+    } else if (filtroActividad !== "Todas") {
+      matchActividad = v.titulo_actividad && v.titulo_actividad.trim() === filtroActividad.trim()
+    }
 
     // Alertas
     const matchAlertas = !soloAlertas || v.alerta_fraude_checkin || v.alerta_fraude_checkout
@@ -209,8 +219,10 @@ export function VisitasFeedClient({
               value={filtroActividad}
               onChange={(e) => setFiltroActividad(e.target.value)}
             >
-              <option value="Todas">Todas las actividades</option>
-              {actividadesUnicas.map(a => <option key={a} value={a as string}>{a as string}</option>)}
+              <option value="Todas">Todas (Visitas y Actividades)</option>
+              <option value="Visita a Agencia">Visita a Agencia</option>
+              {ACTIVIDADES_ESTANDAR.map(a => <option key={a} value={a}>{a}</option>)}
+              <option value="Otras">Otras (Ingresadas manualmente)</option>
             </select>
           </div>
         </div>
