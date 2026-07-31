@@ -223,14 +223,17 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
   subtitle.border = { bottom: { style: 'medium', color: { argb: 'FF1A237E' } } };
 
   // Cálculos de Minutos por Categoría
-  const minAgencias = rows.filter(r => r.Categoría === 'Gestión Comercial (Agencias)').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
-  const minAdmin = rows.filter(r => r.Categoría === 'Trabajo Administrativo').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
-  const minReuniones = rows.filter(r => r.Categoría === 'Reunión / Capacitación').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
-  const minAlmuerzo = rows.filter(r => r.Categoría === 'Almuerzo / Personal').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
-  const minOtras = rows.filter(r => r.Categoría === 'Actividad Interna (Otras)').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minAgencias    = rows.filter(r => r.Categoría === 'Gestión Comercial (Agencias)').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minAdmin       = rows.filter(r => r.Categoría === 'Trabajo Administrativo').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minTransporte  = rows.filter(r => r.Categoría === 'Transporte / Movilización').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minReuniones   = rows.filter(r => r.Categoría === 'Reunión / Capacitación').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minAlmuerzo    = rows.filter(r => r.Categoría === 'Almuerzo / Personal').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
+  const minOtras       = rows.filter(r => r.Categoría === 'Actividad Interna (Otras)').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0);
 
-  const totalMins = minAgencias + minAdmin + minReuniones + minAlmuerzo + minOtras;
+  // totalMins incluye TODAS las categorías → los porcentajes suman exactamente 100%
+  const totalMins    = minAgencias + minAdmin + minTransporte + minReuniones + minAlmuerzo + minOtras;
   const horasTotales = (totalMins / 60).toFixed(1);
+  // Productividad = tiempo efectivo en agencias / tiempo total real trabajado
   const productividad = totalMins > 0 ? ((minAgencias / totalMins) * 100).toFixed(1) : '0.0';
 
   const countInactividad = rows.filter(r => String(r['alerta de tiempo inactivo'] || '').startsWith('Sí')).length;
@@ -301,11 +304,11 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
 
   const categoriasData = [
     { name: 'Gestión Comercial (Agencias)', mins: minAgencias },
-    { name: 'Trabajo Administrativo', mins: minAdmin },
-    { name: 'Transporte / Movilización', mins: rows.filter(r => r.Categoría === 'Transporte / Movilización').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0) },
-    { name: 'Reunión / Capacitación', mins: minReuniones },
-    { name: 'Almuerzo / Personal', mins: minAlmuerzo },
-    { name: 'Otras Actividades', mins: minOtras }
+    { name: 'Trabajo Administrativo',       mins: minAdmin },
+    { name: 'Transporte / Movilización',    mins: minTransporte },  // reutiliza variable ya calculada
+    { name: 'Reunión / Capacitación',       mins: minReuniones },
+    { name: 'Almuerzo / Personal',          mins: minAlmuerzo },
+    { name: 'Otras Actividades',            mins: minOtras }
   ];
 
   categoriasData.forEach((cat, index) => {
@@ -319,8 +322,9 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
     dash.getCell(`E${row}`).numFmt = ';;;'; // ocultar el número para dejar solo la barra
   });
 
+  // dataBar cubre las 6 filas de categorías (E10:E15) para mostrar la barra proporcional
   dash.addConditionalFormatting({
-    ref: 'E10:E14',
+    ref: 'E10:E15',
     rules: [
       {
         type: 'dataBar',
@@ -489,13 +493,14 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
 
 
 
-  addTotalRow(totalRowStart, `TOTAL VISITAS COMERCIALES (${countAgencias} visitas):`, formatMinsStr(minAgencias));
-  addTotalRow(totalRowStart + 1, `TOTAL TRABAJOS ADMINISTRATIVOS (${countAdmin} act.):`, formatMinsStr(minAdmin));
-  addTotalRow(totalRowStart + 2, `TOTAL REUNIONES / CAPACITACIONES (${countReuniones} act.):`, formatMinsStr(minReuniones));
-  addTotalRow(totalRowStart + 3, `TOTAL ALMUERZO / PERSONAL (${countAlmuerzo} act.):`, formatMinsStr(minAlmuerzo));
-  addTotalRow(totalRowStart + 4, `TOTAL TRANSPORTE / MOVILIZACIÓN (${countTransporte} act.):`, formatMinsStr(rows.filter(r => r.Categoría === 'Transporte / Movilización').reduce((acc, r) => acc + parseDuracion(r.Duracion), 0)));
-  addTotalRow(totalRowStart + 5, `TOTAL ACTIVIDADES EXTRAS (${countOtras} act.):`, formatMinsStr(minOtras));
-  addTotalRow(totalRowStart + 6, `GRAN TOTAL DE TIEMPO REGISTRADO (${countAgencias + countActividades + countTransporte} registros):`, formatMinsStr(totalMins), true);
+  addTotalRow(totalRowStart,     `TOTAL VISITAS COMERCIALES (${countAgencias} visitas):`,                    formatMinsStr(minAgencias));
+  addTotalRow(totalRowStart + 1, `TOTAL TRABAJOS ADMINISTRATIVOS (${countAdmin} act.):`,                    formatMinsStr(minAdmin));
+  addTotalRow(totalRowStart + 2, `TOTAL TRANSPORTE / MOVILIZACIÓN (${countTransporte} act.):`,               formatMinsStr(minTransporte));
+  addTotalRow(totalRowStart + 3, `TOTAL REUNIONES / CAPACITACIONES (${countReuniones} act.):`,               formatMinsStr(minReuniones));
+  addTotalRow(totalRowStart + 4, `TOTAL ALMUERZO / PERSONAL (${countAlmuerzo} act.):`,                      formatMinsStr(minAlmuerzo));
+  addTotalRow(totalRowStart + 5, `TOTAL ACTIVIDADES EXTRAS (${countOtras} act.):`,                          formatMinsStr(minOtras));
+  const granTotalRegistros = countAgencias + countAdmin + countTransporte + countReuniones + countAlmuerzo + countOtras;
+  addTotalRow(totalRowStart + 6, `GRAN TOTAL DE TIEMPO REGISTRADO (${granTotalRegistros} registros):`,       formatMinsStr(totalMins), true);
   
   addTotalRow(totalRowStart + 7, `TOTAL ALERTAS DE INACTIVIDAD (VISITAS > 1 HORA):`, `${countInactividad} novedades`, true, 'FFCC0000');
   addTotalRow(totalRowStart + 8, `TOTAL ALERTAS POR DISTANCIA (FUERA DE AGENCIA):`, `${countLejania} novedades`, true, 'FFCC0000');
