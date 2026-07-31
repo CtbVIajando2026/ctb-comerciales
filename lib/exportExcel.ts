@@ -741,168 +741,312 @@ export async function exportToExcel(rows: ExcelRow[], filename: string, rawVisit
   }
 
   // =========================================================================
-  // 4. NUEVA PESTAÑA: RESUMEN DIARIO
+  // 4. PESTAÑA: CONTROL DIARIO DE VISITAS (RESUMEN GERENCIAL)
   // =========================================================================
   if (rawVisitas && rawVisitas.length > 0) {
-    const resumenWs = workbook.addWorksheet('Resumen Diario', {
-      views: [{ state: 'frozen', ySplit: 1 }]
-    });
 
-    resumenWs.columns = [
-      { header: 'Fecha', key: 'fecha', width: 15 },
-      { header: 'Comercial', key: 'comercial', width: 25 },
-      { header: 'N° Visitas', key: 'num_visitas', width: 15 },
-      { header: 'T. Visitas (hrs)', key: 't_visitas', width: 18 },
-      { header: 'N° Actividades', key: 'num_actividades', width: 18 },
-      { header: 'T. Actividades (hrs)', key: 't_actividades', width: 20 },
-      { header: 'Almuerzo (Sí/No)', key: 'almuerzo', width: 18 },
-      { header: 'Alertas Inact.', key: 'alertas_inact', width: 18 },
-      { header: 'T. Inactividad (hrs)', key: 't_inactividad', width: 20 },
-      { header: 'Alertas F. de Sitio', key: 'alertas_sitio', width: 20 },
-    ];
-
-    const hRowRes = resumenWs.getRow(1);
-    hRowRes.height = 22;
-    hRowRes.eachCell((cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } };
-      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 11 };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    });
-
-    let globalNumVisitas = 0;
-    let globalTVisitas = 0;
-    let globalNumAct = 0;
-    let globalTAct = 0;
-    let globalAlertasInact = 0;
-    let globalTInact = 0;
-    let globalAlertasSitio = 0;
-    let globalAlmuerzosOk = 0;
-
-    const agrupado: Record<string, any[]> = {};
+    // ── Agrupamos raw por fecha + comercial ──────────────────────────────────
+    const agrupado2: Record<string, any[]> = {};
     rawVisitas.forEach(v => {
       if (!v.hora_checkin) return;
-      const d = new Date(v.hora_checkin);
-      const fechaISO = d.toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' });
+      const fechaISO = new Date(v.hora_checkin).toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' });
       const comercialNombre = (v.usuarios?.nombre || v.usuario?.nombre || v.usuarioNombre || v.comercialNombre || 'Desconocido').trim();
-      const key = `${fechaISO}:::${comercialNombre}`;
-      if (!agrupado[key]) agrupado[key] = [];
-      agrupado[key].push(v);
+      const key = `${fechaISO}|||${comercialNombre}`;
+      if (!agrupado2[key]) agrupado2[key] = [];
+      agrupado2[key].push(v);
     });
 
-    Object.entries(agrupado).sort((a, b) => b[0].localeCompare(a[0])).forEach(([key, visitasDelDia]) => {
-      const [fechaISO, comercialNombre] = key.split(':::');
-      
-      let numVisitas = 0;
-      let tVisitas = 0;
-      let numActividades = 0;
-      let tActividades = 0;
-      let almuerzo = 'No';
-      let alertasSitio = 0;
-
-      visitasDelDia.forEach(v => {
-        const isAct = !!v.es_actividad;
-        
-        const actLower = (v.titulo_actividad || '').toLowerCase();
-        const obsLower = (v.observaciones || '').toLowerCase();
-        const isAlmuerzo = actLower.includes('almuerzo') || actLower.includes('personal') || obsLower.includes('almuerzo');
-        if (isAlmuerzo) almuerzo = 'Sí';
-
-        if (v.check_lejano) alertasSitio++;
-
-        if (v.hora_checkin && v.hora_checkout) {
-          const m = (new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000;
-          if (m > 0) {
-            if (isAct) {
-              if (!isAlmuerzo) {
-                 numActividades++;
-                 tActividades += m;
-              }
-            } else {
-              numVisitas++;
-              tVisitas += m;
-            }
-          }
-        }
-      });
-
-      const minMuertos = calcularHorasMuertas(visitasDelDia, fechaISO, 15);
-      
-      let alertasInact = 0;
-      const completadas = visitasDelDia.filter(v => v.hora_checkin && v.hora_checkout).map(v => ({in: new Date(v.hora_checkin).getTime(), out: new Date(v.hora_checkout).getTime()})).sort((a, b) => a.in - b.in);
-      
-      let cursor = new Date(`${fechaISO}T09:00:00-05:00`).getTime();
-      let finAnalisis = new Date(`${fechaISO}T18:00:00-05:00`).getTime();
-      const ahora = new Date().getTime();
-      if (fechaISO === new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }) && ahora < finAnalisis) {
-        finAnalisis = ahora;
-      }
-      
-      for (const v of completadas) {
-        if (v.in > cursor) {
-          const gapEnd = Math.min(v.in, finAnalisis);
-          if (gapEnd > cursor) {
-             const m = (gapEnd - cursor)/60000;
-             if (m >= 15) alertasInact++;
-          }
-        }
-        cursor = Math.max(cursor, v.out);
-      }
-      if (cursor < finAnalisis && (finAnalisis - cursor)/60000 >= 15) {
-        alertasInact++;
-      }
-
-      resumenWs.addRow({
-        fecha: fechaISO,
-        comercial: comercialNombre,
-        num_visitas: numVisitas,
-        t_visitas: formatToHHMM(tVisitas),
-        num_actividades: numActividades,
-        t_actividades: formatToHHMM(tActividades),
-        almuerzo: almuerzo === 'Sí' ? '✅ Sí' : '❌ No',
-        alertas_inact: alertasInact,
-        t_inactividad: formatToHHMM(minMuertos),
-        alertas_sitio: alertasSitio
-      });
-
-      globalNumVisitas += numVisitas;
-      globalTVisitas += tVisitas;
-      globalNumAct += numActividades;
-      globalTAct += tActividades;
-      globalAlertasInact += alertasInact;
-      globalTInact += minMuertos;
-      globalAlertasSitio += alertasSitio;
-      if (almuerzo === 'Sí') globalAlmuerzosOk++;
-    });
-
-    const addResumenTotal = (rowNum: number, label: string, value: string, fontColor?: string) => {
-      resumenWs.mergeCells(`A${rowNum}:H${rowNum}`);
-      const lblCell = resumenWs.getCell(`A${rowNum}`);
-      lblCell.value = label;
-      lblCell.alignment = { horizontal: 'right', vertical: 'middle' };
-      lblCell.font = { bold: true, size: 11, color: fontColor ? { argb: fontColor } : undefined };
-      lblCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
-      lblCell.border = { top: { style: 'thin' }, bottom: { style: 'double' } };
-      
-      const valCell = resumenWs.getCell(`I${rowNum}`);
-      valCell.value = value;
-      valCell.font = { bold: true, size: 12, color: fontColor ? { argb: fontColor } : undefined };
-      valCell.alignment = { horizontal: 'left', vertical: 'middle' };
-      valCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
-      valCell.border = { top: { style: 'thin' }, bottom: { style: 'double' } };
-      
-      resumenWs.mergeCells(`I${rowNum}:J${rowNum}`);
+    // ── Función de clasificación de categoría (igual que buildExcelRow) ──────
+    const clasificar = (v: any): string => {
+      if (!v.es_actividad) return 'agencia';
+      const act = (v.titulo_actividad || '').toLowerCase();
+      const obs = (v.observaciones || '').toLowerCase();
+      if (act.includes('administrati') || obs.includes('administrati') || act.includes('oficina')) return 'admin';
+      if (act.includes('almuerzo') || act.includes('personal') || obs.includes('almuerzo')) return 'almuerzo';
+      if (act.includes('transporte') || act.includes('movilizaci')) return 'transporte';
+      if (act.includes('reunion') || act.includes('capacita')) return 'reunion';
+      return 'otro';
     };
 
-    const resTot = Object.keys(agrupado).length + 3;
-    addResumenTotal(resTot, 'DÍAS TRABAJADOS (Jornadas Evaluadas):', `${Object.keys(agrupado).length} días`);
-    addResumenTotal(resTot + 1, 'TOTAL VISITAS:', `${globalNumVisitas} visitas`);
-    addResumenTotal(resTot + 2, 'TOTAL TIEMPO EN VISITAS:', formatToHHMM(globalTVisitas), 'FF2E7D32');
-    addResumenTotal(resTot + 3, 'TOTAL ACTIVIDADES VARIAS:', `${globalNumAct} actividades`);
-    addResumenTotal(resTot + 4, 'TOTAL TIEMPO EN ACTIVIDADES VARIAS:', formatToHHMM(globalTAct), 'FF2E7D32');
-    addResumenTotal(resTot + 5, 'ALMUERZOS REGISTRADOS:', `${globalAlmuerzosOk} días`);
-    addResumenTotal(resTot + 6, 'TOTAL ALERTAS INACTIVIDAD:', `${globalAlertasInact} alertas`, 'FFCC0000');
-    addResumenTotal(resTot + 7, 'TOTAL HORAS INACTIVIDAD:', formatToHHMM(globalTInact), 'FFCC0000');
-    addResumenTotal(resTot + 8, 'TOTAL ALERTAS FUERA DE SITIO (Check Lejano):', `${globalAlertasSitio} alertas`, 'FFCC0000');
+    // ── Calcular filas de detalle ─────────────────────────────────────────────
+    interface ResumenDiaRow {
+      fechaISO: string;
+      comercial: string;
+      visitas: number;
+      tVisitasMins: number;
+      admin: number;
+      tAdminMins: number;
+      transporte: number;
+      tTransporteMins: number;
+      almuerzo: number;
+      tAlmuerzoMins: number;
+      reunion: number;
+      tReunionMins: number;
+      otro: number;
+      tOtroMins: number;
+      totalRegistros: number;
+      alertasLejania: number;
+      alertasInact: number;
+      tInactMins: number;
+    }
+
+    const detalles: ResumenDiaRow[] = [];
+
+    Object.entries(agrupado2).sort((a, b) => b[0].localeCompare(a[0])).forEach(([key, visitasDelDia]) => {
+      const [fechaISO, comercialNombre] = key.split('|||');
+      const r: ResumenDiaRow = {
+        fechaISO, comercial: comercialNombre,
+        visitas: 0, tVisitasMins: 0,
+        admin: 0, tAdminMins: 0,
+        transporte: 0, tTransporteMins: 0,
+        almuerzo: 0, tAlmuerzoMins: 0,
+        reunion: 0, tReunionMins: 0,
+        otro: 0, tOtroMins: 0,
+        totalRegistros: 0, alertasLejania: 0, alertasInact: 0, tInactMins: 0,
+      };
+
+      visitasDelDia.forEach(v => {
+        const cat = clasificar(v);
+        r.totalRegistros++;
+        if (v.alerta_fraude_checkin) r.alertasLejania++;
+
+        if (v.hora_checkin && v.hora_checkout) {
+          const mins = Math.max(0, (new Date(v.hora_checkout).getTime() - new Date(v.hora_checkin).getTime()) / 60000);
+          if (mins > 60) r.alertasInact++;
+          switch (cat) {
+            case 'agencia':   r.visitas++;    r.tVisitasMins    += mins; break;
+            case 'admin':     r.admin++;      r.tAdminMins      += mins; break;
+            case 'transporte':r.transporte++; r.tTransporteMins += mins; break;
+            case 'almuerzo':  r.almuerzo++;   r.tAlmuerzoMins   += mins; break;
+            case 'reunion':   r.reunion++;    r.tReunionMins    += mins; break;
+            default:          r.otro++;       r.tOtroMins       += mins; break;
+          }
+        } else {
+          // Registro sin checkout (checkin only)
+          switch (cat) {
+            case 'agencia':    r.visitas++;    break;
+            case 'admin':      r.admin++;      break;
+            case 'transporte': r.transporte++; break;
+            case 'almuerzo':   r.almuerzo++;   break;
+            case 'reunion':    r.reunion++;    break;
+            default:           r.otro++;       break;
+          }
+        }
+      });
+
+      r.tInactMins = calcularHorasMuertas(visitasDelDia, fechaISO, 15);
+      detalles.push(r);
+    });
+
+    // ── Crear la hoja ─────────────────────────────────────────────────────────
+    const controlWs = workbook.addWorksheet('Control Diario de Visitas', {
+      views: [{ showGridLines: false, state: 'frozen', ySplit: 3 }]
+    });
+
+    // Anchos de columna
+    const colWidths = [4, 14, 24, 10, 14, 10, 14, 10, 14, 10, 14, 10, 14, 10, 14, 12, 10, 14];
+    colWidths.forEach((w, i) => { controlWs.getColumn(i + 1).width = w; });
+
+    // ── FILA 1: Título grande ──────────────────────────────────────────────────
+    controlWs.mergeCells('B1:R1');
+    const titleCell = controlWs.getCell('B1');
+    titleCell.value = '📋  CONTROL DIARIO DE VISITAS COMERCIALES';
+    titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    controlWs.getRow(1).height = 36;
+
+    // ── FILA 2: Sub-título / leyenda de grupos ────────────────────────────────
+    controlWs.mergeCells('B2:R2');
+    const subCell = controlWs.getCell('B2');
+    subCell.value = `Resumen diario agrupado por comercial — Generado: ${new Date().toLocaleString('es-EC')}`;
+    subCell.font = { size: 10, italic: true, color: { argb: 'FF475569' } };
+    subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+    subCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    controlWs.getRow(2).height = 20;
+
+    // ── FILA 3: Encabezados de columnas ────────────────────────────────────────
+    const headers = [
+      '', 'Fecha', 'Comercial',
+      'Nº Visitas\nAgencias', 'Tiempo\nVisitas',
+      'Nº Trabaj.\nAdministrativos', 'Tiempo\nAdministrativo',
+      'Nº\nTransporte', 'Tiempo\nTransporte',
+      'Nº\nAlmuerzo', 'Tiempo\nAlmuerzo',
+      'Nº\nOtros', 'Tiempo\nOtros',
+      'TOTAL\nREGISTROS', 'TOTAL\nACTIVIDADES',
+      'Alertas\nLejanía', 'Alertas\nInact.', 'T. Inactividad'
+    ];
+
+    const headerColors: Record<number, string> = {
+      3: 'FF1A237E',  // Fecha
+      4: 'FF1A237E',  // Comercial
+      5: 'FF1B5E20',  // Visitas agencias
+      6: 'FF1B5E20',
+      7: 'FF0D47A1',  // Admin
+      8: 'FF0D47A1',
+      9: 'FF4A148C',  // Transporte
+      10:'FF4A148C',
+      11:'FFE65100',  // Almuerzo
+      12:'FFE65100',
+      13:'FF37474F',  // Otros
+      14:'FF37474F',
+      15:'FF880E4F',  // Totales
+      16:'FF880E4F',
+      17:'FFCC0000',  // Alertas
+      18:'FFCC0000',
+      19:'FFCC0000',
+    };
+
+    const hRow3 = controlWs.getRow(3);
+    hRow3.height = 46;
+    headers.forEach((h, i) => {
+      const cell = hRow3.getCell(i + 1);
+      cell.value = h;
+      const argb = headerColors[i + 1] || 'FF0F172A';
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } };
+      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 10 };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      cell.border = { right: { style: 'thin', color: { argb: 'FFFFFFFF' } } };
+    });
+
+    // ── Totales globales acumulados ─────────────────────────────────────────
+    let gVisitas = 0, gTVis = 0, gAdmin = 0, gTAdmin = 0, gTrans = 0, gTTrans = 0;
+    let gAlm = 0, gTAlm = 0, gReun = 0, gTReun = 0, gOtro = 0, gTOtro = 0;
+    let gTotal = 0, gLejania = 0, gInact = 0, gTInact = 0;
+
+    // ── Rellenar filas de datos ─────────────────────────────────────────────
+    detalles.forEach((d, index) => {
+      const rowNum = index + 4; // Start after 3 header rows
+      const exRow = controlWs.getRow(rowNum);
+      exRow.height = 18;
+
+      // Alternar color de fila
+      const bgEven = 'FFFAFAFA';
+      const bgOdd  = 'FFE8F5E9'; // verde muy suave para visitas
+      const bg = index % 2 === 0 ? bgEven : bgOdd;
+
+      const setCellData = (colNum: number, value: string | number, bold = false, fontColor?: string, bgOverride?: string) => {
+        const cell = exRow.getCell(colNum);
+        cell.value = value;
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgOverride || bg } };
+        cell.font = { size: 10, bold, color: fontColor ? { argb: fontColor } : undefined };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
+        cell.border = { right: { style: 'hair', color: { argb: 'FFCCCCCC' } } };
+      };
+
+      // Formatear fecha bonita
+      const parts = d.fechaISO.split('-');
+      const fechaBonita = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d.fechaISO;
+
+      setCellData(1, '');
+      setCellData(2, fechaBonita, true);
+      setCellData(3, d.comercial, true);
+
+      // Visitas agencias (verde)
+      setCellData(4, d.visitas, d.visitas > 0, d.visitas > 0 ? 'FF1B5E20' : 'FF999999', d.visitas > 0 ? 'FFE8F5E9' : undefined);
+      setCellData(5, d.tVisitasMins > 0 ? formatToHHMM(d.tVisitasMins) : '-', false, 'FF1B5E20');
+
+      // Trabajo administrativo (azul)
+      setCellData(6, d.admin, d.admin > 0, d.admin > 0 ? 'FF0D47A1' : 'FF999999', d.admin > 0 ? 'FFE3F2FD' : undefined);
+      setCellData(7, d.tAdminMins > 0 ? formatToHHMM(d.tAdminMins) : '-', false, 'FF0D47A1');
+
+      // Transporte (morado)
+      setCellData(8, d.transporte, d.transporte > 0, d.transporte > 0 ? 'FF4A148C' : 'FF999999', d.transporte > 0 ? 'FFF3E5F5' : undefined);
+      setCellData(9, d.tTransporteMins > 0 ? formatToHHMM(d.tTransporteMins) : '-', false, 'FF4A148C');
+
+      // Almuerzo (naranja)
+      setCellData(10, d.almuerzo > 0 ? '✅ ' + d.almuerzo : 0, d.almuerzo > 0, d.almuerzo > 0 ? 'FFE65100' : 'FFCC0000', d.almuerzo > 0 ? 'FFFFF3E0' : 'FFFFEBEE');
+      setCellData(11, d.tAlmuerzoMins > 0 ? formatToHHMM(d.tAlmuerzoMins) : '-', false, 'FFE65100');
+
+      // Otros (gris oscuro)
+      setCellData(12, d.otro + d.reunion, (d.otro + d.reunion) > 0, 'FF37474F');
+      setCellData(13, (d.tOtroMins + d.tReunionMins) > 0 ? formatToHHMM(d.tOtroMins + d.tReunionMins) : '-', false, 'FF37474F');
+
+      // TOTAL REGISTROS (destacado magenta oscuro)
+      const totalActs = d.admin + d.transporte + d.almuerzo + d.reunion + d.otro;
+      setCellData(14, d.totalRegistros, true, 'FFFFFFFF', 'FF880E4F');
+      setCellData(15, totalActs, true, 'FFFFFFFF', 'FF880E4F');
+
+      // Alertas (rojo)
+      setCellData(16, d.alertasLejania > 0 ? `⚠️ ${d.alertasLejania}` : '—', d.alertasLejania > 0, d.alertasLejania > 0 ? 'FFCC0000' : 'FF999999');
+      setCellData(17, d.alertasInact > 0 ? `⚠️ ${d.alertasInact}` : '—', d.alertasInact > 0, d.alertasInact > 0 ? 'FFCC0000' : 'FF999999');
+      setCellData(18, d.tInactMins > 0 ? formatToHHMM(d.tInactMins) : '—', d.tInactMins > 60, d.tInactMins > 60 ? 'FFCC0000' : 'FF999999');
+
+      // Acumular globales
+      gVisitas += d.visitas; gTVis   += d.tVisitasMins;
+      gAdmin   += d.admin;   gTAdmin += d.tAdminMins;
+      gTrans   += d.transporte; gTTrans += d.tTransporteMins;
+      gAlm     += d.almuerzo;   gTAlm   += d.tAlmuerzoMins;
+      gReun    += d.reunion;    gTReun  += d.tReunionMins;
+      gOtro    += d.otro;       gTOtro  += d.tOtroMins;
+      gTotal   += d.totalRegistros;
+      gLejania += d.alertasLejania;
+      gInact   += d.alertasInact;
+      gTInact  += d.tInactMins;
+    });
+
+    // ── FILA DE TOTALES GENERALES ─────────────────────────────────────────────
+    const totalRowNum = detalles.length + 4;
+    const totRow = controlWs.getRow(totalRowNum);
+    totRow.height = 26;
+
+    const totBg = 'FF0F172A';
+    const totFg = 'FFFFFFFF';
+    const totData: (string | number)[] = [
+      '', 'TOTALES GENERALES', '',
+      gVisitas, formatToHHMM(gTVis),
+      gAdmin, formatToHHMM(gTAdmin),
+      gTrans, formatToHHMM(gTTrans),
+      gAlm, formatToHHMM(gTAlm),
+      gReun + gOtro, formatToHHMM(gTReun + gTOtro),
+      gTotal, gAdmin + gTrans + gAlm + gReun + gOtro,
+      gLejania, gInact, formatToHHMM(gTInact)
+    ];
+    totData.forEach((v, i) => {
+      const cell = totRow.getCell(i + 1);
+      cell.value = v;
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: totBg } };
+      cell.font = { bold: true, size: 11, color: { argb: totFg } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+    controlWs.mergeCells(`B${totalRowNum}:C${totalRowNum}`);
+
+    // ── BLOQUE RESUMEN FINAL (debajo de totales) ─────────────────────────────
+    const addCtrlTotal = (rowNum: number, label: string, value: string | number, colorArgb?: string) => {
+      controlWs.mergeCells(`B${rowNum}:M${rowNum}`);
+      const lbl = controlWs.getCell(`B${rowNum}`);
+      lbl.value = label;
+      lbl.alignment = { horizontal: 'right', vertical: 'middle' };
+      lbl.font = { bold: true, size: 11, color: colorArgb ? { argb: colorArgb } : undefined };
+      lbl.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+      lbl.border = { top: { style: 'thin' }, bottom: { style: 'double' } };
+
+      controlWs.mergeCells(`N${rowNum}:R${rowNum}`);
+      const val = controlWs.getCell(`N${rowNum}`);
+      val.value = value;
+      val.font = { bold: true, size: 13, color: colorArgb ? { argb: colorArgb } : undefined };
+      val.alignment = { horizontal: 'left', vertical: 'middle' };
+      val.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+      val.border = { top: { style: 'thin' }, bottom: { style: 'double' } };
+      controlWs.getRow(rowNum).height = 22;
+    };
+
+    const sumStart = totalRowNum + 2;
+    addCtrlTotal(sumStart,      '📊  DÍAS / JORNADAS CON ACTIVIDAD REGISTRADA:',  `${detalles.length} filas`);
+    addCtrlTotal(sumStart + 1,  '🏢  TOTAL VISITAS A AGENCIAS (registros):',        `${gVisitas} visitas`,   'FF1B5E20');
+    addCtrlTotal(sumStart + 2,  '⏱️  TIEMPO TOTAL EN VISITAS AGENCIAS:',            formatToHHMM(gTVis),     'FF1B5E20');
+    addCtrlTotal(sumStart + 3,  '🗂️  TOTAL TRABAJOS ADMINISTRATIVOS (registros):', `${gAdmin} registros`,   'FF0D47A1');
+    addCtrlTotal(sumStart + 4,  '⏱️  TIEMPO TOTAL ADMINISTRATIVO:',                 formatToHHMM(gTAdmin),   'FF0D47A1');
+    addCtrlTotal(sumStart + 5,  '🚗  TOTAL TRANSPORTES / MOVILIZACIONES:',          `${gTrans} registros`,   'FF4A148C');
+    addCtrlTotal(sumStart + 6,  '⏱️  TIEMPO TOTAL EN TRANSPORTE:',                  formatToHHMM(gTTrans),   'FF4A148C');
+    addCtrlTotal(sumStart + 7,  '🍽️  TOTAL ALMUERZOS REGISTRADOS:',                `${gAlm} registros`,    'FFE65100');
+    addCtrlTotal(sumStart + 8,  '⏱️  TIEMPO TOTAL EN ALMUERZO / PERSONAL:',         formatToHHMM(gTAlm),    'FFE65100');
+    addCtrlTotal(sumStart + 9,  '📌  TOTAL OTROS (Reuniones + Extras):',            `${gReun + gOtro} registros`, 'FF37474F');
+    addCtrlTotal(sumStart + 10, '📋  GRAN TOTAL DE REGISTROS EN EL PERÍODO:',       `${gTotal} registros`,   'FF0F172A');
+    addCtrlTotal(sumStart + 11, '⚠️  ALERTAS DE LEJANÍA (GPS fuera de sitio):',    `${gLejania} alertas`,   'FFCC0000');
+    addCtrlTotal(sumStart + 12, '⚠️  ALERTAS DE INACTIVIDAD (>1 hora):',           `${gInact} alertas`,     'FFCC0000');
+    addCtrlTotal(sumStart + 13, '🕐  TIEMPO TOTAL DE INACTIVIDAD (tiempos muertos):', formatToHHMM(gTInact), 'FFCC0000');
+
   }
 
   // Convertir a blob nativamente
